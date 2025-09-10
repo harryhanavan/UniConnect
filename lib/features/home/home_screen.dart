@@ -12,6 +12,7 @@ import '../achievements/achievements_screen.dart';
 import '../search/advanced_search_screen.dart';
 import '../privacy/privacy_settings_screen.dart';
 import '../friends/interactive_map_screen.dart';
+import '../design_system/design_system_showcase_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -391,6 +392,51 @@ class _HomeScreenState extends State<HomeScreen> {
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+                ),
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 8),
+        
+        Row(
+          children: [
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Design System',
+                Icons.palette,
+                AppColors.homeColor,  // Purple for design system
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const DesignSystemShowcaseScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Advanced Search',
+                Icons.search,
+                AppColors.personalColor,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdvancedSearchScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildQuickActionCard(
+                context,
+                'Privacy Settings',
+                Icons.privacy_tip,
+                AppColors.personalColor,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PrivacySettingsScreen()),
                 ),
               ),
             ),

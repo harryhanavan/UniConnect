@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../shared/models/chat_message.dart';
@@ -99,11 +100,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           backgroundImage: avatarUrl != null 
               ? NetworkImage(avatarUrl) 
               : null,
-          backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
           child: avatarUrl == null 
               ? Icon(
                   chat.isDirectMessage ? Icons.person : Icons.group,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppColors.socialColor,
                 )
               : null,
         ),
@@ -175,7 +176,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: AppColors.socialColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -241,43 +242,101 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Messages',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'Stay connected with friends',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: Colors.white),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NewChatScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.search, color: Colors.white),
+                      onPressed: () {
+                        // TODO: Implement search functionality
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Messages'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const NewChatScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.edit_outlined),
+      backgroundColor: Colors.white,
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _chats.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: _loadChats,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: _chats.length,
+                          itemBuilder: (context, index) {
+                            return _buildChatTile(_chats[index]);
+                          },
+                        ),
+                      ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _chats.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadChats,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _chats.length,
-                    itemBuilder: (context, index) {
-                      return _buildChatTile(_chats[index]);
-                    },
-                  ),
-                ),
       floatingActionButton: FloatingActionButton(
         heroTag: "new_chat",
+        backgroundColor: AppColors.socialColor,
         onPressed: () {
           Navigator.push(
             context,
@@ -286,7 +345,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           );
         },
-        child: const Icon(Icons.message_outlined),
+        child: const Icon(Icons.message_outlined, color: Colors.white),
       ),
     );
   }

@@ -244,7 +244,7 @@ class CalendarService {
     // Add to demo data (in real app, would save to database)
     // Note: In the JSON-based system, this would require updating the JSON file
     // For now, this is a limitation of the demo system
-    print('Note: Adding events at runtime not yet supported in JSON-based demo data');
+    // Note: Adding events at runtime not yet supported in JSON-based demo data
 
     // Send notifications to invited friends (simulate)
     await _notifyInvitedFriends(newEvent, invitedFriendIds);
@@ -271,7 +271,7 @@ class CalendarService {
 
     // Note: Auto-RSVP functionality temporarily disabled in JSON-based demo data
     // In a real app, this would update the database
-    print('Society joined: ${society.name}. Event RSVP updates not yet supported in JSON-based demo data.');
+    // Society joined: ${society.name}. Event RSVP updates not yet supported in JSON-based demo data.
 
     // Trigger calendar refresh
     await _refreshCalendar(userId);
@@ -293,7 +293,7 @@ class CalendarService {
 
     // Note: Event attendee list updates temporarily disabled in JSON-based demo data
     // In a real app, this would update the database
-    print('Society left. Event attendee updates not yet supported in JSON-based demo data.');
+    // Society left. Event attendee updates not yet supported in JSON-based demo data.
 
     await _refreshCalendar(userId);
     return true;

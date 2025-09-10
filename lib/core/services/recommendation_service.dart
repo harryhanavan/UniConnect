@@ -179,7 +179,7 @@ class RecommendationService {
     final friends = _friendshipService.getUserFriends(userId);
     for (final friend in friends) {
       // Calculate connection strength based on mutual friends and common activities
-      final mutualFriends = _friendshipService.getMutualFriends(userId, friend.id);
+      final mutualFriends = _friendshipService.getMutualFriendsSync(userId, friend.id);
       final connectionStrength = 1.0 + (mutualFriends.length * 0.2);
       socialConnections[friend.id] = connectionStrength;
     }
@@ -228,7 +228,7 @@ class RecommendationService {
       }
 
       // Mutual friends boost
-      final mutualFriends = _friendshipService.getMutualFriends(userId, candidate.id);
+      final mutualFriends = _friendshipService.getMutualFriendsSync(userId, candidate.id);
       if (mutualFriends.isNotEmpty) {
         score += mutualFriends.length * 0.2;
         reasons.add('${mutualFriends.length} mutual friends');
@@ -500,7 +500,7 @@ class RecommendationService {
       }
 
       // Mutual connections (trust factor)
-      final mutualFriends = _friendshipService.getMutualFriends(userId, candidate.id);
+      final mutualFriends = _friendshipService.getMutualFriendsSync(userId, candidate.id);
       if (mutualFriends.isNotEmpty) {
         score += mutualFriends.length * 0.1;
         reasons.add('${mutualFriends.length} mutual connections');

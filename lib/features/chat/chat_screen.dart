@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../shared/models/chat_message.dart';
@@ -188,13 +189,13 @@ class _ChatScreenState extends State<ChatScreen> {
               backgroundImage: user?.profileImageUrl != null
                   ? NetworkImage(user!.profileImageUrl!)
                   : null,
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
               child: user?.profileImageUrl == null
                   ? Text(
                       user?.name.substring(0, 1) ?? '?',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: Theme.of(context).colorScheme.primary,
+                        color: AppColors.socialColor,
                       ),
                     )
                   : null,
@@ -225,7 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? Theme.of(context).colorScheme.primary
+                        ? AppColors.socialColor
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -297,7 +298,7 @@ class _ChatScreenState extends State<ChatScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border(
           left: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
+            color: AppColors.socialColor,
             width: 3,
           ),
         ),
@@ -307,10 +308,10 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Text(
             replyUser?.name ?? 'Unknown',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.primary,
+              color: AppColors.socialColor,
             ),
           ),
           const SizedBox(height: 2),
@@ -337,12 +338,12 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
             child: Text(
               _userCache[_typingUsers.first]?.name.substring(0, 1) ?? '?',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 10,
-                color: Theme.of(context).colorScheme.primary,
+                color: AppColors.socialColor,
               ),
             ),
           ),
@@ -388,40 +389,65 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getChatTitle(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (_getChatSubtitle() != null)
+                    Text(
+                      _getChatSubtitle()!,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: () {
+                // TODO: Implement chat info/settings
+              },
+              icon: const Icon(Icons.more_vert, color: Colors.white),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              _getChatTitle(),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            if (_getChatSubtitle() != null)
-              Text(
-                _getChatSubtitle()!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-          ],
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              // TODO: Implement chat info/settings
-            },
-            icon: const Icon(Icons.more_vert),
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
+          _buildHeader(),
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -484,7 +510,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 4,
             height: 40,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
+              color: AppColors.socialColor,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -495,10 +521,10 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(
                   'Replying to ${replyUser?.name ?? 'Unknown'}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.socialColor,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -563,8 +589,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 8),
             Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
+              decoration: const BoxDecoration(
+                color: AppColors.socialColor,
                 shape: BoxShape.circle,
               ),
               child: IconButton(

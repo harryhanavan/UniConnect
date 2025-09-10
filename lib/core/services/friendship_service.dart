@@ -35,7 +35,7 @@ class FriendshipService {
 
     // Note: Friend request updates temporarily disabled in JSON-based demo data
     // In a real app, this would update the database
-    print('Friend request sent from $senderId to $receiverId. Data updates not yet supported in JSON-based demo data.');
+    // Friend request sent from $senderId to $receiverId. Data updates not yet supported in JSON-based demo data.
 
     return newRequest;
   }
@@ -50,7 +50,7 @@ class FriendshipService {
     final friendRequests = _demoData.friendRequestsSync;
     final request = friendRequests.firstWhere((r) => r.id == requestId, orElse: () => throw Exception('Request not found'));
     
-    print('Friend request would be accepted: ${request.senderId} -> ${request.receiverId}');
+    // Friend request would be accepted: ${request.senderId} -> ${request.receiverId}
 
     // Auto-setup default timetable sharing
     await _setupDefaultTimetableSharing(request.senderId, request.receiverId);
@@ -71,7 +71,7 @@ class FriendshipService {
     final friendRequests = _demoData.friendRequestsSync;
     final request = friendRequests.firstWhere((r) => r.id == requestId, orElse: () => throw Exception('Request not found'));
     
-    print('Friend request would be declined: ${request.senderId} -> ${request.receiverId}');
+    // Friend request would be declined: ${request.senderId} -> ${request.receiverId}
 
     return true;
   }
@@ -83,7 +83,7 @@ class FriendshipService {
 
     // Note: Friend removal temporarily disabled in JSON-based demo data
     // In a real app, this would update the database
-    print('Friend removed: $userId1 <-> $userId2. Data updates not yet supported in JSON-based demo data.');
+    // Friend removed: $userId1 <-> $userId2. Data updates not yet supported in JSON-based demo data.
 
     return true;
   }
@@ -428,25 +428,25 @@ class FriendshipService {
   void _addFriendRelationship(String userId1, String userId2) {
     // Note: Friend relationship updates temporarily disabled in JSON-based demo data
     // In a real app, this would update the database with bidirectional friend relationships
-    print('Friend relationship would be added: $userId1 <-> $userId2');
+    // Friend relationship would be added: $userId1 <-> $userId2
   }
 
   void _removeFriendRelationship(String userId1, String userId2) {
     // Note: Friend relationship removal temporarily disabled in JSON-based demo data
     // In a real app, this would update the database with bidirectional friend relationship removal
-    print('Friend relationship would be removed: $userId1 <-> $userId2');
+    // Friend relationship would be removed: $userId1 <-> $userId2
   }
 
   void _removePendingRequests(String senderId, String receiverId) {
     // Note: Pending request removal temporarily disabled in JSON-based demo data
     // In a real app, this would update the database to remove request tracking
-    print('Pending requests would be removed between: $senderId <-> $receiverId');
+    // Pending requests would be removed between: $senderId <-> $receiverId
   }
 
   Future<void> _setupDefaultTimetableSharing(String userId1, String userId2) async {
     // Note: Privacy settings updates temporarily disabled in JSON-based demo data
     // In a real app, this would update the database with default timetable sharing between friends
-    print('Default timetable sharing would be enabled between: $userId1 <-> $userId2');
+    // Default timetable sharing would be enabled between: $userId1 <-> $userId2
   }
 
   void _removePrivacyExceptions(String userId1, String userId2) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
@@ -171,7 +172,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: showSelect && isSelected
-              ? Theme.of(context).colorScheme.primary
+              ? AppColors.socialColor
               : Colors.grey.shade200,
           width: showSelect && isSelected ? 2 : 1,
         ),
@@ -185,12 +186,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               backgroundImage: user.profileImageUrl != null
                   ? NetworkImage(user.profileImageUrl!)
                   : null,
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
               child: user.profileImageUrl == null
                   ? Text(
                       user.name.substring(0, 1),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
+                      style: const TextStyle(
+                        color: AppColors.socialColor,
                         fontWeight: FontWeight.bold,
                       ),
                     )
@@ -204,7 +205,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: AppColors.socialColor,
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
@@ -394,15 +395,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                                   backgroundImage: user.profileImageUrl != null
                                       ? NetworkImage(user.profileImageUrl!)
                                       : null,
-                                  backgroundColor: Theme.of(context)
-                                      .colorScheme
-                                      .primary
-                                      .withValues(alpha: 0.1),
+                                  backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
                                   child: user.profileImageUrl == null
                                       ? Text(
                                           user.name.substring(0, 1),
-                                          style: TextStyle(
-                                            color: Theme.of(context).colorScheme.primary,
+                                          style: const TextStyle(
+                                            color: AppColors.socialColor,
                                           ),
                                         )
                                       : null,
@@ -488,24 +486,61 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New Chat'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(text: 'Friends'),
-            Tab(text: 'Discover'),
-            Tab(text: 'Group'),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Column(
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const Expanded(
+                  child: Text(
+                    'New Chat',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            TabBar(
+              controller: _tabController,
+              indicatorColor: Colors.white,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              tabs: const [
+                Tab(text: 'Friends'),
+                Tab(text: 'Discover'),
+                Tab(text: 'Group'),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Column(
         children: [
+          _buildHeader(),
           Container(
             padding: const EdgeInsets.all(16),
             child: TextField(
