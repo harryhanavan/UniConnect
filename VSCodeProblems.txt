@@ -1,6 +1,6 @@
 [{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/calendar_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/calendar_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -16,10 +16,11 @@
 	"startLineNumber": 268,
 	"startColumn": 11,
 	"endLineNumber": 268,
-	"endColumn": 24
+	"endColumn": 24,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/calendar_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/calendar_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -35,10 +36,11 @@
 	"startLineNumber": 290,
 	"startColumn": 11,
 	"endLineNumber": 290,
-	"endColumn": 24
+	"endColumn": 24,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_import",
 		"target": {
@@ -54,10 +56,11 @@
 	"startLineNumber": 3,
 	"startColumn": 8,
 	"endLineNumber": 3,
-	"endColumn": 51
+	"endColumn": 51,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -73,10 +76,11 @@
 	"startLineNumber": 72,
 	"startColumn": 11,
 	"endLineNumber": 72,
-	"endColumn": 18
+	"endColumn": 18,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -92,10 +96,11 @@
 	"startLineNumber": 428,
 	"startColumn": 8,
 	"endLineNumber": 428,
-	"endColumn": 30
+	"endColumn": 30,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -111,10 +116,11 @@
 	"startLineNumber": 434,
 	"startColumn": 8,
 	"endLineNumber": 434,
-	"endColumn": 33
+	"endColumn": 33,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -130,10 +136,11 @@
 	"startLineNumber": 440,
 	"startColumn": 8,
 	"endLineNumber": 440,
-	"endColumn": 30
+	"endColumn": 30,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -149,10 +156,11 @@
 	"startLineNumber": 452,
 	"startColumn": 8,
 	"endLineNumber": 452,
-	"endColumn": 32
+	"endColumn": 32,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -168,10 +176,11 @@
 	"startLineNumber": 473,
 	"startColumn": 16,
 	"endLineNumber": 473,
-	"endColumn": 32
+	"endColumn": 32,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/friendship_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/friendship_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -187,10 +196,11 @@
 	"startLineNumber": 479,
 	"startColumn": 16,
 	"endLineNumber": 479,
-	"endColumn": 43
+	"endColumn": 43,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/location_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/location_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -206,10 +216,11 @@
 	"startLineNumber": 45,
 	"startColumn": 11,
 	"endLineNumber": 45,
-	"endColumn": 14
+	"endColumn": 14,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/location_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/location_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -225,10 +236,11 @@
 	"startLineNumber": 389,
 	"startColumn": 16,
 	"endLineNumber": 389,
-	"endColumn": 22
+	"endColumn": 22,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/location_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/location_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -244,10 +256,11 @@
 	"startLineNumber": 42,
 	"startColumn": 5,
 	"endLineNumber": 42,
-	"endColumn": 10
+	"endColumn": 10,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/location_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/location_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -263,10 +276,11 @@
 	"startLineNumber": 75,
 	"startColumn": 5,
 	"endLineNumber": 75,
-	"endColumn": 10
+	"endColumn": 10,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_code",
 		"target": {
@@ -285,10 +299,11 @@
 	"endColumn": 54,
 	"tags": [
 		1
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_null_aware_expression",
 		"target": {
@@ -304,10 +319,11 @@
 	"startLineNumber": 39,
 	"startColumn": 52,
 	"endLineNumber": 39,
-	"endColumn": 54
+	"endColumn": 54,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_code",
 		"target": {
@@ -326,10 +342,11 @@
 	"endColumn": 63,
 	"tags": [
 		1
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_null_aware_expression",
 		"target": {
@@ -345,10 +362,11 @@
 	"startLineNumber": 183,
 	"startColumn": 58,
 	"endLineNumber": 183,
-	"endColumn": 63
+	"endColumn": 63,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_null_aware_expression",
 		"target": {
@@ -364,10 +382,11 @@
 	"startLineNumber": 184,
 	"startColumn": 64,
 	"endLineNumber": 184,
-	"endColumn": 69
+	"endColumn": 69,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_code",
 		"target": {
@@ -386,10 +405,11 @@
 	"endColumn": 74,
 	"tags": [
 		1
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/privacy_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/privacy_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "dead_null_aware_expression",
 		"target": {
@@ -405,10 +425,11 @@
 	"startLineNumber": 199,
 	"startColumn": 73,
 	"endLineNumber": 199,
-	"endColumn": 74
+	"endColumn": 74,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/study_group_service.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/study_group_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -424,10 +445,11 @@
 	"startLineNumber": 22,
 	"startColumn": 16,
 	"endLineNumber": 22,
-	"endColumn": 34
+	"endColumn": 34,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/achievements/achievements_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/achievements/achievements_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -443,10 +465,11 @@
 	"startLineNumber": 92,
 	"startColumn": 11,
 	"endLineNumber": 92,
-	"endColumn": 22
+	"endColumn": 22,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_import",
 		"target": {
@@ -462,10 +485,11 @@
 	"startLineNumber": 4,
 	"startColumn": 8,
 	"endLineNumber": 4,
-	"endColumn": 48
+	"endColumn": 48,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_field",
 		"target": {
@@ -481,10 +505,11 @@
 	"startLineNumber": 35,
 	"startColumn": 27,
 	"endLineNumber": 35,
-	"endColumn": 45
+	"endColumn": 45,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -500,10 +525,11 @@
 	"startLineNumber": 274,
 	"startColumn": 10,
 	"endLineNumber": 274,
-	"endColumn": 24
+	"endColumn": 24,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -519,10 +545,11 @@
 	"startLineNumber": 683,
 	"startColumn": 23,
 	"endLineNumber": 683,
-	"endColumn": 33
+	"endColumn": 33,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -538,10 +565,11 @@
 	"startLineNumber": 1195,
 	"startColumn": 9,
 	"endLineNumber": 1195,
-	"endColumn": 24
+	"endColumn": 24,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -557,10 +585,11 @@
 	"startLineNumber": 1221,
 	"startColumn": 9,
 	"endLineNumber": 1221,
-	"endColumn": 23
+	"endColumn": 23,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/calendar/enhanced_calendar_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -576,10 +605,11 @@
 	"startLineNumber": 1409,
 	"startColumn": 8,
 	"endLineNumber": 1409,
-	"endColumn": 28
+	"endColumn": 28,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/chat/chat_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/chat/chat_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -592,35 +622,58 @@
 	"severity": 4,
 	"message": "The value of the local variable 'otherUserId' isn't used.\nTry removing the variable or using it.",
 	"source": "dart",
-	"startLineNumber": 167,
+	"startLineNumber": 168,
 	"startColumn": 13,
-	"endLineNumber": 167,
-	"endColumn": 24
+	"endLineNumber": 168,
+	"endColumn": 24,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/chat/chat_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/chat/chat_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": "todo",
 	"severity": 2,
 	"message": "TODO: Implement chat info/settings",
 	"source": "dart",
-	"startLineNumber": 417,
-	"startColumn": 18,
-	"endLineNumber": 417,
-	"endColumn": 52
+	"startLineNumber": 434,
+	"startColumn": 20,
+	"endLineNumber": 434,
+	"endColumn": 54,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/chat/chat_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/chat/chat_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": "todo",
 	"severity": 2,
 	"message": "TODO: Show message options (reply, copy, delete, etc.)",
 	"source": "dart",
-	"startLineNumber": 442,
+	"startLineNumber": 468,
 	"startColumn": 30,
-	"endLineNumber": 442,
-	"endColumn": 84
+	"endLineNumber": 468,
+	"endColumn": 84,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/design_system/widgets/card_components_section.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
+	"code": {
+		"value": "unused_import",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_import",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "Unused import: 'package:intl/intl.dart'.\nTry removing the import directive.",
+	"source": "dart",
+	"startLineNumber": 2,
+	"startColumn": 8,
+	"endLineNumber": 2,
+	"endColumn": 32,
+	"origin": "extHost1"
+},{
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -636,10 +689,11 @@
 	"startLineNumber": 921,
 	"startColumn": 19,
 	"endLineNumber": 921,
-	"endColumn": 25
+	"endColumn": 25,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -655,10 +709,11 @@
 	"startLineNumber": 1168,
 	"startColumn": 10,
 	"endLineNumber": 1168,
-	"endColumn": 30
+	"endColumn": 30,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -674,10 +729,11 @@
 	"startLineNumber": 1364,
 	"startColumn": 8,
 	"endLineNumber": 1364,
-	"endColumn": 25
+	"endColumn": 25,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "use_build_context_synchronously",
 		"target": {
@@ -693,10 +749,11 @@
 	"startLineNumber": 1299,
 	"startColumn": 28,
 	"endLineNumber": 1299,
-	"endColumn": 35
+	"endColumn": 35,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "use_build_context_synchronously",
 		"target": {
@@ -712,10 +769,11 @@
 	"startLineNumber": 1324,
 	"startColumn": 28,
 	"endLineNumber": 1324,
-	"endColumn": 35
+	"endColumn": 35,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "curly_braces_in_flow_control_structures",
 		"target": {
@@ -731,10 +789,11 @@
 	"startLineNumber": 1411,
 	"startColumn": 61,
 	"endLineNumber": 1411,
-	"endColumn": 70
+	"endColumn": 70,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "curly_braces_in_flow_control_structures",
 		"target": {
@@ -750,10 +809,11 @@
 	"startLineNumber": 1468,
 	"startColumn": 61,
 	"endLineNumber": 1468,
-	"endColumn": 70
+	"endColumn": 70,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "curly_braces_in_flow_control_structures",
 		"target": {
@@ -769,10 +829,11 @@
 	"startLineNumber": 1528,
 	"startColumn": 61,
 	"endLineNumber": 1528,
-	"endColumn": 70
+	"endColumn": 70,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "curly_braces_in_flow_control_structures",
 		"target": {
@@ -788,10 +849,11 @@
 	"startLineNumber": 1569,
 	"startColumn": 61,
 	"endLineNumber": 1569,
-	"endColumn": 70
+	"endColumn": 70,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_friends_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "curly_braces_in_flow_control_structures",
 		"target": {
@@ -807,10 +869,11 @@
 	"startLineNumber": 1603,
 	"startColumn": 61,
 	"endLineNumber": 1603,
-	"endColumn": 70
+	"endColumn": 70,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_field",
 		"target": {
@@ -826,10 +889,11 @@
 	"startLineNumber": 27,
 	"startColumn": 27,
 	"endLineNumber": 27,
-	"endColumn": 45
+	"endColumn": 45,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/enhanced_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/enhanced_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -845,10 +909,11 @@
 	"startLineNumber": 363,
 	"startColumn": 10,
 	"endLineNumber": 363,
-	"endColumn": 25
+	"endColumn": 25,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/interactive_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/interactive_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_field",
 		"target": {
@@ -864,10 +929,11 @@
 	"startLineNumber": 30,
 	"startColumn": 27,
 	"endLineNumber": 30,
-	"endColumn": 45
+	"endColumn": 45,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/interactive_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/interactive_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -883,10 +949,11 @@
 	"startLineNumber": 816,
 	"startColumn": 8,
 	"endLineNumber": 816,
-	"endColumn": 27
+	"endColumn": 27,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/interactive_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/interactive_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": "todo",
 	"severity": 2,
 	"message": "TODO: Open navigation to selected location",
@@ -894,10 +961,11 @@
 	"startLineNumber": 714,
 	"startColumn": 24,
 	"endLineNumber": 714,
-	"endColumn": 66
+	"endColumn": 66,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/friends/interactive_map_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/friends/interactive_map_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": "todo",
 	"severity": 2,
 	"message": "TODO: Navigate to chat with friend",
@@ -905,10 +973,11 @@
 	"startLineNumber": 754,
 	"startColumn": 18,
 	"endLineNumber": 754,
-	"endColumn": 52
+	"endColumn": 52,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/home/home_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/home/home_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -921,13 +990,14 @@
 	"severity": 4,
 	"message": "The declaration '_buildFigmaDashboardCard' isn't referenced.\nTry removing the declaration of '_buildFigmaDashboardCard'.",
 	"source": "dart",
-	"startLineNumber": 760,
+	"startLineNumber": 806,
 	"startColumn": 10,
-	"endLineNumber": 760,
-	"endColumn": 34
+	"endLineNumber": 806,
+	"endColumn": 34,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/home/home_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/home/home_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -940,13 +1010,14 @@
 	"severity": 4,
 	"message": "The declaration '_buildQuickActionsSection' isn't referenced.\nTry removing the declaration of '_buildQuickActionsSection'.",
 	"source": "dart",
-	"startLineNumber": 827,
+	"startLineNumber": 873,
 	"startColumn": 10,
-	"endLineNumber": 827,
-	"endColumn": 35
+	"endLineNumber": 873,
+	"endColumn": 35,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -962,10 +1033,11 @@
 	"startLineNumber": 205,
 	"startColumn": 23,
 	"endLineNumber": 205,
-	"endColumn": 33
+	"endColumn": 33,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -984,10 +1056,11 @@
 	"endColumn": 29,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/friend_privacy_overrides_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1006,10 +1079,11 @@
 	"endColumn": 28,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_import",
 		"target": {
@@ -1025,10 +1099,11 @@
 	"startLineNumber": 4,
 	"startColumn": 8,
 	"endLineNumber": 4,
-	"endColumn": 53
+	"endColumn": 53,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1047,10 +1122,11 @@
 	"endColumn": 27,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1069,10 +1145,11 @@
 	"endColumn": 26,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1091,10 +1168,11 @@
 	"endColumn": 27,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1113,10 +1191,11 @@
 	"endColumn": 26,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1135,10 +1214,11 @@
 	"endColumn": 27,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/privacy/privacy_settings_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "deprecated_member_use",
 		"target": {
@@ -1157,10 +1237,11 @@
 	"endColumn": 26,
 	"tags": [
 		2
-	]
+	],
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_field",
 		"target": {
@@ -1176,10 +1257,11 @@
 	"startLineNumber": 27,
 	"startColumn": 27,
 	"endLineNumber": 27,
-	"endColumn": 45
+	"endColumn": 45,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1195,10 +1277,11 @@
 	"startLineNumber": 952,
 	"startColumn": 14,
 	"endLineNumber": 952,
-	"endColumn": 34
+	"endColumn": 34,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1214,10 +1297,11 @@
 	"startLineNumber": 960,
 	"startColumn": 14,
 	"endLineNumber": 960,
-	"endColumn": 39
+	"endColumn": 39,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1233,10 +1317,11 @@
 	"startLineNumber": 972,
 	"startColumn": 8,
 	"endLineNumber": 972,
-	"endColumn": 20
+	"endColumn": 20,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1252,10 +1337,11 @@
 	"startLineNumber": 998,
 	"startColumn": 8,
 	"endLineNumber": 998,
-	"endColumn": 21
+	"endColumn": 21,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1271,10 +1357,11 @@
 	"startLineNumber": 1053,
 	"startColumn": 8,
 	"endLineNumber": 1053,
-	"endColumn": 26
+	"endColumn": 26,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_element",
 		"target": {
@@ -1290,10 +1377,11 @@
 	"startLineNumber": 1111,
 	"startColumn": 8,
 	"endLineNumber": 1111,
-	"endColumn": 33
+	"endColumn": 33,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "sized_box_for_whitespace",
 		"target": {
@@ -1309,10 +1397,11 @@
 	"startLineNumber": 434,
 	"startColumn": 13,
 	"endLineNumber": 434,
-	"endColumn": 22
+	"endColumn": 22,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "use_build_context_synchronously",
 		"target": {
@@ -1328,10 +1417,11 @@
 	"startLineNumber": 989,
 	"startColumn": 28,
 	"endLineNumber": 989,
-	"endColumn": 35
+	"endColumn": 35,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/enhanced_societies_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "use_build_context_synchronously",
 		"target": {
@@ -1347,10 +1437,11 @@
 	"startLineNumber": 1034,
 	"startColumn": 30,
 	"endLineNumber": 1034,
-	"endColumn": 37
+	"endColumn": 37,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/testing/phase1_test_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/testing/phase1_test_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unnecessary_null_comparison",
 		"target": {
@@ -1366,10 +1457,11 @@
 	"startLineNumber": 409,
 	"startColumn": 27,
 	"endLineNumber": 409,
-	"endColumn": 34
+	"endColumn": 34,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/testing/phase1_test_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/testing/phase1_test_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unnecessary_null_comparison",
 		"target": {
@@ -1385,10 +1477,11 @@
 	"startLineNumber": 415,
 	"startColumn": 36,
 	"endLineNumber": 415,
-	"endColumn": 43
+	"endColumn": 43,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/testing/phase3_test_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/testing/phase3_test_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unused_local_variable",
 		"target": {
@@ -1404,10 +1497,11 @@
 	"startLineNumber": 487,
 	"startColumn": 13,
 	"endLineNumber": 487,
-	"endColumn": 30
+	"endColumn": 30,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1423,10 +1517,11 @@
 	"startLineNumber": 52,
 	"startColumn": 7,
 	"endLineNumber": 52,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1442,10 +1537,11 @@
 	"startLineNumber": 64,
 	"startColumn": 7,
 	"endLineNumber": 64,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1461,10 +1557,11 @@
 	"startLineNumber": 151,
 	"startColumn": 7,
 	"endLineNumber": 151,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1480,10 +1577,11 @@
 	"startLineNumber": 195,
 	"startColumn": 7,
 	"endLineNumber": 195,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1499,10 +1597,11 @@
 	"startLineNumber": 279,
 	"startColumn": 7,
 	"endLineNumber": 279,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_loader.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_loader.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1518,10 +1617,11 @@
 	"startLineNumber": 329,
 	"startColumn": 7,
 	"endLineNumber": 329,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_manager.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_manager.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1537,10 +1637,11 @@
 	"startLineNumber": 61,
 	"startColumn": 7,
 	"endLineNumber": 61,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/demo_data/demo_data_manager.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/demo_data/demo_data_manager.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1556,10 +1657,11 @@
 	"startLineNumber": 63,
 	"startColumn": 9,
 	"endLineNumber": 63,
-	"endColumn": 14
+	"endColumn": 14,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/core/services/app_state.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/core/services/app_state.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1575,10 +1677,46 @@
 	"startLineNumber": 55,
 	"startColumn": 7,
 	"endLineNumber": 55,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/notifications/notification_center_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/chat/chat_list_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: Implement search functionality",
+	"source": "dart",
+	"startLineNumber": 299,
+	"startColumn": 28,
+	"endLineNumber": 299,
+	"endColumn": 64,
+	"origin": "extHost1"
+},{
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/design_system/widgets/interactive_elements_section.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
+	"code": {
+		"value": "deprecated_member_use",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/deprecated_member_use",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 2,
+	"message": "'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre.\nTry replacing the use of the deprecated member with the replacement.",
+	"source": "dart",
+	"startLineNumber": 301,
+	"startColumn": 17,
+	"endLineNumber": 301,
+	"endColumn": 28,
+	"tags": [
+		2
+	],
+	"origin": "extHost1"
+},{
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/notifications/notification_center_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "use_build_context_synchronously",
 		"target": {
@@ -1594,10 +1732,11 @@
 	"startLineNumber": 465,
 	"startColumn": 26,
 	"endLineNumber": 465,
-	"endColumn": 33
+	"endColumn": 33,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/society_detail_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/society_detail_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unnecessary_brace_in_string_interps",
 		"target": {
@@ -1613,10 +1752,11 @@
 	"startLineNumber": 754,
 	"startColumn": 50,
 	"endLineNumber": 754,
-	"endColumn": 62
+	"endColumn": 62,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/societies/society_detail_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/societies/society_detail_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "unnecessary_brace_in_string_interps",
 		"target": {
@@ -1632,10 +1772,11 @@
 	"startLineNumber": 754,
 	"startColumn": 68,
 	"endLineNumber": 754,
-	"endColumn": 78
+	"endColumn": 78,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/features/study_groups/study_group_detail_screen.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/features/study_groups/study_group_detail_screen.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": "todo",
 	"severity": 2,
 	"message": "TODO: Check if current user is a member of this study group",
@@ -1643,10 +1784,11 @@
 	"startLineNumber": 30,
 	"startColumn": 8,
 	"endLineNumber": 30,
-	"endColumn": 67
+	"endColumn": 67,
+	"origin": "extHost1"
 },{
-	"resource": "/C:/Users/SBIT/Documents/Projects/MIMIR/active-studies/2025-SPRING-41021-INTERACTION-DESIGN/UniConnect/lib/shared/widgets/main_navigation.dart",
-	"owner": "_generated_diagnostic_collection_name_#5",
+	"resource": "/H:/User/Harry/Documents/UNI/IDS/UniConnect/lib/shared/widgets/main_navigation.dart",
+	"owner": "_generated_diagnostic_collection_name_#9",
 	"code": {
 		"value": "avoid_print",
 		"target": {
@@ -1662,5 +1804,6 @@
 	"startLineNumber": 53,
 	"startColumn": 7,
 	"endLineNumber": 53,
-	"endColumn": 12
+	"endColumn": 12,
+	"origin": "extHost1"
 }]
