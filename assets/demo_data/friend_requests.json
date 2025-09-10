@@ -1,0 +1,31 @@
+{
+  "_comment": "Friend requests use relative dates. 'daysAgo' is relative to current date when loaded",
+  "requests": [
+    {
+      "id": "freq_001",
+      "senderId": "user_003",
+      "receiverId": "user_001",
+      "status": "pending",
+      "daysAgo": 1,
+      "message": "Hey Andrea! We're in the same Interactive Design class. Would love to connect!"
+    },
+    {
+      "id": "freq_002",
+      "senderId": "user_001",
+      "receiverId": "user_002",
+      "status": "accepted",
+      "daysAgo": 15,
+      "respondedDaysAgo": 14,
+      "message": "Saw you in design class, let's be study buddies!"
+    },
+    {
+      "id": "freq_003",
+      "senderId": "user_005",
+      "receiverId": "user_001",
+      "status": "accepted",
+      "daysAgo": 30,
+      "respondedDaysAgo": 29,
+      "message": "Fellow IT student here! Let's connect."
+    }
+  ]
+}

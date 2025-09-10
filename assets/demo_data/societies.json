@@ -1,0 +1,110 @@
+[
+  {
+    "id": "soc_001",
+    "name": "User Experience & Interaction Design Society (UXIDSoc)",
+    "description": "UXID Society is a student-run community for the interaction designers of tomorrow aiming to help students ideate, cooperate and network!",
+    "aboutUs": "We have a dream to assist those who are undertaking interaction design degrees or those who are interested in the interaction design field, we call these people tomorrows' designers! Through our experiences, we know that working on constantly improving and enhancing oneself as a designer can prove to be difficult, therefore, we would like to provide some support.\n\nAt UXID (User Experience & Interaction Design) Society, we've previously hosted the relaxing free donut day to raise awareness about our society, which was a big hit during the exhausting exam preparation week. Looking towards semesters ahead, you (the potential, amazing, talented member) can expect a wide range of social and industry events. We're currently working with amazing industry professionals within the university to give you awesome opportunities, like the up and coming \"Transitioning from Uni to Real-World in UX/UI\" panel featuring UTS Alumni, workshops, and a unique opportunity that you might've never seen coming but really, REALLY, want to happen; ProjectUX, a 8-week program held every semester where you can work in groups to solve a design problem provided by an ACTUAL client and supervised by a industry professional as your mentor. New to design? No worries, three workshops will help build your skills! Industry events aside (though they are already very captivating), We're also planning fun socials like themed game nights, movies, karaoke, and \"bad design\" competitions with prizes, plus a dedicated Discord server to help you connect with like minded peers.\n\nHop on in and join UXID Society today. Whether you want to go all-in and join ProjectUX or if you just want to chill and casually enhance your skills and socialise, we'll be here cheering you on!",
+    "category": "Technology",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2025/07/UXID-LOGO-312x312-1.png",
+    "memberCount": 285,
+    "tags": ["UX/UI", "Design", "Interaction Design", "ProjectUX", "Workshops"],
+    "isJoined": true,
+    "adminIds": ["user_002"]
+  },
+  {
+    "id": "soc_002",
+    "name": "UTS Programmers Society (ProgSoc)",
+    "description": "ProgSoc is UTS's largest technology society, bringing together students passionate about programming, software development, and technology innovation. We host regular events including hackathons, coding workshops, industry networking sessions, and collaborative projects. Whether you're a beginner or experienced developer, ProgSoc offers opportunities to learn, build, and connect with like-minded individuals in the tech industry.",
+    "aboutUs": "Welcome to ProgSoc - where code meets community! We are UTS's premier technology society with over 580 members passionate about all things programming. Our mission is to bridge the gap between academic learning and real-world software development through hands-on experiences and industry connections.\n\nOur flagship events include the annual ProgSoc Hackathon (with prizes worth over $10,000), weekly coding workshops covering everything from web development to machine learning, monthly industry talks featuring developers from Google, Atlassian, and Canva, and collaborative open-source projects that make real impact.\n\nWhether you're struggling with your first \"Hello World\" or deploying production applications, ProgSoc has something for you. Join our vibrant Discord community, participate in coding competitions, get mentorship from senior students, and build your portfolio with real projects. Together, we debug, develop, and deploy!",
+    "category": "Technology",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Programmers-Society-Logo.png",
+    "memberCount": 580,
+    "tags": ["Programming", "Hackathons", "Tech Talks", "Software Development", "Networking"],
+    "isJoined": true,
+    "adminIds": ["user_003"]
+  },
+  {
+    "id": "soc_003",
+    "name": "UTS Engineering Society",
+    "description": "The Engineering Society at UTS serves all engineering disciplines, fostering collaboration and professional growth among students. We organize industry networking events, technical workshops, professional development seminars, and social gatherings. Our society bridges the gap between academic learning and industry practice, helping students build connections and develop skills essential for their engineering careers.",
+    "aboutUs": "The UTS Engineering Society represents over 3,000 engineering students across all disciplines - from Civil and Mechanical to Software and Biomedical Engineering. Since 1988, we've been the voice of engineering students at UTS, advocating for academic excellence and professional development.\n\nOur comprehensive program includes industry site visits to major infrastructure projects, professional skills workshops (resume writing, interview preparation, LinkedIn optimization), technical competitions including the annual Engineering Challenge, networking nights with industry partners, and social events that bring together students from all engineering streams.\n\nWe maintain strong partnerships with Engineers Australia, major engineering firms, and innovative startups, providing our members with exclusive internship opportunities, graduate program insights, and mentorship connections. Join us to transform from an engineering student into an industry-ready professional!",
+    "category": "Academic",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Engineering-Society-Logo.png",
+    "memberCount": 485,
+    "tags": ["Engineering", "Professional Development", "Industry", "Technical", "Networking"],
+    "isJoined": false,
+    "adminIds": ["user_004"]
+  },
+  {
+    "id": "soc_004",
+    "name": "UTS Car Society",
+    "description": "Car Society brings together automotive enthusiasts from across UTS to share their passion for cars, motorcycles, and all things automotive. We organize regular car meets, track days, technical workshops covering maintenance and modifications, and social events. Whether you're into JDM, European, American muscle, or electric vehicles, our diverse community welcomes all automotive interests and skill levels.",
+    "aboutUs": "Rev up your university experience with UTS Car Society! We're a community of petrolheads, EV enthusiasts, and everyone in between who share a passion for all things automotive. From vintage classics to cutting-edge electric vehicles, if it has wheels, we're interested!\n\nOur action-packed calendar includes monthly Cars & Coffee meets in Sydney, track days at Eastern Creek and Wakefield Park, hands-on workshops covering basic maintenance to performance modifications, automotive photography sessions, go-karting competitions, and exclusive garage tours of private collections and workshops.\n\nWe welcome all skill levels - whether you're a seasoned mechanic or can't tell a spark plug from a glow plug. Our experienced members love sharing knowledge about engine building, suspension tuning, detailing techniques, and motorsport. Plus, we have special interest groups for JDM, Euro, muscle cars, motorcycles, and EVs. Join us and shift your uni life into high gear!",
+    "category": "Automotive",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Car-Society-Logo.png",
+    "memberCount": 195,
+    "tags": ["Cars", "Automotive", "Racing", "Workshops", "Car Meets"],
+    "isJoined": false,
+    "adminIds": ["user_005"]
+  },
+  {
+    "id": "soc_005",
+    "name": "CIAO Society",
+    "description": "Building bridges across cultures and supporting international students. Cultural events, social gatherings, and peer support networks.",
+    "aboutUs": "CIAO (Culture, Inclusion, Acceptance, Opportunity) Society is your home away from home at UTS. We're dedicated to supporting international students and celebrating the rich cultural diversity of our university community. With members from over 50 countries, we create a welcoming space where every culture is celebrated and every voice is heard.\n\nOur support programs include arrival assistance for new international students, language exchange partnerships, academic support groups, visa and accommodation guidance, and mental health support sessions. We organize vibrant cultural festivals throughout the year including Lunar New Year celebrations, Diwali Festival of Lights, Harmony Day, International Food Fair, and monthly cultural showcases.\n\nBeyond events, we provide practical support through our buddy system, emergency assistance network, and career development workshops tailored for international students. Whether you're homesick, need help navigating Australian culture, or want to share your own culture with others, CIAO is here for you. Together, we make UTS feel like home!",
+    "category": "Cultural",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/07/294144987_2211721325670245_4489648924956177878_n.jpg",
+    "memberCount": 420,
+    "tags": ["Cultural", "International", "Social", "Support"],
+    "isJoined": true,
+    "adminIds": ["user_002"]
+  },
+  {
+    "id": "soc_006",
+    "name": "UTS Law Students Society",
+    "description": "Supporting law students through their academic journey. Mooting competitions, legal workshops, and networking with legal professionals.",
+    "aboutUs": "The UTS Law Students' Society (LSS) is the peak representative body for over 2,000 law students at UTS. We're committed to enhancing your legal education through practical experience, professional development, and building lasting connections within the legal community.\n\nOur comprehensive competition program includes internal and intervarsity mooting, client interviewing, witness examination, and negotiation competitions. We run the prestigious UTS Law Revue, publish the award-winning Poetic Justice law journal, and host the annual Law Ball - the highlight of the social calendar.\n\nProfessional development is at our core. We facilitate clerkship information sessions with top-tier firms, Criminal Law and Social Justice career panels, workshops on legal research and writing, networking events with the judiciary and bar, and mentoring programs connecting students with practicing lawyers. Our wellbeing initiatives ensure students maintain balance while navigating the demands of law school. Join LSS and transform from law student to legal professional!",
+    "category": "Academic",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Law-Students-Society-Logo.png",
+    "memberCount": 220,
+    "tags": ["Law", "Mooting", "Legal Workshops", "Professional Development"],
+    "isJoined": false,
+    "adminIds": ["user_004"]
+  },
+  {
+    "id": "soc_007",
+    "name": "UTS Hellenic Society",
+    "description": "The Hellenic Society celebrates and promotes Greek culture, history, and traditions within the UTS community. We host cultural events including traditional Greek nights with music and dancing, educational workshops about Greek history and philosophy, networking events, and community service projects. Our society welcomes both Greek students and those interested in learning about Greek heritage and culture.",
+    "aboutUs": "Καλώς ήρθατε! Welcome to the UTS Hellenic Society - your gateway to Greek culture, heritage, and community at university. For over 20 years, we've been sharing the richness of Hellenic civilization with the UTS community, from ancient philosophy to modern Greek culture.\n\nOur cultural program brings Greece to Sydney through traditional Greek dance workshops and performances, Greek language conversation classes, cooking demonstrations featuring regional Greek cuisine, film screenings of classic and contemporary Greek cinema, celebrations of Greek Independence Day and Orthodox Easter, and philosophical discussions exploring Socrates, Plato, and Aristotle.\n\nWe maintain strong connections with the broader Greek-Australian community through partnerships with local Greek restaurants and businesses, volunteer work with Greek community organizations, and networking events with Greek-Australian professionals. Whether you're Greek, have Greek heritage, or simply love Greek culture, you'll find a warm welcome here. Join us for some mezze, music, and meaningful connections. Όπα!",
+    "category": "Cultural",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Hellenic-Logo.png",
+    "memberCount": 175,
+    "tags": ["Greek", "Cultural", "Heritage", "Community", "Networking"],
+    "isJoined": false,
+    "adminIds": ["user_003"]
+  },
+  {
+    "id": "soc_008",
+    "name": "UTS Animation Guild",
+    "description": "The Animation Guild is the creative hub for aspiring animators, digital artists, and storytellers at UTS. We provide workshops on 2D and 3D animation techniques, film screenings of classic and contemporary animated works, industry networking opportunities with professional animators and studios, and collaborative projects where members can work together on animated short films and creative endeavors.",
+    "aboutUs": "Bring your imagination to life with the UTS Animation Guild! We're a collective of artists, animators, and storytellers pushing the boundaries of visual narrative. From hand-drawn 2D animation to cutting-edge 3D CGI, we explore every facet of the animation arts.\n\nOur hands-on workshop series covers character design and storyboarding, 2D animation in TVPaint and Toon Boom, 3D modeling and rigging in Maya and Blender, motion graphics in After Effects, and stop-motion techniques. We host regular animation film festivals showcasing student work, masterclasses with industry professionals from Pixar, Disney, and Animal Logic, and collaborative projects including our annual 48-hour animation challenge.\n\nMembers gain access to our animation lab with Wacom tablets and professional software, feedback sessions with experienced animators, internship opportunities at local studios, and a supportive community of fellow artists. Whether you dream of creating the next Studio Ghibli masterpiece or working on blockbuster VFX, the Animation Guild is where your journey begins!",
+    "category": "Creative",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2022/01/Animation-Guild-Logo.png",
+    "memberCount": 255,
+    "tags": ["Animation", "Digital Art", "Creative", "Film", "Collaboration"],
+    "isJoined": true,
+    "adminIds": ["user_005"]
+  },
+  {
+    "id": "soc_009",
+    "name": "UTS Dinner Society",
+    "description": "Dinner Society brings UTS students together through shared love of food and dining experiences. We organize group restaurant visits to explore Sydney's diverse culinary scene, cooking workshops and masterclasses, food festivals and cultural food events, wine and cheese tastings, and themed dinner parties. Our society creates a welcoming social environment where students can make friends, discover new cuisines, and enjoy great food together.",
+    "aboutUs": "Food brings people together, and at UTS Dinner Society, we're all about creating memorable dining experiences and lasting friendships. We believe the best conversations happen over good food, and Sydney's incredible culinary diversity is our playground!\n\nOur gastronomic adventures include weekly restaurant crawls exploring hidden gems and popular hotspots, monthly themed dinners (think Korean BBQ, Italian feast, Yum Cha sessions), cooking masterclasses with professional chefs, food market tours and festival visits, wine and cheese appreciation evenings, and our famous end-of-semester banquets.\n\nWe cater to all dietary requirements and budgets, with events ranging from cheap eats under $15 to special occasion fine dining. Our members enjoy exclusive restaurant discounts, a supportive foodie community, cooking skill development, and cultural exploration through cuisine. Whether you're a MasterChef wannabe or can barely boil water, if you love food and good company, you belong here. Come hungry, leave happy!",
+    "category": "Social",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2023/12/Dinner-Society_Logo_Feb-2024.png",
+    "memberCount": 420,
+    "tags": ["Food", "Social", "Dining", "Culinary", "Restaurant"],
+    "isJoined": false,
+    "adminIds": ["user_004"]
+  }
+]
