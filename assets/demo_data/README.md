@@ -6,7 +6,7 @@ This directory contains JSON files that define the demo data for UniConnect. All
 
 - **`users.json`** - User accounts, profiles, and relationships
 - **`societies.json`** - University societies/clubs information
-- **`events.json`** - Events, classes, assignments, and society activities
+- **`events.json`** - Enhanced events with two-tier categorization, relationships, and privacy controls
 - **`locations.json`** - Campus locations and buildings
 - **`privacy_settings.json`** - User privacy preferences
 - **`friend_requests.json`** - Friend request data
@@ -66,7 +66,7 @@ In `users.json`, update both users:
 
 ### Adding Events
 
-Events use **relative dates** for easy management:
+Events use **relative dates** and **enhanced categorization** for comprehensive event management:
 
 ```json
 {
@@ -78,10 +78,18 @@ Events use **relative dates** for easy management:
   "duration": 2,
   "location": "Building 11, Room 450",
   "type": "society",
-  "source": "societies",
+  "subType": "workshop",
+  "category": "social",
+  "origin": "society",
   "societyId": "soc_001",
-  "creatorId": "user_002",
-  "attendeeIds": ["user_001", "user_002"]
+  "organizerIds": ["user_002"],
+  "attendeeIds": ["user_001", "user_002"],
+  "invitedIds": ["user_003"],
+  "interestedIds": ["user_004"],
+  "privacyLevel": "societyOnly",
+  "sharingPermission": "canShare",
+  "discoverability": "friendsOnly",
+  "isRecurring": false
 }
 ```
 
@@ -91,8 +99,26 @@ Events use **relative dates** for easy management:
 - `duration`: Length in hours (can use decimals like 1.5)
 - `isAllDay`: Set to true for all-day events (omit hoursFromStart and duration)
 
-**Event Types**: `class`, `assignment`, `society`, `personal`
-**Event Sources**: `personal`, `friends`, `societies`, `shared`
+**Event Classification**:
+- **Type**: `class`, `assignment`, `society`, `personal` (legacy compatibility)
+- **SubType**: `lecture`, `tutorial`, `lab`, `exam`, `meeting`, `social`, `workshop`, `study`, `assignment`, `project`, `deadline`, `reminder`, `other`
+- **Category**: `academic`, `social`, `personal`, `sports`, `cultural`
+- **Origin**: `system`, `user`, `society`, `imported`
+
+**Relationship Fields**:
+- `organizerIds`: Event organizers (who can manage the event)
+- `attendeeIds`: Confirmed attendees
+- `invitedIds`: Users invited but not yet responded
+- `interestedIds`: Users who marked interest
+
+**Privacy and Sharing**:
+- **Privacy Levels**: `public`, `friendsOnly`, `societyOnly`, `courseOnly`, `yearOnly`, `facultyOnly`, `closeOnly`, `personal`
+- **Sharing Permissions**: `canShare`, `canSuggest`, `viewOnly`, `noSharing`
+- **Discoverability**: `public`, `friendsOnly`, `societyOnly`, `private`
+
+**Recurring Events**:
+- `isRecurring`: Boolean indicating if event repeats
+- `recurringPattern`: Pattern like "WEEKLY:MON:10:00", "DAILY", "MONTHLY:15"
 
 ### Adding Societies
 

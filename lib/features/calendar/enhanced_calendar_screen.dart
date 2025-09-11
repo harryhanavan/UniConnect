@@ -5,6 +5,7 @@ import '../../core/constants/event_colors.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/friendship_service.dart';
+import '../../core/utils/event_display_properties.dart';
 import '../../shared/models/event.dart';
 import '../../shared/models/user.dart';
 import '../../shared/widgets/event_cards.dart';
@@ -750,8 +751,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   Widget _buildTimetableEvent(Event event, double hourHeight, int startHour, bool isDetailedView) {
     final startTime = event.startTime;
     final endTime = event.endTime;
-    final source = _determineEventSource(event);
-    final eventTypeStr = _getSourceLabel(source).toLowerCase();
+    final eventTypeStr = _getEventDisplayType(event);
     final attendeeCount = event.attendeeIds.length;
     
     // Calculate position and height
@@ -919,8 +919,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   Widget _buildCompactEventCard(Event event, bool isSelectedDay, {bool isMultiDay = false}) {
-    final source = _determineEventSource(event);
-    final eventTypeStr = _getSourceLabel(source).toLowerCase();
+    final eventTypeStr = _getEventDisplayType(event);
     final attendeeCount = event.attendeeIds.length;
     
     return Container(
@@ -1129,9 +1128,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   Widget _buildEnhancedEventCard(Event event, Map<String, dynamic> overlayData) {
-    final source = _determineEventSource(event);
     final suggestions = _getEventSuggestions(event, overlayData);
-    final eventTypeStr = _getSourceLabel(source).toLowerCase();
+    final eventTypeStr = _getEventDisplayType(event);
     final attendeeCount = event.attendeeIds.length;
     
     // Format suggestions for the new card
@@ -1232,10 +1230,14 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   EventSource _determineEventSource(Event event) {
-    if (event.creatorId == _demoData.currentUser.id) return EventSource.personal;
-    if (event.societyId != null) return EventSource.societies;
-    if (event.attendeeIds.contains(_demoData.currentUser.id)) return EventSource.shared;
-    return EventSource.friends;
+    // Use the actual event source from the data model
+    return EventDisplayProperties.getEventSource(event, _demoData.currentUser.id);
+  }
+  
+  String _getEventDisplayType(Event event) {
+    // Get the display type based on actual event type
+    final displayProps = EventDisplayProperties.fromEvent(event);
+    return displayProps.colorKey;
   }
 
   List<String> _getEventSuggestions(Event event, Map<String, dynamic> overlayData) {

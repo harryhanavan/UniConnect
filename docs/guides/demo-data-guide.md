@@ -48,23 +48,28 @@ The manager initializes all interconnected data automatically when first accesse
 - `soc_004`: International Student Society
 - `soc_005`: Entrepreneur Society
 
-### 3. Events (`Event`)
-**Location**: `lib/shared/models/event.dart`
+### 3. Events (`Event` / `EventV2`)
+**Location**: `lib/shared/models/event.dart` (legacy) and `lib/shared/models/event_v2.dart` (enhanced)
 
-**Key Fields**:
+**Enhanced Event Fields (EventV2)**:
 - Basic: `id`, `title`, `description`, `location`
-- Timing: `startTime`, `endTime`, `isAllDay`
-- Classification: `type` (class_/society/personal/assignment), `source` (personal/friends/societies/shared)
-- Relationships: `societyId`, `courseCode`, `creatorId`, `attendeeIds`
+- Timing: `startTime`, `endTime`, `isAllDay`, `isRecurring`, `recurringPattern`
+- Two-Tier Classification: 
+  - `type` (class/society/personal/assignment) - legacy compatibility
+  - `subType` (lecture/tutorial/lab/exam/meeting/social/workshop/study/assignment/project/deadline/reminder/other)
+  - `category` (academic/social/personal/sports/cultural)
+  - `origin` (system/user/society/imported)
+- Relationships: `organizerIds`, `attendeeIds`, `invitedIds`, `interestedIds`
+- Privacy: `privacyLevel`, `sharingPermission`, `discoverability`
+- Legacy: `societyId`, `courseCode`, `creatorId` (for backward compatibility)
 
-**Event Generation** (lines 86-232):
-Events are dynamically generated based on the current date and include:
-- Today's classes
-- Tomorrow's events
-- Weekly events
-- Personal events
-- Friend events
-- Society events
+**Data Source**:
+Events are loaded from `assets/demo_data/events.json` containing 20 comprehensive events showcasing:
+- Academic classes (lectures, tutorials, labs, exams)
+- Society activities (meetings, workshops, social events)
+- Personal events (study sessions, assignments, deadlines)
+- Various privacy levels and relationship types
+- Recurring patterns for regular classes
 
 ### 4. Locations (`Location`)
 **Location**: `lib/shared/models/location.dart`
@@ -161,21 +166,31 @@ Society(
 
 ### Step 3: Add New Events
 
-```dart
-// In _generateDemoEvents() method (line 86)
-Event(
-  id: 'event_011',
-  title: 'Photo Walk: Sydney Harbour',
-  description: 'Join us for a sunset photography session at Sydney Harbour',
-  startTime: today.add(const Duration(days: 6, hours: 17)),
-  endTime: today.add(const Duration(days: 6, hours: 19)),
-  location: 'Meet at Circular Quay',
-  type: EventType.society,
-  source: EventSource.societies,
-  societyId: 'soc_006',
-  creatorId: 'user_006',
-  attendeeIds: ['user_001', 'user_006'],
-),
+Events are now managed via JSON data. Add to `assets/demo_data/events.json`:
+
+```json
+{
+  "id": "event_021",
+  "title": "Photo Walk: Sydney Harbour",
+  "description": "Join us for a sunset photography session at Sydney Harbour",
+  "daysFromNow": 6,
+  "hoursFromStart": 17,
+  "duration": 2,
+  "location": "Meet at Circular Quay",
+  "type": "society",
+  "subType": "social",
+  "category": "cultural",
+  "origin": "society",
+  "societyId": "soc_006",
+  "organizerIds": ["user_006"],
+  "attendeeIds": ["user_001", "user_006"],
+  "invitedIds": ["user_002"],
+  "interestedIds": [],
+  "privacyLevel": "societyOnly",
+  "sharingPermission": "canShare",
+  "discoverability": "public",
+  "isRecurring": false
+}
 ```
 
 ### Step 4: Add New Locations
@@ -288,12 +303,14 @@ The DemoDataManager provides several helper methods:
 
 ### Getters
 - `currentUser`: Get the logged-in user
-- `users`: All demo users
+- `users`: All demo users  
 - `societies`: All societies
-- `events`: All events (dynamically generated)
+- `events`: Legacy events (for backward compatibility)
+- `eventsV2`: Enhanced events with full feature set
 - `friends`: Friends of current user
 - `joinedSocieties`: Societies current user has joined
-- `todayEvents`: Events happening today
+- `todayEvents`: Legacy events happening today
+- `todayEventsV2`: Enhanced events happening today
 - `locations`: All demo locations
 - `privacySettings`: All privacy settings
 - `friendRequests`: All friend requests
@@ -302,8 +319,10 @@ The DemoDataManager provides several helper methods:
 - `getUserById(String id)`: Get specific user
 - `getSocietyById(String id)`: Get specific society
 - `getLocationById(String id)`: Get specific location
+- `getEventV2ById(String id)`: Get specific enhanced event
 - `getPrivacySettingsForUser(String userId)`: Get user's privacy settings
-- `getEventsByDateRange(DateTime start, DateTime end)`: Get events in date range
+- `getEventsByDateRange(DateTime start, DateTime end)`: Get legacy events in date range
+- `getEventsV2ByDateRange(DateTime start, DateTime end)`: Get enhanced events in date range
 - `getPendingFriendRequests(String userId)`: Get pending requests for user
 - `getSentFriendRequests(String userId)`: Get sent requests by user
 - `getFriendsForUser(String userId)`: Get user's friends
@@ -317,10 +336,14 @@ The DemoDataManager provides several helper methods:
 
 1. **Maintain Relationships**: When adding users, ensure friend relationships are bidirectional
 2. **Unique IDs**: Always use unique IDs following the pattern: `type_XXX` (e.g., `user_001`, `soc_001`)
-3. **Time-based Data**: Events use relative dates from `DateTime.now()` to stay current
+3. **Time-based Data**: Events use relative dates (`daysFromNow`, `hoursFromStart`) to stay current
 4. **Privacy Consistency**: Each user must have corresponding privacy settings
 5. **Location Accuracy**: Use realistic UTS coordinates (around -33.88, 151.20)
 6. **Profile Images**: Use dicebear API with consistent seed for avatars
+7. **JSON Data Management**: All events are now managed via `assets/demo_data/events.json` for easier editing
+8. **Two-Tier Classification**: Use both legacy `type` and new `subType`/`category` for comprehensive event classification
+9. **Relationship Tracking**: Specify event relationships (`organizerIds`, `attendeeIds`, `invitedIds`, `interestedIds`)
+10. **Privacy Controls**: Set appropriate `privacyLevel`, `sharingPermission`, and `discoverability` for events
 
 ## Testing Your Changes
 

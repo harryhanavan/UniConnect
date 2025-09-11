@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniConnect Demo Data Editor</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .entity-card {
+            border-left: 4px solid #0d6efd;
+            background: #f8f9fa;
+        }
+        
+        .relationship-badge {
+            font-size: 0.75rem;
+            margin: 0.1rem;
+        }
+        
+        .validation-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+        }
+        
+        .validation-success {
+            color: #198754;
+            font-size: 0.875rem;
+        }
+        
+        .foreign-key-indicator {
+            background: linear-gradient(45deg, #e3f2fd, #bbdefb);
+            border: 1px dashed #2196f3;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+        }
+        
+        .json-preview {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+        
+        .nav-pills .nav-link.active {
+            background-color: #8b5cf6;
+        }
+        
+        .btn-primary {
+            background-color: #8b5cf6;
+            border-color: #8b5cf6;
+        }
+        
+        .btn-primary:hover {
+            background-color: #7c3aed;
+            border-color: #7c3aed;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="main-container">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">
+                    <i class="bi bi-database-gear me-2"></i>
+                    UniConnect Demo Data Editor
+                </span>
+                <div class="navbar-nav ms-auto">
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="handleCreateSample()">
+                        <i class="bi bi-plus-square"></i> Sample Data
+                    </button>
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="handleLoadData()">
+                        <i class="bi bi-upload"></i> Load Data
+                    </button>
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="handleExportAll()">
+                        <i class="bi bi-download"></i> Export All
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="handleValidateAll()">
+                        <i class="bi bi-check2-circle"></i> Validate
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Status Bar -->
+        <div class="alert alert-info mb-4" id="statusBar">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="statusText">Ready to load demo data. Click "Load Data" to import existing JSON files.</span>
+        </div>
+
+        <!-- Main Tabs -->
+        <ul class="nav nav-pills mb-4" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="events-tab" data-bs-toggle="pill" data-bs-target="#events" type="button" role="tab">
+                    <i class="bi bi-calendar-event me-2"></i>Events
+                    <span class="badge bg-secondary ms-2" id="eventsCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="users-tab" data-bs-toggle="pill" data-bs-target="#users" type="button" role="tab">
+                    <i class="bi bi-people me-2"></i>Users
+                    <span class="badge bg-secondary ms-2" id="usersCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="societies-tab" data-bs-toggle="pill" data-bs-target="#societies" type="button" role="tab">
+                    <i class="bi bi-building me-2"></i>Societies
+                    <span class="badge bg-secondary ms-2" id="societiesCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="locations-tab" data-bs-toggle="pill" data-bs-target="#locations" type="button" role="tab">
+                    <i class="bi bi-geo-alt me-2"></i>Locations
+                    <span class="badge bg-secondary ms-2" id="locationsCount">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="relationships-tab" data-bs-toggle="pill" data-bs-target="#relationships" type="button" role="tab">
+                    <i class="bi bi-diagram-3 me-2"></i>Relationships
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="mainTabContent">
+            <!-- Events Tab -->
+            <div class="tab-pane fade show active" id="events" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-plus-circle me-2"></i>Add New Event
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="eventForm">
+                                    <div class="mb-3">
+                                        <label for="eventTitle" class="form-label">Title</label>
+                                        <input type="text" class="form-control" id="eventTitle" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventDescription" class="form-label">Description</label>
+                                        <textarea class="form-control" id="eventDescription" rows="3"></textarea>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label for="eventCategory" class="form-label">Category</label>
+                                            <select class="form-select" id="eventCategory" required>
+                                                <option value="">Select Category</option>
+                                                <option value="academic">Academic</option>
+                                                <option value="social">Social</option>
+                                                <option value="society">Society</option>
+                                                <option value="personal">Personal</option>
+                                                <option value="university">University</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="eventSubType" class="form-label">Sub Type</label>
+                                            <select class="form-select" id="eventSubType" required>
+                                                <option value="">Select Sub Type</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventLocation" class="form-label">Location</label>
+                                        <select class="form-select" id="eventLocation" required>
+                                            <option value="">Select Location</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label for="eventStartDate" class="form-label">Start Date</label>
+                                            <input type="date" class="form-control" id="eventStartDate" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="eventStartTime" class="form-label">Start Time</label>
+                                            <input type="time" class="form-control" id="eventStartTime" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label for="eventEndDate" class="form-label">End Date</label>
+                                            <input type="date" class="form-control" id="eventEndDate" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="eventEndTime" class="form-label">End Time</label>
+                                            <input type="time" class="form-control" id="eventEndTime" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventCreator" class="form-label">Creator</label>
+                                        <select class="form-select" id="eventCreator" required>
+                                            <option value="">Select Creator</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventOrganizers" class="form-label">Organizers</label>
+                                        <select class="form-select" id="eventOrganizers" multiple>
+                                        </select>
+                                        <div class="form-text">Hold Ctrl/Cmd to select multiple</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventAttendees" class="form-label">Attendees</label>
+                                        <select class="form-select" id="eventAttendees" multiple>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="eventPrivacy" class="form-label">Privacy Level</label>
+                                        <select class="form-select" id="eventPrivacy" required>
+                                            <option value="public">Public</option>
+                                            <option value="university">University</option>
+                                            <option value="faculty">Faculty</option>
+                                            <option value="friends">Friends Only</option>
+                                            <option value="friendsOfFriends">Friends of Friends</option>
+                                            <option value="inviteOnly">Invite Only</option>
+                                            <option value="organizersOnly">Organizers Only</option>
+                                            <option value="private">Private</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-plus-circle me-2"></i>Add Event
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-list me-2"></i>Events List
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" id="exportEventsBtn">
+                                    <i class="bi bi-download"></i> Export Events
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="eventsList" class="row">
+                                    <!-- Events will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Tab -->
+            <div class="tab-pane fade" id="users" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-person-plus me-2"></i>Add New User
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="userForm">
+                                    <div class="mb-3">
+                                        <label for="userName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="userName" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="userEmail" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userCourse" class="form-label">Course</label>
+                                        <input type="text" class="form-control" id="userCourse" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userYear" class="form-label">Year</label>
+                                        <select class="form-select" id="userYear" required>
+                                            <option value="">Select Year</option>
+                                            <option value="1st Year">1st Year</option>
+                                            <option value="2nd Year">2nd Year</option>
+                                            <option value="3rd Year">3rd Year</option>
+                                            <option value="4th Year">4th Year</option>
+                                            <option value="Postgraduate">Postgraduate</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userStatus" class="form-label">Status</label>
+                                        <select class="form-select" id="userStatus" required>
+                                            <option value="online">Online</option>
+                                            <option value="away">Away</option>
+                                            <option value="busy">Busy</option>
+                                            <option value="offline">Offline</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="userLocation" class="form-label">Current Location</label>
+                                        <select class="form-select" id="userLocation">
+                                            <option value="">Select Location</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-person-plus me-2"></i>Add User
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-people me-2"></i>Users List
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" id="exportUsersBtn">
+                                    <i class="bi bi-download"></i> Export Users
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="usersList" class="row">
+                                    <!-- Users will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Societies Tab -->
+            <div class="tab-pane fade" id="societies" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-building-add me-2"></i>Add New Society
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="societyForm">
+                                    <div class="mb-3">
+                                        <label for="societyName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="societyName" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="societyDescription" class="form-label">Description</label>
+                                        <textarea class="form-control" id="societyDescription" rows="3"></textarea>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="societyCategory" class="form-label">Category</label>
+                                        <select class="form-select" id="societyCategory" required>
+                                            <option value="">Select Category</option>
+                                            <option value="academic">Academic</option>
+                                            <option value="cultural">Cultural</option>
+                                            <option value="sports">Sports</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="arts">Arts</option>
+                                            <option value="social">Social</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="societyMemberCount" class="form-label">Member Count</label>
+                                        <input type="number" class="form-control" id="societyMemberCount" min="0" value="0">
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-building-add me-2"></i>Add Society
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-building me-2"></i>Societies List
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" id="exportSocietiesBtn">
+                                    <i class="bi bi-download"></i> Export Societies
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="societiesList" class="row">
+                                    <!-- Societies will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Locations Tab -->
+            <div class="tab-pane fade" id="locations" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-geo-alt-fill me-2"></i>Add New Location
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="locationForm">
+                                    <div class="mb-3">
+                                        <label for="locationName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="locationName" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="locationBuilding" class="form-label">Building</label>
+                                        <input type="text" class="form-control" id="locationBuilding" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="locationRoom" class="form-label">Room</label>
+                                        <input type="text" class="form-control" id="locationRoom">
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <label for="locationLat" class="form-label">Latitude</label>
+                                            <input type="number" class="form-control" id="locationLat" step="0.000001" required>
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="locationLng" class="form-label">Longitude</label>
+                                            <input type="number" class="form-control" id="locationLng" step="0.000001" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="locationType" class="form-label">Type</label>
+                                        <select class="form-select" id="locationType" required>
+                                            <option value="">Select Type</option>
+                                            <option value="lecture_hall">Lecture Hall</option>
+                                            <option value="classroom">Classroom</option>
+                                            <option value="lab">Lab</option>
+                                            <option value="library">Library</option>
+                                            <option value="study_space">Study Space</option>
+                                            <option value="common_area">Common Area</option>
+                                            <option value="outdoor">Outdoor</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-geo-alt-fill me-2"></i>Add Location
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-geo-alt me-2"></i>Locations List
+                                </h5>
+                                <button class="btn btn-outline-primary btn-sm" id="exportLocationsBtn">
+                                    <i class="bi bi-download"></i> Export Locations
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="locationsList" class="row">
+                                    <!-- Locations will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Relationships Tab -->
+            <div class="tab-pane fade" id="relationships" role="tabpanel">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="bi bi-diagram-3 me-2"></i>Data Relationships Overview
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Friend Connections</h6>
+                                        <div id="friendConnections" class="mb-4">
+                                            <!-- Friend relationships will be shown here -->
+                                        </div>
+                                        
+                                        <h6>Society Memberships</h6>
+                                        <div id="societyMemberships" class="mb-4">
+                                            <!-- Society memberships will be shown here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <h6>Event Relationships</h6>
+                                        <div id="eventRelationships" class="mb-4">
+                                            <!-- Event relationships will be shown here -->
+                                        </div>
+                                        
+                                        <h6>Data Integrity Status</h6>
+                                        <div id="integrityStatus">
+                                            <!-- Validation results will be shown here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File input for loading data -->
+    <div class="container mt-3" id="fileInputContainer" style="display: none;">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-upload me-2"></i>Select JSON Files to Load
+                </h6>
+                <input type="file" id="fileInput" multiple accept=".json" class="form-control" onchange="handleFileChange(event)">
+                <div class="form-text mt-2">
+                    Select one or more JSON files from your UniConnect assets/demo_data/ folder
+                </div>
+                <div class="mt-2">
+                    <button class="btn btn-sm btn-secondary" onclick="handleCancelFileSelection()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Fallback handlers for immediate functionality -->
+    <script>
+        // Global fallback handlers that work immediately
+        function handleCreateSample() {
+            if (window.demoDataEditor && window.demoDataEditor.importSampleData) {
+                window.demoDataEditor.importSampleData();
+            } else {
+                alert('Creating sample data... (JavaScript modules still loading)');
+                setTimeout(() => {
+                    if (window.demoDataEditor) {
+                        window.demoDataEditor.importSampleData();
+                    } else {
+                        alert('Please refresh the page and try again');
+                    }
+                }, 1000);
+            }
+        }
+        
+        function handleLoadData() {
+            if (window.demoDataEditor && window.demoDataEditor.loadDataFiles) {
+                window.demoDataEditor.loadDataFiles();
+            } else {
+                const fileInputContainer = document.getElementById('fileInputContainer');
+                const mainContent = document.getElementById('mainTabContent');
+                if (fileInputContainer && mainContent) {
+                    fileInputContainer.style.display = 'block';
+                    mainContent.style.display = 'none';
+                }
+            }
+        }
+        
+        function handleExportAll() {
+            if (window.demoDataEditor && window.demoDataEditor.exportAllData) {
+                window.demoDataEditor.exportAllData();
+            } else {
+                alert('Export functionality will be available once the page fully loads');
+            }
+        }
+        
+        function handleValidateAll() {
+            if (window.demoDataEditor && window.demoDataEditor.validateAllData) {
+                window.demoDataEditor.validateAllData();
+            } else {
+                alert('Validation functionality will be available once the page fully loads');
+            }
+        }
+        
+        function handleCancelFileSelection() {
+            if (window.demoDataEditor && window.demoDataEditor.cancelFileSelection) {
+                window.demoDataEditor.cancelFileSelection();
+            } else {
+                const fileInputContainer = document.getElementById('fileInputContainer');
+                const mainContent = document.getElementById('mainTabContent');
+                if (fileInputContainer && mainContent) {
+                    fileInputContainer.style.display = 'none';
+                    mainContent.style.display = 'block';
+                }
+            }
+        }
+
+        // Update status function
+        function updateStatus(message, type = 'info') {
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            
+            if (statusText) {
+                statusText.textContent = message;
+            }
+            
+            if (statusBar) {
+                statusBar.className = 'alert mb-4';
+                switch (type) {
+                    case 'success':
+                        statusBar.classList.add('alert-success');
+                        break;
+                    case 'error':
+                        statusBar.classList.add('alert-danger');
+                        break;
+                    case 'warning':
+                        statusBar.classList.add('alert-warning');
+                        break;
+                    default:
+                        statusBar.classList.add('alert-info');
+                }
+            }
+        }
+        
+        // Handle file input changes directly
+        async function handleFileChange(event) {
+            const files = Array.from(event.target.files);
+            
+            if (files.length === 0) {
+                updateStatus('No files selected', 'warning');
+                return;
+            }
+            
+            updateStatus(`Loading ${files.length} files...`, 'info');
+            
+            try {
+                // Simple data storage
+                const loadedData = {
+                    users: [],
+                    events: [],
+                    societies: [],
+                    locations: [],
+                    privacySettings: [],
+                    friendRequests: []
+                };
+                
+                for (const file of files) {
+                    if (file.name.endsWith('.json')) {
+                        const content = await readFileAsText(file);
+                        const data = JSON.parse(content);
+                        
+                        // Process different file types
+                        if (file.name.includes('user')) {
+                            loadedData.users = Array.isArray(data) ? data : data.users || [];
+                        } else if (file.name.includes('event')) {
+                            if (Array.isArray(data)) {
+                                loadedData.events = data;
+                            } else if (data.events) {
+                                loadedData.events = data.events;
+                            } else {
+                                loadedData.events = [data];
+                            }
+                        } else if (file.name.includes('societ')) {
+                            loadedData.societies = Array.isArray(data) ? data : data.societies || [];
+                        } else if (file.name.includes('location')) {
+                            loadedData.locations = Array.isArray(data) ? data : data.locations || [];
+                        } else if (file.name.includes('privacy')) {
+                            loadedData.privacySettings = Array.isArray(data) ? data : data.privacy_settings || [];
+                        } else if (file.name.includes('friend')) {
+                            loadedData.friendRequests = Array.isArray(data) ? data : data.friend_requests || [];
+                        }
+                        
+                        console.log(`Loaded ${file.name}:`, data);
+                    }
+                }
+                
+                // Update counts and display
+                updateDataCounts(loadedData);
+                displayLoadedData(loadedData);
+                
+                // Try to pass to full data manager if available
+                if (window.dataManager && window.dataManager.data) {
+                    window.dataManager.data = loadedData;
+                    window.dataManager.updateUI();
+                    
+                    // Trigger rendering of lists
+                    if (window.userManager) window.userManager.renderUsersList();
+                    if (window.eventManager) window.eventManager.renderEventsList();
+                    if (window.societyManager) window.societyManager.renderSocietiesList();
+                    if (window.locationManager) window.locationManager.renderLocationsList();
+                    if (window.relationshipManager) window.relationshipManager.renderRelationships();
+                }
+                
+                // Also render basic lists even if full managers aren't loaded
+                renderBasicLists(loadedData);
+                
+                updateStatus(`Successfully loaded ${files.length} files: ${loadedData.users.length} users, ${loadedData.events.length} events, ${loadedData.societies.length} societies, ${loadedData.locations.length} locations`, 'success');
+                
+                // Hide file input
+                handleCancelFileSelection();
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+                updateStatus(`Error loading files: ${error.message}`, 'error');
+            }
+        }
+        
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+        
+        function updateDataCounts(data) {
+            const counters = [
+                { id: 'usersCount', count: data.users?.length || 0 },
+                { id: 'eventsCount', count: data.events?.length || 0 },
+                { id: 'societiesCount', count: data.societies?.length || 0 },
+                { id: 'locationsCount', count: data.locations?.length || 0 }
+            ];
+            
+            counters.forEach(({ id, count }) => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = count;
+                }
+            });
+        }
+        
+        function displayLoadedData(data) {
+            // Update the status area with a summary of loaded data
+            const statusText = document.getElementById('statusText');
+            if (statusText) {
+                statusText.innerHTML = `
+                    <strong>Data Loaded Successfully!</strong><br>
+                    Users: ${data.users?.length || 0} | 
+                    Events: ${data.events?.length || 0} | 
+                    Societies: ${data.societies?.length || 0} | 
+                    Locations: ${data.locations?.length || 0}
+                `;
+            }
+            
+            // Log the data for debugging
+            console.log('Loaded data summary:', {
+                users: data.users?.length || 0,
+                events: data.events?.length || 0,
+                societies: data.societies?.length || 0,
+                locations: data.locations?.length || 0,
+                privacySettings: data.privacySettings?.length || 0,
+                friendRequests: data.friendRequests?.length || 0
+            });
+            
+            // Show first few items for verification
+            if (data.users?.length > 0) {
+                console.log('Sample users:', data.users.slice(0, 3));
+            }
+            if (data.events?.length > 0) {
+                console.log('Sample events:', data.events.slice(0, 3));
+            }
+        }
+        
+        function renderBasicLists(data) {
+            // Render users list
+            const usersList = document.getElementById('usersList');
+            if (usersList && data.users && data.users.length > 0) {
+                usersList.innerHTML = data.users.map(user => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card entity-card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-center">
+                                    <img src="${user.profileImageUrl || 'https://api.dicebear.com/7.x/avataaars/png?seed=' + user.name}" 
+                                         alt="${user.name}" class="rounded-circle me-2" width="40" height="40">
+                                    <div>
+                                        <h6 class="card-title mb-0">${user.name}</h6>
+                                        <small class="text-muted">${user.id}</small>
+                                    </div>
+                                </div>
+                                <span class="badge bg-${getStatusColor(user.status)}">${user.status || 'offline'}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <i class="bi bi-envelope me-2"></i>
+                                    <small>${user.email}</small>
+                                </div>
+                                <div class="mb-2">
+                                    <i class="bi bi-book me-2"></i>
+                                    <small>${user.course}</small>
+                                </div>
+                                <div class="mb-2">
+                                    <i class="bi bi-calendar me-2"></i>
+                                    <small>${user.year}</small>
+                                </div>
+                                ${user.statusMessage ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-chat-quote me-2"></i>
+                                        <small class="fst-italic">"${user.statusMessage}"</small>
+                                    </div>
+                                ` : ''}
+                                <div class="mb-2">
+                                    <i class="bi bi-people me-2"></i>
+                                    <small>Friends: ${user.friendIds ? user.friendIds.length : 0}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Render events list
+            const eventsList = document.getElementById('eventsList');
+            if (eventsList && data.events && data.events.length > 0) {
+                eventsList.innerHTML = data.events.map(event => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card entity-card h-100" style="border-left-color: ${getCategoryColor(event.category)}">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-1">${event.title}</h6>
+                                    <small class="text-muted">${event.id}</small>
+                                </div>
+                                <span class="badge" style="background-color: ${getCategoryColor(event.category)}">
+                                    ${event.category}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text small">${event.description || 'No description'}</p>
+                                
+                                ${event.location ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-geo-alt me-2"></i>
+                                        <small>${event.location}</small>
+                                    </div>
+                                ` : ''}
+                                
+                                ${event.subType ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-tag me-2"></i>
+                                        <small>${event.subType}</small>
+                                    </div>
+                                ` : ''}
+                                
+                                ${event.creatorId ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-person me-2"></i>
+                                        <small>Creator: <span class="foreign-key-indicator">${getEntityName(data.users, event.creatorId)}</span></small>
+                                    </div>
+                                ` : ''}
+                                
+                                ${event.privacyLevel ? `
+                                    <div class="mt-2">
+                                        <span class="badge bg-secondary">${event.privacyLevel}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Render societies list
+            const societiesList = document.getElementById('societiesList');
+            if (societiesList && data.societies && data.societies.length > 0) {
+                societiesList.innerHTML = data.societies.map(society => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card entity-card h-100" style="border-left-color: ${getSocietyCategoryColor(society.category)}">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-center">
+                                    <img src="${society.imageUrl || 'https://api.dicebear.com/7.x/shapes/png?seed=' + society.name}" 
+                                         alt="${society.name}" class="rounded me-2" width="40" height="40">
+                                    <div>
+                                        <h6 class="card-title mb-0">${society.name}</h6>
+                                        <small class="text-muted">${society.id}</small>
+                                    </div>
+                                </div>
+                                <span class="badge" style="background-color: ${getSocietyCategoryColor(society.category)}">
+                                    ${society.category}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text small">${society.description || 'No description'}</p>
+                                
+                                <div class="mb-2">
+                                    <i class="bi bi-people me-2"></i>
+                                    <small>${society.memberCount || 0} members</small>
+                                </div>
+                                
+                                ${society.contactEmail ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-envelope me-2"></i>
+                                        <small>${society.contactEmail}</small>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="mt-2">
+                                    <span class="badge ${society.isJoined ? 'bg-success' : 'bg-secondary'}">
+                                        ${society.isJoined ? 'Joined' : 'Not Joined'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Render locations list
+            const locationsList = document.getElementById('locationsList');
+            if (locationsList && data.locations && data.locations.length > 0) {
+                locationsList.innerHTML = data.locations.map(location => `
+                    <div class="col-md-6 mb-3">
+                        <div class="card entity-card h-100" style="border-left-color: ${getLocationTypeColor(location.type)}">
+                            <div class="card-header d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi ${getLocationIcon(location.type)} me-2"></i>
+                                        ${location.name || location.building + ' ' + (location.room || '')}
+                                    </h6>
+                                    <small class="text-muted">${location.id}</small>
+                                </div>
+                                <span class="badge" style="background-color: ${getLocationTypeColor(location.type)}">
+                                    ${location.type?.replace('_', ' ') || 'location'}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <i class="bi bi-building me-2"></i>
+                                    <small><strong>${location.building}</strong> ${location.room ? 'Room ' + location.room : ''}</small>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <i class="bi bi-geo-alt me-2"></i>
+                                    <small>${location.latitude?.toFixed(4) || 'N/A'}, ${location.longitude?.toFixed(4) || 'N/A'}</small>
+                                </div>
+                                
+                                ${location.capacity ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-people me-2"></i>
+                                        <small>Capacity: ${location.capacity}</small>
+                                    </div>
+                                ` : ''}
+                                
+                                ${location.description ? `
+                                    <p class="card-text small mt-2">${location.description}</p>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Helper functions for styling
+        function getStatusColor(status) {
+            const colors = { online: 'success', away: 'warning', busy: 'danger', offline: 'secondary' };
+            return colors[status] || 'secondary';
+        }
+        
+        function getCategoryColor(category) {
+            const colors = {
+                academic: '#0D99FF', social: '#31E615', society: '#4CAF50', 
+                personal: '#8B5CF6', university: '#FF7A00'
+            };
+            return colors[category] || '#6c757d';
+        }
+        
+        function getSocietyCategoryColor(category) {
+            const colors = {
+                academic: '#0D99FF', cultural: '#FF6B35', sports: '#4CAF50',
+                technology: '#8B5CF6', arts: '#E91E63', social: '#31E615'
+            };
+            return colors[category] || '#6c757d';
+        }
+        
+        function getLocationTypeColor(type) {
+            const colors = {
+                lecture_hall: '#0D99FF', classroom: '#4CAF50', lab: '#8B5CF6',
+                library: '#FF7A00', study_space: '#31E615', common_area: '#E91E63', outdoor: '#795548'
+            };
+            return colors[type] || '#6c757d';
+        }
+        
+        function getLocationIcon(type) {
+            const icons = {
+                lecture_hall: 'bi-person-video3', classroom: 'bi-easel', lab: 'bi-cpu',
+                library: 'bi-book', study_space: 'bi-people', common_area: 'bi-cup-hot', outdoor: 'bi-tree'
+            };
+            return icons[type] || 'bi-geo-alt';
+        }
+        
+        function getEntityName(entities, id) {
+            const entity = entities?.find(e => e.id === id);
+            return entity ? entity.name : id;
+        }
+        
+        // Check if modules loaded properly
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStatus('Loading Demo Data Editor...', 'info');
+            
+            // Check periodically if modules are loaded
+            let checkCount = 0;
+            const checkInterval = setInterval(() => {
+                checkCount++;
+                
+                if (window.demoDataEditor) {
+                    updateStatus('Demo Data Editor loaded successfully! All features are available.', 'success');
+                    clearInterval(checkInterval);
+                } else if (checkCount > 10) {
+                    updateStatus('Some features may be limited. Try refreshing the page if buttons don\'t work.', 'warning');
+                    clearInterval(checkInterval);
+                }
+            }, 500);
+        });
+    </script>
+    
+    <!-- Custom JS -->
+    <script src="js/data-manager.js"></script>
+    <script src="js/event-manager.js"></script>
+    <script src="js/user-manager.js"></script>
+    <script src="js/society-manager.js"></script>
+    <script src="js/location-manager.js"></script>
+    <script src="js/relationship-manager.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

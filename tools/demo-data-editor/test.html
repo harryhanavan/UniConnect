@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UniConnect Demo Data Editor - Test</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        .main-container { max-width: 1400px; margin: 0 auto; }
+        .entity-card { border-left: 4px solid #0d6efd; background: #f8f9fa; }
+        .foreign-key-indicator { background: linear-gradient(45deg, #e3f2fd, #bbdefb); border: 1px dashed #2196f3; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.8rem; }
+        .nav-pills .nav-link.active { background-color: #8b5cf6; }
+        .btn-primary { background-color: #8b5cf6; border-color: #8b5cf6; }
+        .btn-primary:hover { background-color: #7c3aed; border-color: #7c3aed; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="main-container">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">
+                    <i class="bi bi-database-gear me-2"></i>
+                    UniConnect Demo Data Editor (Test)
+                </span>
+                <div class="navbar-nav ms-auto">
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="createSampleData()">
+                        <i class="bi bi-plus-square"></i> Sample Data
+                    </button>
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="showFileInput()">
+                        <i class="bi bi-upload"></i> Load Data
+                    </button>
+                    <button class="btn btn-outline-light btn-sm me-2" onclick="exportAllData()">
+                        <i class="bi bi-download"></i> Export All
+                    </button>
+                    <button class="btn btn-outline-light btn-sm" onclick="validateData()">
+                        <i class="bi bi-check2-circle"></i> Validate
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Status Bar -->
+        <div class="alert alert-info mb-4" id="statusBar">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="statusText">Ready to load demo data or create sample data. Click buttons above to test functionality.</span>
+        </div>
+
+        <!-- File Input Container -->
+        <div class="container mt-3" id="fileInputContainer" style="display: none;">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-upload me-2"></i>Select JSON Files to Load
+                    </h6>
+                    <input type="file" id="fileInput" multiple accept=".json" class="form-control">
+                    <div class="form-text mt-2">
+                        Select one or more JSON files from your UniConnect assets/demo_data/ folder
+                    </div>
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-secondary" onclick="hideFileInput()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="mainContent">
+            <!-- Sample Data Display -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-people me-2"></i>Users
+                                <span class="badge bg-secondary ms-2" id="usersCount">0</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="usersList">
+                                <p class="text-muted">No users loaded yet. Click "Sample Data" to create some.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-calendar-event me-2"></i>Events
+                                <span class="badge bg-secondary ms-2" id="eventsCount">0</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="eventsList">
+                                <p class="text-muted">No events loaded yet. Click "Sample Data" to create some.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-building me-2"></i>Societies
+                                <span class="badge bg-secondary ms-2" id="societiesCount">0</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="societiesList">
+                                <p class="text-muted">No societies loaded yet. Click "Sample Data" to create some.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add New Data Form -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-plus-circle me-2"></i>Quick Add Event
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="quickEventForm" onsubmit="addQuickEvent(event)">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="text" class="form-control" id="eventTitle" placeholder="Event Title" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" id="eventCategory" required>
+                                            <option value="">Select Category</option>
+                                            <option value="academic">Academic</option>
+                                            <option value="social">Social</option>
+                                            <option value="society">Society</option>
+                                            <option value="personal">Personal</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="date" class="form-control" id="eventDate" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-plus-circle me-1"></i>Add Event
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Simple data storage
+        let demoData = {
+            users: [],
+            events: [],
+            societies: [],
+            locations: []
+        };
+
+        let nextIds = {
+            user: 1,
+            event: 1,
+            society: 1,
+            location: 1
+        };
+
+        // Utility functions
+        function updateStatus(message, type = 'info') {
+            const statusBar = document.getElementById('statusBar');
+            const statusText = document.getElementById('statusText');
+            
+            statusText.textContent = message;
+            
+            statusBar.className = 'alert mb-4';
+            switch (type) {
+                case 'success':
+                    statusBar.classList.add('alert-success');
+                    break;
+                case 'error':
+                    statusBar.classList.add('alert-danger');
+                    break;
+                case 'warning':
+                    statusBar.classList.add('alert-warning');
+                    break;
+                default:
+                    statusBar.classList.add('alert-info');
+            }
+        }
+
+        function generateId(type) {
+            const id = `${type}_${nextIds[type].toString().padStart(3, '0')}`;
+            nextIds[type]++;
+            return id;
+        }
+
+        function updateCounts() {
+            document.getElementById('usersCount').textContent = demoData.users.length;
+            document.getElementById('eventsCount').textContent = demoData.events.length;
+            document.getElementById('societiesCount').textContent = demoData.societies.length;
+        }
+
+        // Main functions
+        function createSampleData() {
+            updateStatus('Creating sample data...', 'info');
+            
+            // Create sample users
+            demoData.users = [
+                {
+                    id: generateId('user'),
+                    name: 'Andrea Fernandez',
+                    email: 'andrea.fernandez@student.uts.edu.au',
+                    course: 'Bachelor of Information Technology',
+                    year: '2nd Year',
+                    status: 'online'
+                },
+                {
+                    id: generateId('user'),
+                    name: 'James Chen',
+                    email: 'james.chen@student.uts.edu.au',
+                    course: 'Bachelor of Computer Science',
+                    year: '3rd Year',
+                    status: 'away'
+                },
+                {
+                    id: generateId('user'),
+                    name: 'Sophia Williams',
+                    email: 'sophia.williams@student.uts.edu.au',
+                    course: 'Bachelor of Engineering',
+                    year: '1st Year',
+                    status: 'online'
+                }
+            ];
+
+            // Create sample societies
+            demoData.societies = [
+                {
+                    id: generateId('society'),
+                    name: 'UTS Programming Society',
+                    description: 'For students passionate about coding',
+                    category: 'technology',
+                    memberCount: 150
+                },
+                {
+                    id: generateId('society'),
+                    name: 'UTS Cultural Club',
+                    description: 'Celebrating diversity and culture',
+                    category: 'cultural',
+                    memberCount: 80
+                }
+            ];
+
+            // Create sample events
+            demoData.events = [
+                {
+                    id: generateId('event'),
+                    title: 'Interactive Design Workshop',
+                    description: 'Hands-on workshop covering UX principles',
+                    category: 'academic',
+                    subType: 'workshop',
+                    date: new Date().toISOString().split('T')[0],
+                    creatorId: demoData.users[0].id,
+                    location: 'CB02.04.56'
+                },
+                {
+                    id: generateId('event'),
+                    title: 'Programming Society Meetup',
+                    description: 'Monthly networking event',
+                    category: 'society',
+                    subType: 'meeting',
+                    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    creatorId: demoData.users[1].id,
+                    location: 'Building 2 Lab'
+                }
+            ];
+
+            renderData();
+            updateStatus('Sample data created successfully! You can now see users, events, and societies.', 'success');
+        }
+
+        function showFileInput() {
+            document.getElementById('fileInputContainer').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+            
+            // Add file input event listener
+            const fileInput = document.getElementById('fileInput');
+            fileInput.addEventListener('change', handleFileSelection);
+        }
+
+        function hideFileInput() {
+            document.getElementById('fileInputContainer').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('fileInput').value = '';
+        }
+
+        async function handleFileSelection(event) {
+            const files = Array.from(event.target.files);
+            
+            if (files.length === 0) {
+                updateStatus('No files selected', 'warning');
+                return;
+            }
+
+            updateStatus('Loading files...', 'info');
+
+            try {
+                for (const file of files) {
+                    if (file.name.endsWith('.json')) {
+                        const content = await readFileAsText(file);
+                        const data = JSON.parse(content);
+                        
+                        // Process different file types
+                        if (file.name.includes('users')) {
+                            demoData.users = Array.isArray(data) ? data : data.users || [];
+                        } else if (file.name.includes('events')) {
+                            demoData.events = Array.isArray(data) ? data : data.events || [];
+                        } else if (file.name.includes('societies')) {
+                            demoData.societies = Array.isArray(data) ? data : data.societies || [];
+                        }
+                    }
+                }
+
+                renderData();
+                hideFileInput();
+                updateStatus(`Successfully loaded ${files.length} file(s)`, 'success');
+
+            } catch (error) {
+                updateStatus(`Error loading files: ${error.message}`, 'error');
+            }
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(new Error('Failed to read file'));
+                reader.readAsText(file);
+            });
+        }
+
+        function exportAllData() {
+            const data = {
+                users: demoData.users,
+                events: demoData.events,
+                societies: demoData.societies,
+                exportedAt: new Date().toISOString()
+            };
+
+            const jsonString = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'uniconnect-demo-data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            updateStatus('Data exported successfully!', 'success');
+        }
+
+        function validateData() {
+            const issues = [];
+            
+            // Basic validation
+            demoData.users.forEach(user => {
+                if (!user.name || !user.email) {
+                    issues.push(`User ${user.id}: Missing required fields`);
+                }
+            });
+
+            demoData.events.forEach(event => {
+                if (!event.title || !event.category) {
+                    issues.push(`Event ${event.id}: Missing required fields`);
+                }
+            });
+
+            if (issues.length === 0) {
+                updateStatus('✅ All data is valid!', 'success');
+            } else {
+                updateStatus(`⚠️ Found ${issues.length} validation issues`, 'warning');
+                console.log('Validation issues:', issues);
+            }
+        }
+
+        function addQuickEvent(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('eventTitle').value;
+            const category = document.getElementById('eventCategory').value;
+            const date = document.getElementById('eventDate').value;
+
+            if (!title || !category || !date) {
+                updateStatus('Please fill all fields', 'error');
+                return;
+            }
+
+            const newEvent = {
+                id: generateId('event'),
+                title: title,
+                category: category,
+                date: date,
+                creatorId: demoData.users.length > 0 ? demoData.users[0].id : 'system',
+                location: 'TBD'
+            };
+
+            demoData.events.push(newEvent);
+            renderData();
+            
+            // Reset form
+            document.getElementById('quickEventForm').reset();
+            
+            updateStatus(`Event "${title}" added successfully!`, 'success');
+        }
+
+        function renderData() {
+            // Render users
+            const usersList = document.getElementById('usersList');
+            if (demoData.users.length === 0) {
+                usersList.innerHTML = '<p class="text-muted">No users loaded yet.</p>';
+            } else {
+                usersList.innerHTML = demoData.users.map(user => `
+                    <div class="mb-2">
+                        <strong>${user.name}</strong><br>
+                        <small class="text-muted">${user.email}</small><br>
+                        <span class="badge bg-secondary">${user.status}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Render events
+            const eventsList = document.getElementById('eventsList');
+            if (demoData.events.length === 0) {
+                eventsList.innerHTML = '<p class="text-muted">No events loaded yet.</p>';
+            } else {
+                eventsList.innerHTML = demoData.events.map(event => `
+                    <div class="mb-2">
+                        <strong>${event.title}</strong><br>
+                        <small class="text-muted">${event.category} • ${event.date}</small><br>
+                        <span class="badge bg-primary">${event.category}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Render societies
+            const societiesList = document.getElementById('societiesList');
+            if (demoData.societies.length === 0) {
+                societiesList.innerHTML = '<p class="text-muted">No societies loaded yet.</p>';
+            } else {
+                societiesList.innerHTML = demoData.societies.map(society => `
+                    <div class="mb-2">
+                        <strong>${society.name}</strong><br>
+                        <small class="text-muted">${society.description}</small><br>
+                        <span class="badge bg-success">${society.memberCount} members</span>
+                    </div>
+                `).join('');
+            }
+
+            updateCounts();
+        }
+
+        // Set default date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const eventDateInput = document.getElementById('eventDate');
+            if (eventDateInput) {
+                eventDateInput.value = today;
+            }
+            
+            updateStatus('Test interface loaded! All buttons should work now.', 'success');
+        });
+    </script>
+</body>
+</html>
