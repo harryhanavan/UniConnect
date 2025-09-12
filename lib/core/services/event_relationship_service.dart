@@ -193,6 +193,20 @@ class EventRelationshipService {
     };
   }
 
+  /// Update event details (title, description, time, etc.)
+  /// Used by the event editing interface
+  Future<bool> updateEventDetails(EventV2 updatedEvent) async {
+    await _ensureInitialized();
+    
+    bool success = await _updateEventInDataManager(updatedEvent);
+    
+    if (success) {
+      _relationshipChangeNotifier.value++;
+    }
+    
+    return success;
+  }
+
   /// Private helper to update event in data manager
   /// Note: In a real app, this would make API calls to update the backend
   Future<bool> _updateEventInDataManager(EventV2 updatedEvent) async {

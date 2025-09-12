@@ -780,4 +780,65 @@ class CalendarService {
     return await _eventRelationshipService.getDiscoverableSocietyEvents(userId, startDate: startDate, endDate: endDate);
   }
 
+  /// Get enhanced events filtered by source (sync version)
+  List<EventV2> getEnhancedEventsBySourceSync(String userId, EventSource source, {DateTime? startDate, DateTime? endDate}) {
+    if (!_isInitialized) {
+      throw StateError('Calendar service not initialized. Call async method first.');
+    }
+    
+    final start = startDate ?? DateTime.now();
+    final end = endDate ?? start.add(const Duration(days: 30));
+    final allEventsV2 = _demoData.enhancedEventsSync;
+
+    List<EventV2> filteredEvents = [];
+
+    switch (source) {
+      case EventSource.personal:
+        // Personal events: user-created, academic events, personal tasks
+        filteredEvents = allEventsV2.where((event) =>
+          (event.origin == EventOrigin.user || event.origin == EventOrigin.system) &&
+          (event.category == EventCategory.academic || event.category == EventCategory.personal) &&
+          event.attendeeIds.contains(userId) &&
+          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+          event.startTime.isBefore(end)
+        ).toList();
+        break;
+        
+      case EventSource.friends:
+        // Friend events: events shared by friends, study sessions with friends
+        filteredEvents = allEventsV2.where((event) =>
+          ((event.origin == EventOrigin.friend) ||
+           (event.category == EventCategory.social && event.attendeeIds.contains(userId))) &&
+          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+          event.startTime.isBefore(end)
+        ).toList();
+        break;
+        
+      case EventSource.societies:
+        // Society events from joined societies
+        filteredEvents = allEventsV2.where((event) =>
+          event.origin == EventOrigin.society &&
+          event.attendeeIds.contains(userId) &&
+          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+          event.startTime.isBefore(end)
+        ).toList();
+        break;
+        
+      case EventSource.shared:
+        // All events user is invited to or attending (excludes purely personal)
+        filteredEvents = allEventsV2.where((event) =>
+          (event.getUserRelationship(userId) == EventRelationship.attendee ||
+           event.getUserRelationship(userId) == EventRelationship.invited ||
+           event.getUserRelationship(userId) == EventRelationship.interested) &&
+          event.origin != EventOrigin.user && // Exclude purely personal events
+          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+          event.startTime.isBefore(end)
+        ).toList();
+        break;
+    }
+
+    filteredEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return filteredEvents;
+  }
+
 }

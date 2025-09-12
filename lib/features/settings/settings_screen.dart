@@ -9,6 +9,7 @@ import '../calendar/enhanced_calendar_screen.dart';
 import '../societies/enhanced_societies_screen.dart';
 import '../friends/enhanced_map_screen.dart';
 import '../timetable/smart_timetable_overlay.dart';
+import '../timetable/timetable_management_screen.dart';
 import '../notifications/notification_center_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -125,6 +126,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Icons.visibility,
                   () {},
                   trailing: const Text('Public', style: TextStyle(color: Colors.grey)),
+                ),
+              ],
+            ),
+
+            // Academic & Timetable
+            _buildSettingsSection(
+              'Academic & Timetable',
+              [
+                _buildTile(
+                  'Manage Timetable',
+                  'Import classes from university or add manually',
+                  Icons.edit_calendar,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TimetableManagementScreen()),
+                    );
+                  },
+                ),
+                _buildTile(
+                  'Timetable Privacy',
+                  'Control who can see your class schedule',
+                  Icons.schedule,
+                  () {},
+                  trailing: const Text('Friends Only', style: TextStyle(color: Colors.grey)),
+                ),
+                _buildTile(
+                  'Academic Notifications',
+                  'Alerts for classes, assignments, and deadlines',
+                  Icons.school,
+                  () {},
+                  trailing: Switch(
+                    value: notificationsEnabled,
+                    onChanged: (value) => setState(() => notificationsEnabled = value),
+                    activeThumbColor: AppColors.primary,
+                  ),
                 ),
               ],
             ),
