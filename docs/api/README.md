@@ -33,21 +33,17 @@ This documentation covers the service layer APIs and data models used throughout
 
 | Method | Parameters | Returns | Description |
 |--------|------------|---------|-------------|
-| `getEvents` | `DateTime date` | `List<Event>` | Get legacy events for a specific date |
-| `getEventsV2` | `DateTime date` | `List<EventV2>` | Get enhanced events for a specific date |
-| `getEventsByDateRange` | `DateTime start, DateTime end` | `List<Event>` | Get legacy events in date range |
-| `getEventsV2ByDateRange` | `DateTime start, DateTime end` | `List<EventV2>` | Get enhanced events in date range |
-| `getTodayEvents` | - | `List<Event>` | Get today's legacy events |
-| `getTodayEventsV2` | - | `List<EventV2>` | Get today's enhanced events |
-| `getUpcomingEvents` | `int days` | `List<Event>` | Get upcoming legacy events |
-| `getUpcomingEventsV2` | `int days` | `List<EventV2>` | Get upcoming enhanced events |
-| `addEvent` | `Event event` | `Future<bool>` | Add a new legacy event |
-| `addEventV2` | `EventV2 event` | `Future<bool>` | Add a new enhanced event |
-| `updateEvent` | `Event event` | `Future<bool>` | Update existing legacy event |
-| `updateEventV2` | `EventV2 event` | `Future<bool>` | Update existing enhanced event |
+| `getEnhancedEvents` | `DateTime date` | `List<EventV2>` | Get enhanced events for a specific date |
+| `getEnhancedEventsByDateRange` | `DateTime start, DateTime end` | `List<EventV2>` | Get enhanced events in date range |
+| `getTodayEnhancedEvents` | - | `List<EventV2>` | Get today's enhanced events |
+| `getUpcomingEnhancedEvents` | `int days` | `List<EventV2>` | Get upcoming enhanced events |
+| `addEnhancedEvent` | `EventV2 event` | `Future<bool>` | Add a new enhanced event |
+| `updateEnhancedEvent` | `EventV2 event` | `Future<bool>` | Update existing enhanced event |
 | `deleteEvent` | `String eventId` | `Future<bool>` | Delete an event |
-| `getEventById` | `String eventId` | `Event?` | Get specific legacy event |
-| `getEventV2ById` | `String eventId` | `EventV2?` | Get specific enhanced event |
+| `getEnhancedEventById` | `String eventId` | `EventV2?` | Get specific enhanced event |
+| `getEvents` | `DateTime date` | `List<Event>` | Get legacy events (deprecated) |
+| `getEventsByDateRange` | `DateTime start, DateTime end` | `List<Event>` | Get legacy events (deprecated) |
+| `getEventById` | `String eventId` | `Event?` | Get specific legacy event (deprecated) |
 
 ---
 
@@ -248,9 +244,9 @@ enum EventSource {
 }
 ```
 
-### EventV2 Model (Enhanced)
+### Enhanced Event Model
 
-**Location**: `lib/shared/models/event_v2.dart`
+**Location**: `lib/shared/models/event_v2.dart` (Primary event model)
 
 ```dart
 class EventV2 {

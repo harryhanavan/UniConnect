@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../shared/models/society.dart';
-import '../../shared/models/event.dart';
+import '../../shared/models/event_v2.dart';
+import '../../shared/models/event_enums.dart';
+import '../../shared/models/user.dart';
 import '../../core/demo_data/demo_data_manager.dart';
+import '../../core/services/calendar_service.dart';
+import '../../core/services/event_relationship_service.dart';
+import '../../shared/widgets/enhanced_event_card.dart';
 
 class SocietyDetailScreen extends StatefulWidget {
   final Society society;
@@ -18,51 +23,146 @@ class SocietyDetailScreen extends StatefulWidget {
 
 class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   late Society currentSociety;
-  List<Event> upcomingEvents = [];
+  List<EventV2> upcomingEvents = [];
+  List<Map<String, dynamic>> eventsWithStatus = [];
   bool notificationsEnabled = true;
   bool _isInitialized = false;
+  
+  final CalendarService _calendarService = CalendarService();
+  final EventRelationshipService _eventRelationshipService = EventRelationshipService();
 
   @override
   void initState() {
     super.initState();
     currentSociety = widget.society;
     _initializeData();
+    
+    // Listen for external event relationship changes
+    _eventRelationshipService.relationshipChangeNotifier.addListener(_onExternalEventRelationshipChange);
   }
   
   Future<void> _initializeData() async {
     if (!_isInitialized) {
-      await DemoDataManager.instance.events; // Trigger initialization
-      _loadUpcomingEvents();
+      await DemoDataManager.instance.enhancedEvents; // Trigger EventV2 initialization
+      await _loadUpcomingEvents();
       _isInitialized = true;
       if (mounted) setState(() {});
     }
   }
 
-  void _loadUpcomingEvents() {
-    final allEvents = DemoDataManager.instance.eventsSync;
-    upcomingEvents = allEvents
-        .where((event) => 
-            event.source == EventSource.societies && 
-            event.societyId == widget.society.id &&
-            event.startTime.isAfter(DateTime.now()))
-        .take(3)
+  Future<void> _loadUpcomingEvents() async {
+    // Get events with relationship status for this society
+    eventsWithStatus = await _calendarService.getSocietyEventsWithStatus(
+      DemoDataManager.instance.currentUser.id,
+      widget.society.id,
+    );
+    
+    // Extract events for backward compatibility
+    upcomingEvents = eventsWithStatus
+        .map((eventData) => eventData['event'] as EventV2)
+        .take(5)
         .toList();
   }
 
   void _toggleJoinSociety() {
+    final demoData = DemoDataManager.instance;
+    final isCurrentlyJoined = demoData.currentUser.societyIds.contains(currentSociety.id);
+    
     setState(() {
-      if (currentSociety.isJoined) {
-        currentSociety = currentSociety.copyWith(
-          isJoined: false,
-          memberCount: currentSociety.memberCount - 1,
-        );
+      if (isCurrentlyJoined) {
+        demoData.leaveSociety(currentSociety.id);
       } else {
-        currentSociety = currentSociety.copyWith(
-          isJoined: true,
-          memberCount: currentSociety.memberCount + 1,
-        );
+        demoData.joinSociety(currentSociety.id);
       }
+      // Refresh the current society data from the updated data manager
+      currentSociety = demoData.getSocietyById(currentSociety.id) ?? currentSociety;
     });
+    
+    // Reload events to reflect any membership changes
+    _loadUpcomingEvents().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _onEventRelationshipChanged(EventV2 event, EventRelationship newRelationship) {
+    // Refresh the events list to show updated status
+    _loadUpcomingEvents().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+  
+  void _onExternalEventRelationshipChange() {
+    // Handle external event relationship changes (from other screens)
+    if (mounted && _isInitialized) {
+      _loadUpcomingEvents().then((_) {
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  void _onEventTap(EventV2 event) {
+    // Show event details modal or navigate to event detail screen
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                event.title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                event.description,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.access_time, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${event.startTime.day}/${event.startTime.month}/${event.startTime.year} at ${event.startTime.hour}:${event.startTime.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      event.location,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              EnhancedEventCard(
+                event: event,
+                userId: DemoDataManager.instance.currentUser.id,
+                onRelationshipChanged: _onEventRelationshipChanged,
+                showFullDetails: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -243,7 +343,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                                 width: double.infinity,
                                 height: 48,
                                 decoration: ShapeDecoration(
-                                  color: currentSociety.isJoined 
+                                  color: DemoDataManager.instance.currentUser.societyIds.contains(currentSociety.id)
                                       ? const Color(0xFF34C759) 
                                       : const Color(0xFF0D99FF),
                                   shape: RoundedRectangleBorder(
@@ -257,7 +357,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                                 child: TextButton(
                                   onPressed: _toggleJoinSociety,
                                   child: Text(
-                                    currentSociety.isJoined ? 'Joined' : 'Join Society',
+                                    DemoDataManager.instance.currentUser.societyIds.contains(currentSociety.id) ? 'Joined' : 'Join Society',
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: Colors.white,
@@ -398,6 +498,9 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     ),
                   ),
 
+                  // Members Section
+                  _buildMembersSection(),
+
                   // Upcoming Events Section
                   if (upcomingEvents.isNotEmpty) ...[
                     Container(
@@ -428,7 +531,15 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     ),
                     
                     // Event Cards
-                    ...upcomingEvents.map((event) => _buildEventCard(event)),
+                    ...upcomingEvents.map((event) => Container(
+                      margin: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+                      child: EnhancedEventCard(
+                        event: event,
+                        userId: DemoDataManager.instance.currentUser.id,
+                        onEventTap: _onEventTap,
+                        onRelationshipChanged: _onEventRelationshipChanged,
+                      ),
+                    )),
                   ],
 
                   // Sample Announcement
@@ -480,151 +591,6 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     );
   }
 
-  Widget _buildEventCard(Event event) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      width: double.infinity,
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event.title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 16,
-                fontFamily: 'Roboto',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 20),
-            
-            Text(
-              event.description,
-              style: const TextStyle(
-                color: Colors.black,
-                fontSize: 12,
-                fontFamily: 'Roboto',
-                fontWeight: FontWeight.w400,
-                height: 1.67,
-              ),
-            ),
-            const SizedBox(height: 30),
-            
-            // When and Where info
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // When
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'When\n',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '\n${_formatEventTime(event)}',
-                          style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            fontSize: 12,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w400,
-                            height: 1.33,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                // Where
-                Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      children: [
-                        const TextSpan(
-                          text: 'Where\n',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 12,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '\n${event.location}',
-                          style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.6),
-                            fontSize: 12,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w400,
-                            height: 1.33,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Add to calendar button
-            Center(
-              child: Container(
-                width: 196,
-                height: 42,
-                decoration: ShapeDecoration(
-                  color: const Color(0xFF0D99FF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(34),
-                  ),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    // Add to calendar functionality
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${event.title} added to calendar')),
-                    );
-                  },
-                  child: const Text(
-                    'Add to calendar',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildAnnouncementCard() {
     return Container(
@@ -745,23 +711,159 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     );
   }
 
-  String _formatEventTime(Event event) {
-    final day = event.startTime.day;
-    final month = _getMonthName(event.startTime.month);
-    final startHour = event.startTime.hour;
-    final endHour = event.endTime.hour;
+  
+  Widget _buildMembersSection() {
+    final demoData = DemoDataManager.instance;
+    final members = demoData.usersSync.where((user) => currentSociety.memberIds.contains(user.id)).toList();
+    final currentUserFriends = demoData.getFriendsForUser(demoData.currentUser.id);
+    final friendsInSociety = members.where((member) => currentUserFriends.any((friend) => friend.id == member.id)).toList();
     
-    return '$day $month ${event.startTime.year}, ${startHour}:00 - ${endHour}:00';
-  }
-
-  String _getMonthName(int month) {
-    const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return months[month];
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            width: 1,
+            color: Colors.black.withValues(alpha: 0.10),
+          ),
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Members (${members.length})',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                if (friendsInSociety.isNotEmpty)
+                  Text(
+                    '${friendsInSociety.length} friend${friendsInSociety.length > 1 ? 's' : ''}',
+                    style: TextStyle(
+                      color: Colors.blue[600],
+                      fontSize: 14,
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            
+            // Show first few members with avatars
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: members.take(8).map((member) {
+                final isFriend = currentUserFriends.any((friend) => friend.id == member.id);
+                return _buildMemberAvatar(member, isFriend);
+              }).toList(),
+            ),
+            
+            if (members.length > 8) ...[
+              const SizedBox(height: 8),
+              Text(
+                '... and ${members.length - 8} more members',
+                style: TextStyle(
+                  color: Colors.black.withValues(alpha: 0.6),
+                  fontSize: 12,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
   
+  Widget _buildMemberAvatar(User member, bool isFriend) {
+    return Column(
+      children: [
+        Stack(
+          children: [
+            // Avatar
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: isFriend ? Border.all(color: Colors.blue, width: 2) : null,
+              ),
+              child: ClipOval(
+                child: CachedNetworkImage(
+                  imageUrl: member.profileImageUrl ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${member.name}',
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.person, size: 24),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.person, size: 24),
+                  ),
+                ),
+              ),
+            ),
+            
+            // Friend indicator
+            if (isFriend)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    size: 10,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        
+        const SizedBox(height: 4),
+        
+        // Name
+        SizedBox(
+          width: 48,
+          child: Text(
+            member.name.split(' ').first,
+            style: TextStyle(
+              color: isFriend ? Colors.blue[600] : Colors.black,
+              fontSize: 10,
+              fontFamily: 'Roboto',
+              fontWeight: isFriend ? FontWeight.w600 : FontWeight.w400,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSocietyPlaceholder() {
     return Container(
       width: 80,
@@ -776,5 +878,11 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
         color: Colors.grey[600],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _eventRelationshipService.relationshipChangeNotifier.removeListener(_onExternalEventRelationshipChange);
+    super.dispose();
   }
 }

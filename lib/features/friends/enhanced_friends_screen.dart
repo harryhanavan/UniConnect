@@ -1457,7 +1457,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   
   List<Map<String, dynamic>> _getSocietyMembers(User currentUser) {
     final societyMembers = <Map<String, dynamic>>[];
-    final joinedSocieties = _demoData.societiesSync.where((s) => s.isJoined).toList();
+    final joinedSocieties = _demoData.societiesSync.where((s) => _demoData.currentUser.societyIds.contains(s.id)).toList();
     
     if (joinedSocieties.isEmpty) return [];
     

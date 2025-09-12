@@ -25,6 +25,9 @@ class User {
   final List<String> pendingFriendRequests;
   final List<String> sentFriendRequests;
   
+  // Society relationships
+  final List<String> societyIds;
+  
   // Privacy settings IDs (references to PrivacySettings)
   final String privacySettingsId;
 
@@ -49,6 +52,7 @@ class User {
     this.friendIds = const [],
     this.pendingFriendRequests = const [],
     this.sentFriendRequests = const [],
+    this.societyIds = const [],
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -80,6 +84,7 @@ class User {
       friendIds: (json['friendIds'] as List<dynamic>?)?.cast<String>() ?? [],
       pendingFriendRequests: (json['pendingFriendRequests'] as List<dynamic>?)?.cast<String>() ?? [],
       sentFriendRequests: (json['sentFriendRequests'] as List<dynamic>?)?.cast<String>() ?? [],
+      societyIds: (json['societyIds'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
 
@@ -105,6 +110,7 @@ class User {
       'friendIds': friendIds,
       'pendingFriendRequests': pendingFriendRequests,
       'sentFriendRequests': sentFriendRequests,
+      'societyIds': societyIds,
     };
   }
 
@@ -129,6 +135,7 @@ class User {
     List<String>? friendIds,
     List<String>? pendingFriendRequests,
     List<String>? sentFriendRequests,
+    List<String>? societyIds,
   }) {
     return User(
       id: id ?? this.id,
@@ -151,6 +158,7 @@ class User {
       friendIds: friendIds ?? this.friendIds,
       pendingFriendRequests: pendingFriendRequests ?? this.pendingFriendRequests,
       sentFriendRequests: sentFriendRequests ?? this.sentFriendRequests,
+      societyIds: societyIds ?? this.societyIds,
     );
   }
 

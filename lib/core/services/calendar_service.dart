@@ -1,7 +1,10 @@
 import '../../shared/models/event.dart';
+import '../../shared/models/event_v2.dart';
+import '../../shared/models/event_enums.dart';
 import '../../shared/models/user.dart';
 import '../demo_data/demo_data_manager.dart';
 import 'friendship_service.dart';
+import 'event_relationship_service.dart';
 
 class CalendarService {
   static final CalendarService _instance = CalendarService._internal();
@@ -10,6 +13,7 @@ class CalendarService {
 
   final DemoDataManager _demoData = DemoDataManager.instance;
   final FriendshipService _friendshipService = FriendshipService();
+  final EventRelationshipService _eventRelationshipService = EventRelationshipService();
   
   bool _isInitialized = false;
   
@@ -556,4 +560,224 @@ class CalendarService {
     // Simulate calendar refresh
     await Future.delayed(const Duration(milliseconds: 100));
   }
+
+  // ========== NEW EVENTV2-BASED METHODS ==========
+  
+  /// Get enhanced unified calendar using EventV2 with relationship-based filtering
+  /// Only includes events where user is actually attending (confirmed relationship)
+  Future<List<EventV2>> getEnhancedUnifiedCalendar(String userId, {DateTime? startDate, DateTime? endDate}) async {
+    await _ensureInitialized();
+    
+    final user = _demoData.getUserById(userId);
+    if (user == null) return [];
+
+    final start = startDate ?? DateTime.now();
+    final end = endDate ?? start.add(const Duration(days: 30));
+
+    final allEvents = <EventV2>[];
+
+    // 1. Personal events (classes, assignments, personal) - converted to EventV2
+    final personalEvents = _getPersonalEventsV2(userId, start, end);
+    allEvents.addAll(personalEvents);
+
+    // 2. Events user is actively attending (not just society member)
+    final attendingEvents = await _eventRelationshipService.getUserAttendingEvents(userId, startDate: start, endDate: end);
+    allEvents.addAll(attendingEvents);
+
+    // 3. Friend shared events where user is attendee
+    final friendEvents = _getFriendEventsV2(userId, start, end);
+    allEvents.addAll(friendEvents);
+
+    // Remove duplicates and sort by start time
+    final uniqueEvents = allEvents.toSet().toList();
+    uniqueEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    return uniqueEvents;
+  }
+
+  /// Get enhanced unified calendar synchronously (for UI performance)
+  List<EventV2> getEnhancedUnifiedCalendarSync(String userId, {DateTime? startDate, DateTime? endDate}) {
+    if (!_isInitialized) {
+      throw StateError('Calendar service not initialized. Call async method first.');
+    }
+    
+    final user = _demoData.getUserById(userId);
+    if (user == null) return [];
+
+    final start = startDate ?? DateTime.now();
+    final end = endDate ?? start.add(const Duration(days: 30));
+
+    final allEvents = <EventV2>[];
+
+    // 1. Personal events (classes, assignments, personal) - converted to EventV2
+    final personalEvents = _getPersonalEventsV2(userId, start, end);
+    allEvents.addAll(personalEvents);
+
+    // 2. Events user is actively attending (not just society member)
+    final allEventsV2 = _demoData.enhancedEventsSync;
+    final attendingEvents = allEventsV2.where((event) => 
+      event.getUserRelationship(userId) == EventRelationship.attendee &&
+      event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+      event.startTime.isBefore(end)
+    ).toList();
+    allEvents.addAll(attendingEvents);
+
+    // 3. Friend events and shared events
+    final friendEvents = _getFriendEventsV2(userId, start, end);
+    allEvents.addAll(friendEvents);
+
+    // Remove duplicates by ID and sort by date
+    final uniqueEvents = <String, EventV2>{};
+    for (final event in allEvents) {
+      if (event.startTime.isAfter(start.subtract(const Duration(days: 1))) && 
+          event.startTime.isBefore(end)) {
+        uniqueEvents[event.id] = event;
+      }
+    }
+
+    final sortedEvents = uniqueEvents.values.toList();
+    sortedEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return sortedEvents;
+  }
+
+  /// Get society events that user can discover (but may not be attending)
+  Future<List<EventV2>> getDiscoverableSocietyEvents(String userId, {DateTime? startDate, DateTime? endDate}) async {
+    return await _eventRelationshipService.getDiscoverableSocietyEvents(userId, startDate: startDate, endDate: endDate);
+  }
+
+  /// Get society events with user's relationship status
+  Future<List<Map<String, dynamic>>> getSocietyEventsWithStatus(String userId, String societyId) async {
+    return await _eventRelationshipService.getSocietyEventsWithStatus(userId, societyId);
+  }
+
+  /// Get events for a specific date using EventV2 (personal calendar only)
+  Future<List<EventV2>> getUserEventsForDateV2(String userId, DateTime date) async {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return getEnhancedUnifiedCalendar(userId, startDate: startOfDay, endDate: endOfDay);
+  }
+
+  /// Get personal events converted to EventV2 format
+  List<EventV2> _getPersonalEventsV2(String userId, DateTime start, DateTime end) {
+    final legacyEvents = _getPersonalEvents(userId, start, end);
+    // Convert legacy events to EventV2 by finding matching EventV2 instances
+    final allEventsV2 = _demoData.enhancedEventsSync;
+    
+    return legacyEvents.map((legacyEvent) {
+      // Find matching EventV2 by ID
+      final eventV2 = allEventsV2.where((e) => e.id == legacyEvent.id).firstOrNull;
+      if (eventV2 != null) {
+        return eventV2;
+      }
+      
+      // If no matching EventV2, create one from legacy event (fallback)
+      return _convertLegacyToEventV2(legacyEvent);
+    }).toList();
+  }
+
+  /// Get friend events as EventV2
+  List<EventV2> _getFriendEventsV2(String userId, DateTime start, DateTime end) {
+    final user = _demoData.getUserById(userId);
+    if (user == null) return [];
+
+    final allEventsV2 = _demoData.getEnhancedEventsByDateRange(start, end);
+    
+    return allEventsV2.where((event) {
+      final relationship = event.getUserRelationship(userId);
+      // Include events where user is attendee and it's from friends
+      return relationship == EventRelationship.attendee && 
+             (event.origin == EventOrigin.friend || 
+              user.friendIds.contains(event.creatorId));
+    }).toList();
+  }
+
+  /// Convert legacy Event to EventV2 (fallback method)
+  EventV2 _convertLegacyToEventV2(Event legacyEvent) {
+    // Determine category and subtype based on legacy event type
+    EventCategory category;
+    EventSubType subType;
+    EventOrigin origin;
+
+    switch (legacyEvent.type) {
+      case EventType.class_:
+        category = EventCategory.academic;
+        subType = EventSubType.lecture;
+        break;
+      case EventType.assignment:
+        category = EventCategory.academic;
+        subType = EventSubType.assignment;
+        break;
+      case EventType.society:
+        category = EventCategory.society;
+        subType = EventSubType.societyEvent;
+        break;
+      case EventType.personal:
+        category = EventCategory.personal;
+        subType = EventSubType.personalGoal;
+        break;
+    }
+
+    switch (legacyEvent.source) {
+      case EventSource.societies:
+        origin = EventOrigin.society;
+        break;
+      case EventSource.friends:
+        origin = EventOrigin.friend;
+        break;
+      default:
+        origin = EventOrigin.user;
+        break;
+    }
+
+    return EventV2(
+      id: legacyEvent.id,
+      title: legacyEvent.title,
+      description: legacyEvent.description,
+      startTime: legacyEvent.startTime,
+      endTime: legacyEvent.endTime,
+      location: legacyEvent.location,
+      category: category,
+      subType: subType,
+      origin: origin,
+      creatorId: legacyEvent.creatorId,
+      attendeeIds: legacyEvent.attendeeIds,
+      societyId: legacyEvent.societyId,
+      courseCode: legacyEvent.courseCode,
+      isAllDay: legacyEvent.isAllDay,
+      privacyLevel: EventPrivacyLevel.friendsOnly,
+      sharingPermission: EventSharingPermission.canSuggest,
+      discoverability: EventDiscoverability.feedVisible,
+    );
+  }
+
+  /// Backward compatibility: Get events by source with EventV2 filtering
+  Future<List<EventV2>> getEventsBySourceV2(String userId, EventSource source, {DateTime? startDate, DateTime? endDate}) async {
+    await _ensureInitialized();
+    
+    final start = startDate ?? DateTime.now();
+    final end = endDate ?? start.add(const Duration(days: 30));
+
+    switch (source) {
+      case EventSource.personal:
+        return _getPersonalEventsV2(userId, start, end);
+      case EventSource.friends:
+        return _getFriendEventsV2(userId, start, end);
+      case EventSource.societies:
+        // Only return society events user is attending, not all discoverable ones
+        return await _eventRelationshipService.getUserAttendingEvents(userId, startDate: start, endDate: end)
+            .then((events) => events.where((e) => e.origin == EventOrigin.society).toList());
+      case EventSource.shared:
+        return await _eventRelationshipService.getEventsByRelationship(userId, EventRelationship.attendee)
+            .then((events) => events.where((e) => 
+              e.startTime.isAfter(start) && e.startTime.isBefore(end)
+            ).toList());
+    }
+  }
+
+  /// Get all discoverable society events (regardless of attendance status)
+  /// This is for the society events tab where users can see all events and choose to attend
+  Future<List<EventV2>> getAllSocietyEventsForDiscovery(String userId, {DateTime? startDate, DateTime? endDate}) async {
+    return await _eventRelationshipService.getDiscoverableSocietyEvents(userId, startDate: startDate, endDate: endDate);
+  }
+
 }

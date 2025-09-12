@@ -328,7 +328,7 @@ class SearchService {
       }
 
       // Already joined boost
-      if (society.isJoined) {
+      if (_demoData.currentUser.societyIds.contains(society.id)) {
         score += 15;
         matchReasons.add('Already joined');
       }

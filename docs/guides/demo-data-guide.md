@@ -305,12 +305,12 @@ The DemoDataManager provides several helper methods:
 - `currentUser`: Get the logged-in user
 - `users`: All demo users  
 - `societies`: All societies
-- `events`: Legacy events (for backward compatibility)
-- `eventsV2`: Enhanced events with full feature set
+- `enhancedEvents`: Enhanced events (primary event API)
+- `events`: Legacy events (deprecated, for backward compatibility)
 - `friends`: Friends of current user
 - `joinedSocieties`: Societies current user has joined
-- `todayEvents`: Legacy events happening today
-- `todayEventsV2`: Enhanced events happening today
+- `todayEnhancedEvents`: Enhanced events happening today
+- `todayEvents`: Legacy events happening today (deprecated)
 - `locations`: All demo locations
 - `privacySettings`: All privacy settings
 - `friendRequests`: All friend requests
@@ -319,10 +319,10 @@ The DemoDataManager provides several helper methods:
 - `getUserById(String id)`: Get specific user
 - `getSocietyById(String id)`: Get specific society
 - `getLocationById(String id)`: Get specific location
-- `getEventV2ById(String id)`: Get specific enhanced event
+- `getEnhancedEventById(String id)`: Get specific enhanced event
 - `getPrivacySettingsForUser(String userId)`: Get user's privacy settings
-- `getEventsByDateRange(DateTime start, DateTime end)`: Get legacy events in date range
-- `getEventsV2ByDateRange(DateTime start, DateTime end)`: Get enhanced events in date range
+- `getEnhancedEventsByDateRange(DateTime start, DateTime end)`: Get enhanced events in date range
+- `getEventsByDateRange(DateTime start, DateTime end)`: Get legacy events in date range (deprecated)
 - `getPendingFriendRequests(String userId)`: Get pending requests for user
 - `getSentFriendRequests(String userId)`: Get sent requests by user
 - `getFriendsForUser(String userId)`: Get user's friends

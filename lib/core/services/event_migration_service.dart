@@ -1,4 +1,3 @@
-import '../../shared/models/event.dart';
 import '../../shared/models/event_v2.dart';
 import '../../shared/models/event_enums.dart';
 import '../demo_data/demo_data_manager.dart';
@@ -203,8 +202,8 @@ class EventMigrationService {
     return v2Event;
   }
   
-  /// Get events for a date range in v2 format
-  Future<List<EventV2>> getEventsV2ForDateRange(
+  /// Get events for a date range in enhanced format
+  Future<List<EventV2>> getEnhancedEventsForDateRange(
     DateTime startDate, 
     DateTime endDate,
   ) async {
@@ -217,6 +216,15 @@ class EventMigrationService {
             event.startTime.isBefore(endDate))
         .toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
+  }
+  
+  /// Backward compatibility method
+  @Deprecated('Use getEnhancedEventsForDateRange instead')
+  Future<List<EventV2>> getEventsV2ForDateRange(
+    DateTime startDate, 
+    DateTime endDate,
+  ) async {
+    return getEnhancedEventsForDateRange(startDate, endDate);
   }
   
   /// Filter events by category

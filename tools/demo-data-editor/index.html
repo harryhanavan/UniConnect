@@ -713,6 +713,9 @@
                     }
                 }
                 
+                // Store loaded data globally for other functions
+                window.currentLoadedData = loadedData;
+                
                 // Update counts and display
                 updateDataCounts(loadedData);
                 displayLoadedData(loadedData);
@@ -842,6 +845,25 @@
                                     <i class="bi bi-people me-2"></i>
                                     <small>Friends: ${user.friendIds ? user.friendIds.length : 0}</small>
                                 </div>
+                                
+                                ${user.societyIds && user.societyIds.length > 0 ? `
+                                    <div class="mb-2">
+                                        <i class="bi bi-building me-2"></i>
+                                        <small>Societies: ${user.societyIds.length}</small>
+                                        <div class="d-flex flex-wrap mt-1">
+                                            ${user.societyIds.map(societyId => {
+                                                const society = data.societies?.find(s => s.id === societyId);
+                                                return society ? `
+                                                    <span class="badge bg-light text-dark me-1 mb-1" 
+                                                          style="font-size: 0.7rem;"
+                                                          title="${society.name}">
+                                                        ${society.name.length > 20 ? society.name.substring(0, 20) + '...' : society.name}
+                                                    </span>
+                                                ` : '';
+                                            }).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
                     </div>
@@ -922,8 +944,51 @@
                                 
                                 <div class="mb-2">
                                     <i class="bi bi-people me-2"></i>
-                                    <small>${society.memberCount || 0} members</small>
+                                    <small>${society.memberIds ? society.memberIds.length : society.memberCount || 0} members</small>
                                 </div>
+                                
+                                ${society.memberIds && society.memberIds.length > 0 ? `
+                                    <div class="mb-2">
+                                        <small><strong>Members:</strong></small>
+                                        <div class="d-flex flex-wrap mt-1">
+                                            ${society.memberIds.slice(0, 8).map(memberId => {
+                                                const member = data.users?.find(u => u.id === memberId);
+                                                const isFriend = data.users?.find(u => u.id === 'user_001')?.friendIds?.includes(memberId);
+                                                return member ? `
+                                                    <img src="${member.profileImageUrl || 'https://api.dicebear.com/7.x/avataaars/png?seed=' + member.name}" 
+                                                         alt="${member.name}" 
+                                                         title="${member.name}${isFriend ? ' (Friend)' : ''}"
+                                                         class="rounded-circle me-1 mb-1 ${isFriend ? 'border border-success border-2' : ''}" 
+                                                         width="30" height="30">
+                                                ` : '';
+                                            }).join('')}
+                                            ${society.memberIds.length > 8 ? `
+                                                <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center me-1 mb-1" 
+                                                     style="width: 30px; height: 30px; font-size: 0.7rem;">
+                                                    +${society.memberIds.length - 8}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                        ${(() => {
+                                            const currentUser = data.users?.find(u => u.id === 'user_001');
+                                            const friendsInSociety = society.memberIds.filter(memberId => 
+                                                currentUser?.friendIds?.includes(memberId)
+                                            );
+                                            const friendNames = friendsInSociety.map(fId => 
+                                                data.users?.find(u => u.id === fId)?.name
+                                            ).filter(name => name);
+                                            
+                                            return friendsInSociety.length > 0 ? `
+                                                <div class="mt-1">
+                                                    <small class="text-success">
+                                                        <i class="bi bi-people-fill me-1"></i>
+                                                        ${friendNames.length} friend${friendNames.length > 1 ? 's' : ''}: ${friendNames.join(', ')}
+                                                    </small>
+                                                </div>
+                                            ` : '';
+                                        })()}
+                                    </div>
+                                ` : ''}
                                 
                                 ${society.contactEmail ? `
                                     <div class="mb-2">
@@ -933,10 +998,33 @@
                                 ` : ''}
                                 
                                 <div class="mt-2">
-                                    <span class="badge ${society.isJoined ? 'bg-success' : 'bg-secondary'}">
-                                        ${society.isJoined ? 'Joined' : 'Not Joined'}
-                                    </span>
+                                    ${(() => {
+                                        const currentUser = data.users?.find(u => u.id === 'user_001');
+                                        const isJoined = society.memberIds?.includes('user_001') || 
+                                                         currentUser?.societyIds?.includes(society.id) || 
+                                                         society.isJoined;
+                                        return `
+                                            <span class="badge ${isJoined ? 'bg-success' : 'bg-secondary'}">
+                                                ${isJoined ? 'Joined' : 'Not Joined'}
+                                            </span>
+                                        `;
+                                    })()}
                                 </div>
+                            </div>
+                            <div class="card-footer">
+                                ${(() => {
+                                    const currentUser = data.users?.find(u => u.id === 'user_001');
+                                    const isJoined = society.memberIds?.includes('user_001') || 
+                                                     currentUser?.societyIds?.includes(society.id) || 
+                                                     society.isJoined;
+                                    return `
+                                        <button class="btn btn-sm btn-${isJoined ? 'outline-danger' : 'outline-success'}" 
+                                                onclick="toggleSocietyMembership('${society.id}', window.currentLoadedData)">
+                                            <i class="bi ${isJoined ? 'bi-box-arrow-right' : 'bi-box-arrow-in-right'}"></i>
+                                            ${isJoined ? 'Leave' : 'Join'} Society
+                                        </button>
+                                    `;
+                                })()}
                             </div>
                         </div>
                     </div>
@@ -1031,6 +1119,50 @@
             const entity = entities?.find(e => e.id === id);
             return entity ? entity.name : id;
         }
+        
+        // Join/Leave society functions
+        function toggleSocietyMembership(societyId, loadedData) {
+            const society = loadedData.societies?.find(s => s.id === societyId);
+            const currentUser = loadedData.users?.find(u => u.id === 'user_001');
+            
+            if (!society || !currentUser) {
+                updateStatus('Unable to toggle membership - data not found', 'error');
+                return;
+            }
+            
+            // Initialize arrays if they don't exist
+            if (!society.memberIds) society.memberIds = [];
+            if (!currentUser.societyIds) currentUser.societyIds = [];
+            
+            const isJoined = society.memberIds.includes('user_001');
+            
+            if (isJoined) {
+                // Leave society
+                society.memberIds = society.memberIds.filter(id => id !== 'user_001');
+                currentUser.societyIds = currentUser.societyIds.filter(id => id !== societyId);
+                updateStatus(`Left ${society.name}`, 'success');
+            } else {
+                // Join society
+                society.memberIds.push('user_001');
+                currentUser.societyIds.push(societyId);
+                updateStatus(`Joined ${society.name}`, 'success');
+            }
+            
+            // Update member count
+            society.memberCount = society.memberIds.length;
+            
+            // Re-render the lists
+            renderBasicLists(loadedData);
+            
+            // Update global data if available
+            if (window.dataManager && window.dataManager.data) {
+                window.dataManager.data = loadedData;
+            }
+        }
+        
+        // Make toggle function globally available
+        window.toggleSocietyMembership = toggleSocietyMembership;
+        window.currentLoadedData = null; // Store loaded data globally for toggle function
         
         // Check if modules loaded properly
         document.addEventListener('DOMContentLoaded', function() {

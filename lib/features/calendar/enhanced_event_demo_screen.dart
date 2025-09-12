@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/services/event_migration_service.dart';
-import '../../core/utils/event_display_properties_v2.dart';
-import '../../core/demo_data/demo_data_manager_v2.dart';
+import '../../core/utils/event_display_properties.dart';
+import '../../core/demo_data/demo_data_manager.dart';
 import '../../shared/models/event_v2.dart';
 import '../../shared/models/event_enums.dart';
 
-/// Demo screen to showcase Phase 2 event system enhancements
-class EventV2DemoScreen extends StatefulWidget {
-  const EventV2DemoScreen({super.key});
+/// Demo screen to showcase enhanced event system
+class EnhancedEventDemoScreen extends StatefulWidget {
+  const EnhancedEventDemoScreen({super.key});
 
   @override
-  State<EventV2DemoScreen> createState() => _EventV2DemoScreenState();
+  State<EnhancedEventDemoScreen> createState() => _EnhancedEventDemoScreenState();
 }
 
-class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
-  final DemoDataManagerV2 _demoData = DemoDataManagerV2.instance;
+class _EnhancedEventDemoScreenState extends State<EnhancedEventDemoScreen> {
+  final DemoDataManager _demoData = DemoDataManager.instance;
   
   List<EventV2> _events = [];
   EventCategory? _selectedCategory;
@@ -31,7 +31,7 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
   Future<void> _loadEvents() async {
     setState(() => _isLoading = true);
     
-    final events = await _demoData.eventsV2;
+    final events = await _demoData.enhancedEvents;
     
     setState(() {
       _events = events;
@@ -54,8 +54,8 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
     
     // Sort by display priority
     filtered.sort((a, b) {
-      final propsA = EventDisplayPropertiesV2.fromEventV2(a, _demoData.currentUser.id);
-      final propsB = EventDisplayPropertiesV2.fromEventV2(b, _demoData.currentUser.id);
+      final propsA = EventDisplayProperties.fromEventV2(a, _demoData.currentUser.id);
+      final propsB = EventDisplayProperties.fromEventV2(b, _demoData.currentUser.id);
       return propsB.displayPriority.compareTo(propsA.displayPriority);
     });
     
@@ -66,7 +66,7 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Event System V2 Demo'),
+        title: const Text('Enhanced Event System Demo'),
         backgroundColor: AppColors.primaryBlue,
       ),
       body: _isLoading
@@ -177,7 +177,7 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
           Wrap(
             spacing: 12,
             children: categoryStats.entries.map((entry) {
-              final props = EventDisplayPropertiesV2._getCategoryProperties(entry.key);
+              final props = EventDisplayProperties._getCategoryProperties(entry.key);
               return Chip(
                 avatar: Icon(props.icon, size: 16, color: props.color),
                 label: Text('${entry.key.toString().split('.').last}: ${entry.value}'),
@@ -208,7 +208,7 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
   }
   
   Widget _buildEnhancedEventCard(EventV2 event) {
-    final displayProps = EventDisplayPropertiesV2.fromEventV2(
+    final displayProps = EventDisplayProperties.fromEventV2(
       event, 
       _demoData.currentUser.id,
     );
@@ -387,7 +387,7 @@ class _EventV2DemoScreenState extends State<EventV2DemoScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        final displayProps = EventDisplayPropertiesV2.fromEventV2(
+        final displayProps = EventDisplayProperties.fromEventV2(
           event,
           _demoData.currentUser.id,
         );

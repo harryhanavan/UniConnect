@@ -93,6 +93,8 @@ class RelationshipManager {
         if (!container) return;
         
         const societies = this.dataManager.getEntities('society');
+        const users = this.dataManager.getEntities('user');
+        const currentUser = users.find(u => u.id === 'user_001');
         
         if (societies.length === 0) {
             container.innerHTML = '<p class="text-muted">No societies to show memberships for.</p>';
@@ -103,6 +105,18 @@ class RelationshipManager {
         
         societies.forEach(society => {
             const categoryColor = this.getSocietyCategoryColor(society.category);
+            const memberCount = society.memberIds ? society.memberIds.length : society.memberCount;
+            const isJoined = society.memberIds?.includes('user_001') || 
+                           currentUser?.societyIds?.includes(society.id) || 
+                           society.isJoined;
+            
+            // Get member details
+            const members = society.memberIds ? 
+                society.memberIds.slice(0, 8).map(id => users.find(u => u.id === id)).filter(u => u) : [];
+            
+            // Check for friends in society
+            const friendsInSociety = society.memberIds ? 
+                society.memberIds.filter(id => currentUser?.friendIds?.includes(id)) : [];
             
             html += `
                 <div class="list-group-item">
@@ -115,16 +129,39 @@ class RelationshipManager {
                             </div>
                             <div class="mt-1">
                                 <span class="badge" style="background-color: ${categoryColor}">${society.category}</span>
-                                <span class="badge bg-secondary">${society.memberCount} members</span>
-                                ${society.isJoined ? '<span class="badge bg-success">Joined</span>' : '<span class="badge bg-light text-dark">Not Joined</span>'}
+                                <span class="badge bg-secondary">${memberCount} members</span>
+                                ${isJoined ? '<span class="badge bg-success">Joined</span>' : '<span class="badge bg-light text-dark">Not Joined</span>'}
+                                ${friendsInSociety.length > 0 ? `<span class="badge bg-info">${friendsInSociety.length} friends</span>` : ''}
                             </div>
+                            
+                            ${members.length > 0 ? `
+                                <div class="mt-2">
+                                    <small><strong>Members:</strong></small>
+                                    <div class="d-flex flex-wrap mt-1">
+                                        ${members.map(member => `
+                                            <img src="${member.profileImageUrl || 'https://api.dicebear.com/7.x/avataaars/png?seed=' + member.name}" 
+                                                 alt="${member.name}" 
+                                                 title="${member.name}${currentUser?.friendIds?.includes(member.id) ? ' (Friend)' : ''}"
+                                                 class="rounded-circle me-1 ${currentUser?.friendIds?.includes(member.id) ? 'border border-success border-2' : ''}" 
+                                                 width="25" height="25">
+                                        `).join('')}
+                                        ${society.memberIds.length > 8 ? `
+                                            <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" 
+                                                 style="width: 25px; height: 25px; font-size: 0.6rem;">
+                                                +${society.memberIds.length - 8}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
                             <div class="mt-2 small text-muted">
                                 ${society.description || 'No description'}
                             </div>
                         </div>
                         <button class="btn btn-sm btn-outline-secondary" onclick="relationshipManager.toggleSocietyMembership('${society.id}')">
-                            <i class="bi ${society.isJoined ? 'bi-box-arrow-right' : 'bi-box-arrow-in-right'}"></i>
-                            ${society.isJoined ? 'Leave' : 'Join'}
+                            <i class="bi ${isJoined ? 'bi-box-arrow-right' : 'bi-box-arrow-in-right'}"></i>
+                            ${isJoined ? 'Leave' : 'Join'}
                         </button>
                     </div>
                 </div>

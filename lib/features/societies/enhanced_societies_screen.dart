@@ -3,10 +3,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
-import '../../core/services/friendship_service.dart';
+import '../../core/services/event_relationship_service.dart';
 import '../../shared/models/society.dart';
 import '../../shared/models/event.dart';
+import '../../shared/models/event_v2.dart';
+import '../../shared/models/event_enums.dart';
 import '../../shared/models/user.dart';
+import '../../shared/widgets/enhanced_event_card.dart';
 import 'society_detail_screen.dart';
 
 class EnhancedSocietiesScreen extends StatefulWidget {
@@ -24,7 +27,9 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   
   final DemoDataManager _demoData = DemoDataManager.instance;
   final CalendarService _calendarService = CalendarService();
-  final FriendshipService _friendshipService = FriendshipService();
+  final EventRelationshipService _eventRelationshipService = EventRelationshipService();
+  // Services are available but not directly used in this screen currently
+  // final FriendshipService _friendshipService = FriendshipService();
   
   bool _isInitialized = false;
 
@@ -37,11 +42,29 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _initializeData();
+    
+    // Listen for society membership changes
+    _demoData.societyMembershipNotifier.addListener(_onMembershipChanged);
+    
+    // Listen for event relationship changes
+    _eventRelationshipService.relationshipChangeNotifier.addListener(_onEventRelationshipGlobalChange);
+  }
+  
+  void _onMembershipChanged() {
+    if (mounted) {
+      setState(() {}); // Refresh UI when membership changes
+    }
+  }
+  
+  void _onEventRelationshipGlobalChange() {
+    if (mounted) {
+      setState(() {}); // Refresh UI when event relationships change globally
+    }
   }
   
   Future<void> _initializeData() async {
     if (!_isInitialized) {
-      await _demoData.users; // Trigger initialization
+      await _demoData.enhancedEvents; // Trigger EventV2 initialization
       _isInitialized = true;
       if (mounted) setState(() {});
     }
@@ -70,8 +93,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildDiscoverTab(),
                   _buildMySocietiesTab(),
+                  _buildDiscoverTab(),
                   _buildEventsTab(),
                 ],
               ),
@@ -202,8 +225,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
         unselectedLabelColor: Colors.grey,
         indicatorColor: AppColors.societyColor,
         tabs: const [
-          Tab(text: 'Discover'),
           Tab(text: 'My Societies'),
+          Tab(text: 'Discover'),
           Tab(text: 'Events'),
         ],
       ),
@@ -289,9 +312,11 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
   Widget _buildMySocietiesTab() {
-    final joinedSocieties = _demoData.joinedSocieties;
+    final allJoinedSocieties = _demoData.joinedSocieties;
+    final filteredJoinedSocieties = _getFilteredJoinedSocieties();
     
-    if (joinedSocieties.isEmpty) {
+    // Show empty state if no societies joined at all
+    if (allJoinedSocieties.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -310,12 +335,37 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => _tabController.animateTo(0),
+              onPressed: () => _tabController.animateTo(1),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.societyColor,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Discover Societies'),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    // Show "no results" if there are joined societies but none match the filter
+    if (filteredJoinedSocieties.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isEmpty ? 'No societies in this category' : 'No societies found',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchQuery.isEmpty 
+                  ? 'Try selecting a different category or clear the filter.'
+                  : 'Try adjusting your search terms or clear the filter.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -335,7 +385,9 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               children: [
                 Expanded(
                   child: Text(
-                    'Your Societies',
+                    _searchQuery.isEmpty && _selectedCategory == 'All'
+                        ? 'Your Societies'
+                        : 'Filtered Societies (${filteredJoinedSocieties.length})',
                     style: const TextStyle(
                       color: Colors.black,
                       fontSize: 18,
@@ -355,9 +407,9 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
           // Society List
           Expanded(
             child: ListView.builder(
-              itemCount: joinedSocieties.length,
+              itemCount: filteredJoinedSocieties.length,
               itemBuilder: (context, index) {
-                return _buildFigmaYourSocietyCard(joinedSocieties[index]);
+                return _buildFigmaYourSocietyCard(filteredJoinedSocieties[index]);
               },
             ),
           ),
@@ -367,19 +419,29 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
   Widget _buildEventsTab() {
-    final societyEvents = _calendarService.getEventsBySourceSync(
-      _demoData.currentUser.id,
-      EventSource.societies,
-    );
-    
-    // Group events by date
-    final eventsByDate = <String, List<Event>>{};
-    for (final event in societyEvents) {
-      final dateKey = '${event.startTime.year}-${event.startTime.month}-${event.startTime.day}';
-      eventsByDate.putIfAbsent(dateKey, () => []).add(event);
+    if (!_isInitialized) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
     }
     
-    if (eventsByDate.isEmpty) {
+    final filteredEvents = _getFilteredEvents();
+    
+    // Get all society events using the same filtering logic as _getFilteredEvents()
+    // but without search/category filters to check for empty state
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+    final allSocietyEvents = _demoData.enhancedEventsSync.where((event) =>
+      event.societyId != null && 
+      event.canUserView(
+        _demoData.currentUser.id,
+        userSocietyIds: _demoData.currentUser.societyIds,
+      ) &&
+      event.startTime.isAfter(sevenDaysAgo) &&
+      _demoData.currentUser.societyIds.contains(event.societyId)
+    ).toList();
+    
+    // Show empty state if no society events at all
+    if (allSocietyEvents.isEmpty) {
       return const Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -400,16 +462,76 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
       );
     }
     
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: eventsByDate.length,
-      itemBuilder: (context, index) {
-        final dateKey = eventsByDate.keys.elementAt(index);
-        final events = eventsByDate[dateKey]!;
-        final date = events.first.startTime;
+    // Show "no results" if there are events but none match the filter
+    if (filteredEvents.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isEmpty ? 'No events in this category' : 'No events found',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _searchQuery.isEmpty 
+                  ? 'Try selecting a different category or clear the filter.'
+                  : 'Try adjusting your search terms or clear the filter.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return Column(
+      children: [
+        // Header showing filter count
+        if (_searchQuery.isNotEmpty || _selectedCategory != 'All')
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              'Filtered Events (${filteredEvents.length})',
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 18,
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w500,
+                height: 1.33,
+              ),
+            ),
+          ),
         
-        return _buildEventDateSection(date, events);
-      },
+        // Events list
+        Expanded(
+          child: ListView.builder(
+            padding: EdgeInsets.fromLTRB(
+              16, 
+              (_searchQuery.isNotEmpty || _selectedCategory != 'All') ? 0 : 16, 
+              16, 
+              0
+            ),
+            itemCount: filteredEvents.length,
+            itemBuilder: (context, index) {
+              final event = filteredEvents[index];
+              
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: EnhancedEventCard(
+                  event: event,
+                  userId: _demoData.currentUser.id,
+                  onEventTap: _onEventTap,
+                  onRelationshipChanged: _onEventRelationshipChanged,
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -511,6 +633,11 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   
                   const SizedBox(height: 4),
                   
+                  // Member count and friend info
+                  _buildMembershipInfo(society),
+                  
+                  const SizedBox(height: 4),
+                  
                   Text(
                     'Join now!',
                     style: const TextStyle(
@@ -531,11 +658,15 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
   Widget _buildFigmaYourSocietyCard(Society society) {
-    return GestureDetector(
+    return InkWell(
       onTap: () => _showSocietyDetails(society),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -583,16 +714,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   
                   const SizedBox(height: 4),
                   
-                  Text(
-                    '${society.memberCount} members',
-                    style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.50),
-                      fontSize: 12,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w400,
-                      height: 1.67,
-                    ),
-                  ),
+                  // Member count and friend info
+                  _buildMembershipInfo(society),
                   
                   const SizedBox(height: 4),
                   
@@ -948,13 +1071,194 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     }).toList();
   }
 
+  List<Society> _getFilteredJoinedSocieties() {
+    return _demoData.joinedSocieties.where((society) {
+      if (_searchQuery.isNotEmpty && 
+          !society.name.toLowerCase().contains(_searchQuery.toLowerCase()) &&
+          !society.description.toLowerCase().contains(_searchQuery.toLowerCase())) {
+        return false;
+      }
+      
+      if (_selectedCategory != 'All' && society.category != _selectedCategory) {
+        return false;
+      }
+      
+      return true;
+    }).toList();
+  }
+
+  List<EventV2> _getFilteredEvents() {
+    if (!_isInitialized) return [];
+    
+    // Get all discoverable society events (regardless of attendance status)
+    // Show events from the past 7 days + future events to avoid "cutoff" appearance
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+    final allSocietyEvents = _demoData.enhancedEventsSync.where((event) =>
+      event.societyId != null && 
+      event.canUserView(
+        _demoData.currentUser.id,
+        userSocietyIds: _demoData.currentUser.societyIds,
+      ) &&
+      event.startTime.isAfter(sevenDaysAgo) &&
+      _demoData.currentUser.societyIds.contains(event.societyId)
+    ).toList();
+    
+    return allSocietyEvents.where((event) {
+      // Search in event title and description
+      if (_searchQuery.isNotEmpty) {
+        final matchesEvent = event.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            event.description.toLowerCase().contains(_searchQuery.toLowerCase());
+        
+        // Also search in the society name that organized the event
+        bool matchesSociety = false;
+        if (event.societyId != null) {
+          final society = _demoData.getSocietyById(event.societyId!);
+          if (society != null) {
+            matchesSociety = society.name.toLowerCase().contains(_searchQuery.toLowerCase());
+          }
+        }
+        
+        if (!matchesEvent && !matchesSociety) {
+          return false;
+        }
+      }
+      
+      // Filter by category if the event's organizing society matches the selected category
+      if (_selectedCategory != 'All' && event.societyId != null) {
+        final society = _demoData.getSocietyById(event.societyId!);
+        if (society != null && society.category != _selectedCategory) {
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
+  }
+
+  void _onEventTap(EventV2 event) {
+    // Show detailed event view modal
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                event.title,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                event.description,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.access_time, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${event.startTime.day}/${event.startTime.month}/${event.startTime.year} at ${event.startTime.hour}:${event.startTime.minute.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      event.location,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              if (event.societyId != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.groups, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _demoData.getSocietyById(event.societyId!)?.name ?? 'Unknown Society',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 24),
+              EnhancedEventCard(
+                event: event,
+                userId: _demoData.currentUser.id,
+                onRelationshipChanged: _onEventRelationshipChanged,
+                showFullDetails: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onEventRelationshipChanged(EventV2 event, EventRelationship newRelationship) {
+    // Refresh the UI to show updated relationship status
+    setState(() {
+      // The state will be automatically updated by the EnhancedEventCard
+      // This setState triggers a rebuild to refresh any other UI elements
+    });
+  }
+
+
+  Widget _buildMembershipInfo(Society society) {
+    final currentUserFriends = _demoData.getFriendsForUser(_demoData.currentUser.id);
+    final friendsInSociety = currentUserFriends.where((friend) => society.memberIds.contains(friend.id)).toList();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${society.memberIds.length} members',
+          style: TextStyle(
+            color: Colors.black.withValues(alpha: 0.50),
+            fontSize: 12,
+            fontFamily: 'Roboto',
+            fontWeight: FontWeight.w400,
+            height: 1.67,
+          ),
+        ),
+        if (friendsInSociety.isNotEmpty)
+          Text(
+            '${friendsInSociety.length} friend${friendsInSociety.length > 1 ? 's' : ''} ${friendsInSociety.length > 1 ? 'are' : 'is'} a member',
+            style: TextStyle(
+              color: Colors.blue[600],
+              fontSize: 10,
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.w500,
+              height: 1.67,
+            ),
+          ),
+      ],
+    );
+  }
 
   List<User> _getFriendsInSociety(Society society, List<User> friends) {
-    // Simplified logic - in real app would check actual society membership
-    return friends.where((friend) => 
-      friend.course.contains(society.category) || 
-      society.tags.any((tag) => friend.course.contains(tag))
-    ).take(3).toList();
+    // Updated to use actual memberIds
+    return friends.where((friend) => society.memberIds.contains(friend.id)).toList();
   }
 
   List<User> _getFriendsAttendingEvent(Event event) {
@@ -1136,6 +1440,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _demoData.societyMembershipNotifier.removeListener(_onMembershipChanged);
+    _eventRelationshipService.relationshipChangeNotifier.removeListener(_onEventRelationshipGlobalChange);
     super.dispose();
   }
 }

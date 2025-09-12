@@ -5,10 +5,14 @@ import '../../core/constants/event_colors.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/friendship_service.dart';
+import '../../core/services/event_relationship_service.dart';
 import '../../core/utils/event_display_properties.dart';
 import '../../shared/models/event.dart';
+import '../../shared/models/event_v2.dart';
+import '../../shared/models/event_enums.dart';
 import '../../shared/models/user.dart';
 import '../../shared/widgets/event_cards.dart';
+import '../../shared/widgets/enhanced_event_card.dart';
 
 class EnhancedCalendarScreen extends StatefulWidget {
   const EnhancedCalendarScreen({super.key});
@@ -34,6 +38,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   final DemoDataManager _demoData = DemoDataManager.instance;
   final CalendarService _calendarService = CalendarService();
   final FriendshipService _friendshipService = FriendshipService();
+  final EventRelationshipService _eventRelationshipService = EventRelationshipService();
   
   bool _isInitialized = false;
 
@@ -42,16 +47,41 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _initializeData();
+    
+    // Listen for event relationship changes to refresh calendar
+    _eventRelationshipService.relationshipChangeNotifier.addListener(_onEventRelationshipChange);
+    
+    // Listen for society membership changes to refresh calendar
+    _demoData.societyMembershipNotifier.addListener(_onSocietyMembershipChanged);
   }
   
   Future<void> _initializeData() async {
     if (!_isInitialized) {
-      await _demoData.users; // Trigger initialization
-      // Initialize the calendar service by calling an async method
-      await _calendarService.getUnifiedCalendar(_demoData.currentUser.id);
+      await _demoData.enhancedEvents; // Trigger EventV2 initialization
+      // Initialize the calendar service with enhanced unified calendar
+      await _calendarService.getEnhancedUnifiedCalendar(_demoData.currentUser.id);
       _isInitialized = true;
       if (mounted) setState(() {});
     }
+  }
+  
+  void _onEventRelationshipChange() {
+    if (mounted && _isInitialized) {
+      _refreshCalendarData();
+    }
+  }
+  
+  void _onSocietyMembershipChanged() {
+    if (mounted && _isInitialized) {
+      _refreshCalendarData();
+    }
+  }
+  
+  void _refreshCalendarData() {
+    setState(() {
+      // Refresh the calendar when event relationships or society membership change
+      // This will cause a rebuild and re-fetch events with updated data
+    });
   }
 
   @override
@@ -281,7 +311,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                    date.year == DateTime.now().year;
     
     // Get event count for this date
-    final dayEvents = _calendarService.getUnifiedCalendarSync(
+    final dayEvents = _calendarService.getEnhancedUnifiedCalendarSync(
       _demoData.currentUser.id,
       startDate: DateTime(date.year, date.month, date.day),
       endDate: DateTime(date.year, date.month, date.day + 1),
@@ -458,18 +488,20 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    // Get events based on selected source - maintain demo data persistence
-    List<Event> events;
+    // Get events based on selected source using EventV2 - maintains event relationships
+    List<EventV2> events;
     
     switch (selectedSource) {
       case EventSource.shared:
-        events = _calendarService.getUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
         break;
       case EventSource.personal:
-        events = _calendarService.getUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
         break;
       default:
-        events = _calendarService.getEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
+        // For specific sources, use Enhanced calendar and filter by event origin/type
+        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = events.where((event) => _matchesEventSource(event, selectedSource)).toList();
         break;
     }
 
@@ -751,7 +783,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   Widget _buildTimetableEvent(Event event, double hourHeight, int startHour, bool isDetailedView) {
     final startTime = event.startTime;
     final endTime = event.endTime;
-    final eventTypeStr = _getEventDisplayType(event);
+    final eventTypeStr = _getEventDisplayTypeLegacy(event);
     final attendeeCount = event.attendeeIds.length;
     
     // Calculate position and height
@@ -773,7 +805,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         event: event,
         eventType: eventTypeStr,
         attendeeCount: attendeeCount,
-        onTap: () => _showEventDetails(event, []),
+        onTap: () => _showEventDetailsLegacy(event, []),
       );
     } else {
       // Week view timetable chip
@@ -781,7 +813,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         event: event,
         eventType: eventTypeStr,
         attendeeCount: attendeeCount,
-        onTap: () => _showEventDetails(event, []),
+        onTap: () => _showEventDetailsLegacy(event, []),
       );
     }
     
@@ -919,7 +951,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   Widget _buildCompactEventCard(Event event, bool isSelectedDay, {bool isMultiDay = false}) {
-    final eventTypeStr = _getEventDisplayType(event);
+    final eventTypeStr = _getEventDisplayTypeLegacy(event);
     final attendeeCount = event.attendeeIds.length;
     
     return Container(
@@ -928,7 +960,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         event: event,
         eventType: eventTypeStr,
         attendeeCount: attendeeCount,
-        onTap: () => _showEventDetails(event, []),
+        onTap: () => _showEventDetailsLegacy(event, []),
       ),
     );
   }
@@ -1127,7 +1159,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  Widget _buildEnhancedEventCard(Event event, Map<String, dynamic> overlayData) {
+  Widget _buildEnhancedEventCard(EventV2 event, Map<String, dynamic> overlayData) {
     final suggestions = _getEventSuggestions(event, overlayData);
     final eventTypeStr = _getEventDisplayType(event);
     final attendeeCount = event.attendeeIds.length;
@@ -1138,7 +1170,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: EventCards.buildDayViewCard(
-        event: event,
+        event: event.toLegacyEvent(),
         eventType: eventTypeStr,
         attendeeCount: attendeeCount,
         suggestions: formattedSuggestions,
@@ -1216,31 +1248,96 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
   }
 
-  Color _getEventColor(Event event) {
-    switch (event.type) {
-      case EventType.class_:
-        return AppColors.personalColor;  // Classes are personal schedule
-      case EventType.society:
-        return AppColors.societyColor;
-      case EventType.personal:
-        return AppColors.personalColor;
-      case EventType.assignment:
-        return AppColors.personalColor;  // Assignments are personal academic
+  Color _getEventColor(EventV2 event) {
+    switch (event.category) {
+      case EventCategory.academic:
+        return AppColors.personalColor;  // Academic events use personal color
+      case EventCategory.society:
+        return AppColors.societyColor;   // Society events use society color
+      case EventCategory.social:
+        return AppColors.socialColor;    // Social events use social color
+      case EventCategory.personal:
+        return AppColors.personalColor;  // Personal events use personal color
+      case EventCategory.university:
+        return AppColors.personalColor;  // University events use personal color
     }
   }
 
-  EventSource _determineEventSource(Event event) {
+  EventSource _determineEventSource(EventV2 event) {
     // Use the actual event source from the data model
-    return EventDisplayProperties.getEventSource(event, _demoData.currentUser.id);
+    return EventDisplayProperties.getEventSource(event.toLegacyEvent(), _demoData.currentUser.id);
   }
   
-  String _getEventDisplayType(Event event) {
+  String _getEventDisplayType(EventV2 event) {
+    // Get the display type based on actual event type
+    final displayProps = EventDisplayProperties.fromEventV2(event, _demoData.currentUser.id);
+    return displayProps.colorKey;
+  }
+
+  // Overloaded version for legacy Event types
+  String _getEventDisplayTypeLegacy(Event event) {
     // Get the display type based on actual event type
     final displayProps = EventDisplayProperties.fromEvent(event);
     return displayProps.colorKey;
   }
 
-  List<String> _getEventSuggestions(Event event, Map<String, dynamic> overlayData) {
+  void _showEventDetailsLegacy(Event event, List<String> suggestions) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                event.title,
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text('${DateFormat('MMM d, HH:mm').format(event.startTime)} - ${DateFormat('HH:mm').format(event.endTime)}'),
+              if (event.location.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text('📍 ${event.location}'),
+              ],
+              if (event.description.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(event.description),
+              ],
+              if (suggestions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Text('Smart Suggestions:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...suggestions.map((s) => Text('• $s')),
+              ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                  if (event.type != EventType.class_)
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Event editing would open here')),
+                        );
+                      },
+                      child: const Text('Edit'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<String> _getEventSuggestions(EventV2 event, Map<String, dynamic> overlayData) {
     final suggestions = <String>[];
     
     // Add friend-related suggestions
@@ -1251,7 +1348,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       
       // Check if friend has events at same time
       for (final friendEvent in friendEvents) {
-        if (_eventsOverlap(event, friendEvent)) {
+        if (_eventsOverlapMixed(event, friendEvent)) {
           suggestions.add('${friend?.name} also has ${friendEvent.title} at this time');
           break;
         }
@@ -1274,9 +1371,15 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return suggestions;
   }
 
-  bool _eventsOverlap(Event event1, Event event2) {
+  bool _eventsOverlap(EventV2 event1, EventV2 event2) {
     return event1.startTime.isBefore(event2.endTime) && 
            event2.startTime.isBefore(event1.endTime);
+  }
+
+  // Overloaded version to handle EventV2 and legacy Event
+  bool _eventsOverlapMixed(EventV2 eventV2, Event legacyEvent) {
+    return eventV2.startTime.isBefore(legacyEvent.endTime) && 
+           legacyEvent.startTime.isBefore(eventV2.endTime);
   }
 
   // Navigation helpers
@@ -1450,7 +1553,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  void _showEventDetails(Event event, List<String> suggestions) {
+  void _showEventDetails(EventV2 event, List<String> suggestions) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -1487,7 +1590,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                     onPressed: () => Navigator.pop(context),
                     child: const Text('Close'),
                   ),
-                  if (event.type != EventType.class_)
+                  if (event.category != EventCategory.academic || event.subType != EventSubType.lecture)
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
@@ -1527,9 +1630,27 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
+  // Helper method to match EventV2 with EventSource filter
+  bool _matchesEventSource(EventV2 event, EventSource source) {
+    switch (source) {
+      case EventSource.societies:
+        return event.origin == EventOrigin.society;
+      case EventSource.friends:
+        return event.origin == EventOrigin.friend;
+      case EventSource.personal:
+        return event.origin == EventOrigin.user || 
+               event.category == EventCategory.personal || 
+               event.category == EventCategory.academic;
+      case EventSource.shared:
+        return true; // Show all events for shared view
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
+    _eventRelationshipService.relationshipChangeNotifier.removeListener(_onEventRelationshipChange);
+    _demoData.societyMembershipNotifier.removeListener(_onSocietyMembershipChanged);
     super.dispose();
   }
 }

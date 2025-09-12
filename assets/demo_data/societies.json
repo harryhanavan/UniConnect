@@ -9,7 +9,8 @@
     "memberCount": 285,
     "tags": ["UX/UI", "Design", "Interaction Design", "ProjectUX", "Workshops"],
     "isJoined": true,
-    "adminIds": ["user_002"]
+    "adminIds": ["user_002"],
+    "memberIds": ["user_001", "user_002", "user_003", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021", "user_023", "user_025", "user_027", "user_029", "user_031", "user_033", "user_035", "user_037"]
   },
   {
     "id": "soc_002",
@@ -21,7 +22,8 @@
     "memberCount": 580,
     "tags": ["Programming", "Hackathons", "Tech Talks", "Software Development", "Networking"],
     "isJoined": true,
-    "adminIds": ["user_003"]
+    "adminIds": ["user_003"],
+    "memberIds": ["user_001", "user_003", "user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030", "user_032", "user_034", "user_036", "user_038", "user_040", "user_042", "user_044", "user_046", "user_048"]
   },
   {
     "id": "soc_003",
@@ -33,7 +35,8 @@
     "memberCount": 485,
     "tags": ["Engineering", "Professional Development", "Industry", "Technical", "Networking"],
     "isJoined": false,
-    "adminIds": ["user_004"]
+    "adminIds": ["user_004"],
+    "memberIds": ["user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030", "user_032"]
   },
   {
     "id": "soc_004",
@@ -45,7 +48,8 @@
     "memberCount": 195,
     "tags": ["Cars", "Automotive", "Racing", "Workshops", "Car Meets"],
     "isJoined": false,
-    "adminIds": ["user_005"]
+    "adminIds": ["user_005"],
+    "memberIds": ["user_002", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021"]
   },
   {
     "id": "soc_005",
@@ -57,7 +61,8 @@
     "memberCount": 420,
     "tags": ["Cultural", "International", "Social", "Support"],
     "isJoined": true,
-    "adminIds": ["user_002"]
+    "adminIds": ["user_002"],
+    "memberIds": ["user_001", "user_002", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021", "user_023", "user_025", "user_027", "user_029", "user_031", "user_033", "user_035"]
   },
   {
     "id": "soc_006",
@@ -69,7 +74,8 @@
     "memberCount": 220,
     "tags": ["Law", "Mooting", "Legal Workshops", "Professional Development"],
     "isJoined": false,
-    "adminIds": ["user_004"]
+    "adminIds": ["user_004"],
+    "memberIds": ["user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020"]
   },
   {
     "id": "soc_007",
@@ -81,7 +87,8 @@
     "memberCount": 175,
     "tags": ["Greek", "Cultural", "Heritage", "Community", "Networking"],
     "isJoined": false,
-    "adminIds": ["user_003"]
+    "adminIds": ["user_003"],
+    "memberIds": ["user_003", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017"]
   },
   {
     "id": "soc_008",
@@ -93,7 +100,8 @@
     "memberCount": 255,
     "tags": ["Animation", "Digital Art", "Creative", "Film", "Collaboration"],
     "isJoined": true,
-    "adminIds": ["user_005"]
+    "adminIds": ["user_005"],
+    "memberIds": ["user_001", "user_002", "user_003", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021", "user_023"]
   },
   {
     "id": "soc_009",
@@ -105,6 +113,7 @@
     "memberCount": 420,
     "tags": ["Food", "Social", "Dining", "Culinary", "Restaurant"],
     "isJoined": false,
-    "adminIds": ["user_004"]
+    "adminIds": ["user_004"],
+    "memberIds": ["user_002", "user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030"]
   }
 ]

@@ -17,7 +17,8 @@
     "statusMessage": "In Interactive Design class",
     "friendIds": ["user_002", "user_005"],
     "pendingFriendRequests": ["user_003"],
-    "sentFriendRequests": []
+    "sentFriendRequests": [],
+    "societyIds": ["soc_001", "soc_002", "soc_005", "soc_008"]
   },
   {
     "id": "user_002",
@@ -37,7 +38,8 @@
     "statusMessage": "Working on design project",
     "friendIds": ["user_001"],
     "pendingFriendRequests": [],
-    "sentFriendRequests": []
+    "sentFriendRequests": [],
+    "societyIds": ["soc_001", "soc_004", "soc_005", "soc_008", "soc_009"]
   },
   {
     "id": "user_003",
@@ -52,7 +54,8 @@
     "currentLocationId": null,
     "friendIds": [],
     "pendingFriendRequests": [],
-    "sentFriendRequests": ["user_001"]
+    "sentFriendRequests": ["user_001"],
+    "societyIds": ["soc_001", "soc_002", "soc_007", "soc_008"]
   },
   {
     "id": "user_004",
@@ -67,7 +70,8 @@
     "statusMessage": "New to UTS!",
     "friendIds": [],
     "pendingFriendRequests": [],
-    "sentFriendRequests": []
+    "sentFriendRequests": [],
+    "societyIds": ["soc_002", "soc_003", "soc_006", "soc_009"]
   },
   {
     "id": "user_005",
@@ -87,6 +91,7 @@
     "statusMessage": "Just finished database lab",
     "friendIds": ["user_001"],
     "pendingFriendRequests": [],
-    "sentFriendRequests": []
+    "sentFriendRequests": [],
+    "societyIds": ["soc_001", "soc_004", "soc_005", "soc_008"]
   }
 ]

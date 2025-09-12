@@ -399,6 +399,9 @@ class ValidationSystem {
         // Validate privacy settings relationships
         this.validatePrivacyRelationships(results);
         
+        // Validate society memberships
+        this.validateSocietyMemberships(results);
+        
         return results;
     }
     
@@ -487,6 +490,68 @@ class ValidationSystem {
                 results.errors.push(`Privacy settings for "${privacy.userId}": User not found`);
             }
         });
+    }
+    
+    /**
+     * Validate society memberships are bidirectional
+     */
+    validateSocietyMemberships(results) {
+        const users = this.dataManager.getEntities('user');
+        const societies = this.dataManager.getEntities('society');
+        
+        // Check that society memberIds correspond to user societyIds
+        societies.forEach(society => {
+            if (society.memberIds && society.memberIds.length > 0) {
+                society.memberIds.forEach(userId => {
+                    const user = users.find(u => u.id === userId);
+                    
+                    if (!user) {
+                        results.errors.push(`Society "${society.name}": Member "${userId}" not found`);
+                    } else {
+                        // Check if user has this society in their societyIds
+                        if (!user.societyIds || !user.societyIds.includes(society.id)) {
+                            results.errors.push(`Asymmetric membership: Society "${society.name}" lists "${user.name}" as member but user doesn't have society in their list`);
+                        }
+                    }
+                });
+                
+                // Check member count matches
+                if (society.memberCount !== society.memberIds.length) {
+                    results.warnings.push(`Society "${society.name}": Member count (${society.memberCount}) doesn't match actual members (${society.memberIds.length})`);
+                }
+            }
+        });
+        
+        // Check that user societyIds correspond to society memberIds
+        users.forEach(user => {
+            if (user.societyIds && user.societyIds.length > 0) {
+                user.societyIds.forEach(societyId => {
+                    const society = societies.find(s => s.id === societyId);
+                    
+                    if (!society) {
+                        results.errors.push(`User "${user.name}": Society "${societyId}" not found`);
+                    } else {
+                        // Check if society has this user in their memberIds
+                        if (!society.memberIds || !society.memberIds.includes(user.id)) {
+                            results.errors.push(`Asymmetric membership: User "${user.name}" lists "${society.name}" as joined but society doesn't have user as member`);
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Check isJoined flag consistency for user_001
+        const currentUser = users.find(u => u.id === 'user_001');
+        if (currentUser) {
+            societies.forEach(society => {
+                const shouldBeJoined = society.memberIds?.includes('user_001') || 
+                                       currentUser.societyIds?.includes(society.id);
+                
+                if (society.isJoined !== undefined && society.isJoined !== shouldBeJoined) {
+                    results.warnings.push(`Society "${society.name}": isJoined flag (${society.isJoined}) doesn't match actual membership status (${shouldBeJoined})`);
+                }
+            });
+        }
     }
     
     /**

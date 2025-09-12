@@ -849,7 +849,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
-                child: Text(society.isJoined ? 'View Society' : 'Join Society'),
+                child: Text(_demoData.currentUser.societyIds.contains(society.id) ? 'View Society' : 'Join Society'),
               ),
             ),
           ],
