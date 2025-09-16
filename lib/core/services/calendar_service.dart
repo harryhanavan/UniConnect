@@ -25,6 +25,18 @@ class CalendarService {
     }
   }
 
+  // Clear all cached data and force reinitialize
+  Future<void> clearCache() async {
+    _isInitialized = false;
+    await _demoData.clearCache();
+    await _ensureInitialized();
+  }
+
+  // Refresh calendar data after event creation/modification
+  Future<void> refreshCalendarData() async {
+    await clearCache();
+  }
+
   // Get unified calendar events for a user with all sources (async version)
   Future<List<Event>> getUnifiedCalendar(String userId, {DateTime? startDate, DateTime? endDate}) async {
     await _ensureInitialized();
@@ -613,14 +625,16 @@ class CalendarService {
     final personalEvents = _getPersonalEventsV2(userId, start, end);
     allEvents.addAll(personalEvents);
 
-    // 2. Events user is actively attending (not just society member)
+    // 2. Events user is actively attending OR owns (not just society member)
     final allEventsV2 = _demoData.enhancedEventsSync;
-    final attendingEvents = allEventsV2.where((event) => 
-      event.getUserRelationship(userId) == EventRelationship.attendee &&
-      event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
-      event.startTime.isBefore(end)
-    ).toList();
-    allEvents.addAll(attendingEvents);
+    final userEvents = allEventsV2.where((event) {
+      final relationship = event.getUserRelationship(userId);
+      return (relationship == EventRelationship.attendee || 
+              relationship == EventRelationship.owner) &&
+             event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+             event.startTime.isBefore(end);
+    }).toList();
+    allEvents.addAll(userEvents);
 
     // 3. Friend events and shared events
     final friendEvents = _getFriendEventsV2(userId, start, end);
@@ -684,8 +698,8 @@ class CalendarService {
     
     return allEventsV2.where((event) {
       final relationship = event.getUserRelationship(userId);
-      // Include events where user is attendee and it's from friends
-      return relationship == EventRelationship.attendee && 
+      // Include events where user is attendee/owner and it's from friends
+      return (relationship == EventRelationship.attendee || relationship == EventRelationship.owner) && 
              (event.origin == EventOrigin.friend || 
               user.friendIds.contains(event.creatorId));
     }).toList();
@@ -795,33 +809,37 @@ class CalendarService {
     switch (source) {
       case EventSource.personal:
         // Personal events: user-created, academic events, personal tasks
-        filteredEvents = allEventsV2.where((event) =>
-          (event.origin == EventOrigin.user || event.origin == EventOrigin.system) &&
-          (event.category == EventCategory.academic || event.category == EventCategory.personal) &&
-          event.attendeeIds.contains(userId) &&
-          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
-          event.startTime.isBefore(end)
-        ).toList();
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return (event.origin == EventOrigin.user || event.origin == EventOrigin.system) &&
+                 (event.category == EventCategory.academic || event.category == EventCategory.personal) &&
+                 (relationship == EventRelationship.owner || relationship == EventRelationship.attendee) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
         break;
         
       case EventSource.friends:
         // Friend events: events shared by friends, study sessions with friends
-        filteredEvents = allEventsV2.where((event) =>
-          ((event.origin == EventOrigin.friend) ||
-           (event.category == EventCategory.social && event.attendeeIds.contains(userId))) &&
-          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
-          event.startTime.isBefore(end)
-        ).toList();
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return ((event.origin == EventOrigin.friend) ||
+                  (event.category == EventCategory.social && 
+                   (relationship == EventRelationship.owner || relationship == EventRelationship.attendee))) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
         break;
         
       case EventSource.societies:
         // Society events from joined societies
-        filteredEvents = allEventsV2.where((event) =>
-          event.origin == EventOrigin.society &&
-          event.attendeeIds.contains(userId) &&
-          event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
-          event.startTime.isBefore(end)
-        ).toList();
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return event.origin == EventOrigin.society &&
+                 (relationship == EventRelationship.owner || relationship == EventRelationship.attendee) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
         break;
         
       case EventSource.shared:

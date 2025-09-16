@@ -10,7 +10,7 @@
     "tags": ["UX/UI", "Design", "Interaction Design", "ProjectUX", "Workshops"],
     "isJoined": true,
     "adminIds": ["user_002"],
-    "memberIds": ["user_001", "user_002", "user_003", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021", "user_023", "user_025", "user_027", "user_029", "user_031", "user_033", "user_035", "user_037"]
+    "memberIds": ["user_002", "user_003", "user_005", "user_007", "user_009", "user_011", "user_013", "user_015", "user_017", "user_019", "user_021", "user_023", "user_025", "user_027", "user_029", "user_031", "user_033", "user_035", "user_037"]
   },
   {
     "id": "soc_002",
@@ -23,7 +23,7 @@
     "tags": ["Programming", "Hackathons", "Tech Talks", "Software Development", "Networking"],
     "isJoined": true,
     "adminIds": ["user_003"],
-    "memberIds": ["user_001", "user_003", "user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030", "user_032", "user_034", "user_036", "user_038", "user_040", "user_042", "user_044", "user_046", "user_048"]
+    "memberIds": ["user_003", "user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030", "user_032", "user_034", "user_036", "user_038", "user_040", "user_042", "user_044", "user_046", "user_048"]
   },
   {
     "id": "soc_003",
@@ -115,5 +115,18 @@
     "isJoined": false,
     "adminIds": ["user_004"],
     "memberIds": ["user_002", "user_004", "user_006", "user_008", "user_010", "user_012", "user_014", "user_016", "user_018", "user_020", "user_022", "user_024", "user_026", "user_028", "user_030"]
+  },
+  {
+    "id": "soc_010",
+    "name": "UTS Swimming Club",
+    "description": "The UTS Swimming Club supports swimmers of all abilities including elite student athletes as they progress in their sporting and academic pursuits. We provide training programs, compete in university championships, organize social events, and foster a supportive community for swimmers at UTS. Whether you're training for competition or swimming for fitness, everyone is welcome.",
+    "aboutUs": "Welcome to UTS Swimming Club - where aquatic excellence meets university life! As a Union Club, we've been supporting swimmers of all abilities for years, helping both recreational swimmers and elite student athletes achieve their goals in the pool and in their studies.\n\nOur comprehensive program includes structured squad training sessions throughout the week, technique workshops with qualified coaches, participation in intervarsity swimming championships, social swimming events and pool parties, fundraising activities to support club operations, and mentorship programs pairing experienced swimmers with newcomers.\n\nIn 2019, we underwent structural changes and merged operational functions with UTS Sport to better serve our members. Our facilities include access to quality pool time, training equipment, and we maintain strong connections with local aquatic centers. We're proud of our inclusive culture - whether you're aiming for national championships or just want to improve your stroke technique, you'll find your place here.\n\nBeyond training, we organize beach trips, BBQs, end-of-season celebrations, and volunteer at community swimming events. Our executive committee works hard to create opportunities for leadership development, event management experience, and building lifelong friendships through our shared love of swimming. Dive in and join our aquatic family!",
+    "category": "Sports",
+    "logoUrl": "https://www.activateuts.com.au/wp-content/uploads/2023/01/UTS-Swimming-Club-Logo.png",
+    "memberCount": 95,
+    "tags": ["Swimming", "Competitive", "Training", "Aquatic Sports", "Student Athletes"],
+    "isJoined": true,
+    "adminIds": ["user_001", "user_006"],
+    "memberIds": ["user_001", "user_006", "user_007", "user_009", "user_011", "user_012", "user_015", "user_018", "user_020", "user_023", "user_026", "user_029", "user_032", "user_035", "user_038", "user_041"]
   }
 ]

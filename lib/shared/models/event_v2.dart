@@ -37,10 +37,25 @@ class EventV2 {
   final String? parentEventId; // For recurring events
   final Map<String, dynamic>? customFields; // Extensible fields
   
+  // Academic semester fields
+  final String? semesterType; // "spring", "autumn", "summer", "winter"
+  final int? semesterYear;
+  final DateTime? semesterStartDate;
+  final DateTime? semesterEndDate;
+  final int? academicWeek; // Week number within semester
+  
+  // Enhanced date handling
+  final bool useAbsoluteDate; // If true, use exactDate instead of relative calculation
+  final DateTime? exactDate; // For specific dated events
+  final String? dayOfWeek; // For recurring weekly events
+  final String? timeOfDay; // Time within the day (HH:mm format)
+  final bool driftAdjustment; // Flag for demo data drift adjustment
+  
   // Import metadata
   final String? importSource;
   final String? importId;
   final DateTime? lastSyncTime;
+  final Map<String, dynamic>? importPeriod; // Semester period metadata for imports
   
   const EventV2({
     required this.id,
@@ -67,9 +82,20 @@ class EventV2 {
     this.recurringPattern,
     this.parentEventId,
     this.customFields,
+    this.semesterType,
+    this.semesterYear,
+    this.semesterStartDate,
+    this.semesterEndDate,
+    this.academicWeek,
+    this.useAbsoluteDate = false,
+    this.exactDate,
+    this.dayOfWeek,
+    this.timeOfDay,
+    this.driftAdjustment = false,
     this.importSource,
     this.importId,
     this.lastSyncTime,
+    this.importPeriod,
   });
   
   /// Get user's relationship to this event

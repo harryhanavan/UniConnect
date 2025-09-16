@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/timetable_service.dart';
+import '../../core/services/calendar_service.dart';
 import '../../shared/models/event_v2.dart';
 import '../../shared/models/event_enums.dart';
 import '../../shared/models/user.dart';
 
 class TimetableManagementScreen extends StatefulWidget {
-  const TimetableManagementScreen({super.key});
+  final int initialTabIndex;
+  
+  const TimetableManagementScreen({
+    super.key,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<TimetableManagementScreen> createState() => _TimetableManagementScreenState();
@@ -21,7 +27,11 @@ class _TimetableManagementScreenState extends State<TimetableManagementScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3, 
+      vsync: this,
+      initialIndex: widget.initialTabIndex,
+    );
   }
 
   @override
@@ -347,6 +357,7 @@ class _ManualEntryTabState extends State<_ManualEntryTab> {
   final _locationController = TextEditingController();
   final _instructorController = TextEditingController();
   final TimetableService _timetableService = TimetableService.instance;
+  final CalendarService _calendarService = CalendarService();
   
   EventSubType selectedType = EventSubType.lecture;
   List<String> selectedDays = [];
@@ -677,6 +688,9 @@ class _ManualEntryTabState extends State<_ManualEntryTab> {
     }
 
     try {
+      // Debug logging: Event creation start
+      print('🎯 DEBUG: Starting manual event creation for "${_titleController.text}"');
+      
       // Convert day names to numbers (Monday = 1, Sunday = 7)
       final weekdays = selectedDays.map((day) {
         switch (day) {
@@ -690,6 +704,8 @@ class _ManualEntryTabState extends State<_ManualEntryTab> {
           default: return 1;
         }
       }).toList();
+
+      print('🎯 DEBUG: Event details - Days: $selectedDays, Times: ${startTime!.format(context)}-${endTime!.format(context)}');
 
       await _timetableService.addManualClass(
         title: _titleController.text,
@@ -705,6 +721,13 @@ class _ManualEntryTabState extends State<_ManualEntryTab> {
             ? 'Instructor: ${_instructorController.text}' 
             : null,
       );
+
+      print('🎯 DEBUG: Event created successfully, refreshing calendar data...');
+      
+      // Refresh calendar data to ensure new event appears immediately
+      await _calendarService.refreshCalendarData();
+      
+      print('🎯 DEBUG: Calendar data refreshed, new event should be visible');
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -726,6 +749,7 @@ class _ManualEntryTabState extends State<_ManualEntryTab> {
         selectedType = EventSubType.lecture;
       });
     } catch (e) {
+      print('🎯 DEBUG: Event creation failed - $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add class: $e'),

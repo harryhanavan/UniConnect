@@ -40,32 +40,65 @@ class DemoDataLoader {
     final today = DateTime(now.year, now.month, now.day);
     
     return eventsList.map((json) {
-      // Convert relative dates to actual DateTime
-      final daysFromNow = json['daysFromNow'] ?? 0;
-      final hoursFromStart = json['hoursFromStart'] ?? 0;
-      final duration = json['duration'] ?? 1;
-      final isAllDay = json['isAllDay'] ?? false;
-      
       DateTime startTime;
       DateTime endTime;
       
-      if (isAllDay) {
-        startTime = today.add(Duration(days: daysFromNow));
-        endTime = startTime;
+      // Check if this event uses absolute date or enhanced academic scheduling
+      final useAbsoluteDate = json['useAbsoluteDate'] ?? false;
+      final category = _parseEventCategory(json['category']);
+      final isAllDay = json['isAllDay'] ?? false;
+      final duration = json['duration'] ?? 1;
+      
+      if (useAbsoluteDate && json['exactDate'] != null) {
+        // Use exact date with time
+        final exactDate = DateTime.parse(json['exactDate']);
+        final timeOfDay = json['timeOfDay'] ?? '09:00';
+        final timeParts = timeOfDay.split(':');
+        final hour = int.parse(timeParts[0]);
+        final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
+        
+        startTime = DateTime(exactDate.year, exactDate.month, exactDate.day, hour, minute);
+        
+        // Apply drift adjustment for society events if needed
+        if (json['driftAdjustment'] == true) {
+          startTime = _applyDriftAdjustment(startTime);
+        }
+        
+        if (isAllDay) {
+          endTime = startTime;
+        } else {
+          endTime = startTime.add(Duration(
+            hours: duration.toInt(),
+            minutes: ((duration % 1) * 60).toInt(),
+          ));
+        }
+      } else if (category == EventCategory.academic && json['dayOfWeek'] != null) {
+        // Use academic semester calendar for classes
+        final result = _calculateAcademicEventTime(json);
+        startTime = result['startTime'] as DateTime;
+        endTime = result['endTime'] as DateTime;
       } else {
-        startTime = today.add(Duration(
-          days: daysFromNow,
-          hours: hoursFromStart.toInt(),
-          minutes: ((hoursFromStart % 1) * 60).toInt(),
-        ));
-        endTime = startTime.add(Duration(
-          hours: duration.toInt(),
-          minutes: ((duration % 1) * 60).toInt(),
-        ));
+        // Fall back to original daysFromNow system
+        final daysFromNow = json['daysFromNow'] ?? 0;
+        final hoursFromStart = json['hoursFromStart'] ?? 0;
+        
+        if (isAllDay) {
+          startTime = today.add(Duration(days: daysFromNow));
+          endTime = startTime;
+        } else {
+          startTime = today.add(Duration(
+            days: daysFromNow,
+            hours: hoursFromStart.toInt(),
+            minutes: ((hoursFromStart % 1) * 60).toInt(),
+          ));
+          endTime = startTime.add(Duration(
+            hours: duration.toInt(),
+            minutes: ((duration % 1) * 60).toInt(),
+          ));
+        }
       }
 
-      // Parse enhanced enums
-      final category = _parseEventCategory(json['category']);
+      // Parse enhanced enums  
       final subType = _parseEventSubType(json['subType'], json['type']);
       final origin = _parseEventOrigin(json['origin'], json['source']);
       final privacyLevel = _parseEventPrivacyLevel(json['privacyLevel']);
@@ -97,6 +130,25 @@ class DemoDataLoader {
         recurringPattern: json['recurringPattern'],
         customFields: json['customFields'] != null 
             ? Map<String, dynamic>.from(json['customFields'])
+            : null,
+        semesterType: json['semesterType'],
+        semesterYear: json['semesterYear'],
+        semesterStartDate: json['semesterStartDate'] != null 
+            ? DateTime.parse(json['semesterStartDate']) 
+            : null,
+        semesterEndDate: json['semesterEndDate'] != null 
+            ? DateTime.parse(json['semesterEndDate']) 
+            : null,
+        academicWeek: json['academicWeek'],
+        useAbsoluteDate: json['useAbsoluteDate'] ?? false,
+        exactDate: json['exactDate'] != null 
+            ? DateTime.parse(json['exactDate']) 
+            : null,
+        dayOfWeek: json['dayOfWeek'],
+        timeOfDay: json['timeOfDay'],
+        driftAdjustment: json['driftAdjustment'] ?? false,
+        importPeriod: json['importPeriod'] != null 
+            ? Map<String, dynamic>.from(json['importPeriod'])
             : null,
       );
     }).toList();
@@ -566,5 +618,63 @@ class DemoDataLoader {
     }
     
     return warnings;
+  }
+
+  /// Calculate academic event time based on semester calendar and day of week
+  /// TODO: TEMPORARY DEMO CALCULATION - Replace with proper semester system
+  static Map<String, DateTime> _calculateAcademicEventTime(Map<String, dynamic> json) {
+    print('⚠️ DEMO: Using simplified academic calendar calculation');
+    
+    // UTS Spring 2025 semester dates (simplified for demo)
+    final semesterStart = DateTime(2025, 2, 24); // Feb 24, 2025
+    final semesterEnd = DateTime(2025, 6, 27);   // Jun 27, 2025
+    
+    final dayOfWeek = json['dayOfWeek'] ?? 'Monday';
+    final timeOfDay = json['timeOfDay'] ?? '10:00';
+    final duration = json['duration'] ?? 1;
+    final academicWeek = json['academicWeek'] ?? 6; // Default to week 6
+    
+    // Convert day of week to DateTime weekday (1=Monday, 7=Sunday)
+    final dayMap = {
+      'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4,
+      'Friday': 5, 'Saturday': 6, 'Sunday': 7
+    };
+    final targetWeekday = dayMap[dayOfWeek] ?? 1;
+    
+    // Calculate the date for the specific academic week
+    final weekStart = semesterStart.add(Duration(days: (academicWeek - 1) * 7));
+    final daysToAdd = (targetWeekday - weekStart.weekday + 7) % 7;
+    final eventDate = weekStart.add(Duration(days: daysToAdd));
+    
+    // Parse time
+    final timeParts = timeOfDay.split(':');
+    final hour = int.parse(timeParts[0]);
+    final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
+    
+    final startTime = DateTime(eventDate.year, eventDate.month, eventDate.day, hour, minute);
+    final endTime = startTime.add(Duration(
+      hours: duration.toInt(),
+      minutes: ((duration % 1) * 60).toInt(),
+    ));
+    
+    return {'startTime': startTime, 'endTime': endTime};
+  }
+
+  /// Apply drift adjustment for society events to keep them relevant
+  /// TODO: TEMPORARY DEMO ADJUSTMENT - Replace with proper event scheduling
+  static DateTime _applyDriftAdjustment(DateTime originalDate) {
+    print('⚠️ DEMO: Applying drift adjustment for society event');
+    
+    // Demo base date: September 13, 2025
+    final baseDemoDate = DateTime(2025, 9, 13);
+    final today = DateTime.now();
+    
+    // If current date is after base demo date, shift the event forward
+    if (today.isAfter(baseDemoDate)) {
+      final daysDrift = today.difference(baseDemoDate).inDays;
+      return originalDate.add(Duration(days: daysDrift));
+    }
+    
+    return originalDate;
   }
 }

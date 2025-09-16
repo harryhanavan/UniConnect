@@ -501,4 +501,19 @@ class DemoDataManager {
 
   // Check if using v2 events
   bool get isUsingV2Events => _useV2Events;
+
+  // Clear all cached data and force reload from JSON
+  Future<void> clearCache() async {
+    _isInitialized = false;
+    _currentUser = null;
+    _users = null;
+    _events = null;
+    _eventsV2 = null;
+    _societies = null;
+    _locations = null;
+    _friendRequests = null;
+    _privacySettings = null;
+    // Force reload from JSON files
+    await _initializeData();
+  }
 }

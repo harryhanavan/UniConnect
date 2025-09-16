@@ -78,11 +78,22 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
   }
   
-  void _refreshCalendarData() {
-    setState(() {
-      // Refresh the calendar when event relationships or society membership change
-      // This will cause a rebuild and re-fetch events with updated data
-    });
+  void _refreshCalendarData({bool clearCache = true}) async {
+    print('🎯 DEBUG (Calendar): Refreshing calendar data (clearCache: $clearCache)');
+    
+    if (clearCache) {
+      // Clear calendar service cache to ensure fresh data from JSON
+      await _calendarService.refreshCalendarData();
+      print('🎯 DEBUG (Calendar): Cache cleared and data reloaded from JSON');
+    }
+    
+    if (mounted) {
+      setState(() {
+        // Refresh the calendar when event relationships or society membership change
+        // This will cause a rebuild and re-fetch events with updated data
+      });
+      print('🎯 DEBUG (Calendar): UI refreshed with setState');
+    }
   }
 
   @override
@@ -170,7 +181,12 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                       Icons.edit_calendar, 
                       color: Colors.white,
                     ),
-                    onPressed: _showTimetableManagementDialog,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TimetableManagementScreen(initialTabIndex: 0),
+                      ),
+                    ),
                     tooltip: 'Manage Timetable',
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(
@@ -502,20 +518,18 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    // Get events based on selected source using EventV2 - maintains event relationships
+    // Get events based on selected source using EventV2 - use consistent filtering across all views
     List<EventV2> events;
     
     switch (selectedSource) {
       case EventSource.shared:
-        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
         break;
       case EventSource.personal:
-        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
         break;
       default:
-        // For specific sources, use Enhanced calendar and filter by event origin/type
-        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
-        events = events.where((event) => _matchesEventSource(event, selectedSource)).toList();
+        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
         break;
     }
 
@@ -638,14 +652,14 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    // Get events for the day using EventV2
+    // Get events for the day using EventV2 - use consistent filtering across all views
     List<EventV2> events;
     switch (selectedSource) {
       case EventSource.shared:
-        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
         break;
       case EventSource.personal:
-        events = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startOfDay, endDate: endOfDay);
+        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
         break;
       default:
         events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
@@ -658,14 +672,14 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   Widget _buildMultiDayTimetable(DateTime startDate, int displayDays) {
     final endDate = startDate.add(Duration(days: displayDays));
     
-    // Get events using EventV2 with proper filtering
+    // Get events using EventV2 with consistent filtering across all views
     List<EventV2> allEvents;
     switch (selectedSource) {
       case EventSource.shared:
-        allEvents = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startDate, endDate: endDate);
+        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
         break;
       case EventSource.personal:
-        allEvents = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startDate, endDate: endDate);
+        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
         break;
       default:
         allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
@@ -678,8 +692,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
 
   Widget _buildTimetableGrid(List<DateTime> dates, List<EventV2> events, int dayCount, bool hasExternalHeaders) {
     const double hourHeight = 60.0;
-    const int startHour = 6;  // 6 AM
-    const int endHour = 22;   // 10 PM
+    const int startHour = 0;  // Midnight (24-hour view)
+    const int endHour = 24;   // End of day
     const int totalHours = endHour - startHour;
     
     // Group events by date
@@ -871,10 +885,6 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final top = (startMinutes / 60.0) * hourHeight;
     final height = (durationMinutes / 60.0) * hourHeight;
     
-    // Don't show events outside the visible time range
-    if (startTime.hour < startHour || startTime.hour >= (startHour + 16)) {
-      return const SizedBox();
-    }
     
     // Create view-appropriate timetable chip
     Widget eventWidget;
@@ -1006,10 +1016,10 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     List<EventV2> allEvents;
     switch (selectedSource) {
       case EventSource.shared:
-        allEvents = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startDate, endDate: endDate);
+        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
         break;
       case EventSource.personal:
-        allEvents = _calendarService.getEnhancedUnifiedCalendarSync(_demoData.currentUser.id, startDate: startDate, endDate: endDate);
+        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
         break;
       default:
         allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
@@ -1709,10 +1719,32 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  void _showTimetableManagementDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _TimetableManagementDialog(),
+// Removed _showTimetableManagementDialog - Edit Timetable button now navigates directly to Import tab
+
+  void _showImportDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TimetableManagementScreen(initialTabIndex: 0),
+      ),
+    );
+  }
+  
+  void _showManualEntryDialog() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TimetableManagementScreen(initialTabIndex: 1),
+      ),
+    );
+  }
+  
+  void _showCurrentTimetable() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const TimetableManagementScreen(initialTabIndex: 2),
+      ),
     );
   }
 
@@ -1722,8 +1754,10 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       builder: (context) => _EventCreationDialog(
         currentUser: _demoData.currentUser,
         onEventCreated: (newEvent) {
-          // Refresh calendar view
-          _onEventRelationshipChange();
+          print('🎯 DEBUG (Calendar): Event created callback received for "${newEvent.title}"');
+          
+          // Refresh calendar view WITHOUT clearing cache (since we just added to in-memory data)
+          _refreshCalendarData(clearCache: false);
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -1732,6 +1766,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               duration: const Duration(seconds: 3),
             ),
           );
+          
+          print('🎯 DEBUG (Calendar): Event creation flow completed');
         },
       ),
     );
@@ -1867,21 +1903,6 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  // Helper method to match EventV2 with EventSource filter
-  bool _matchesEventSource(EventV2 event, EventSource source) {
-    switch (source) {
-      case EventSource.societies:
-        return event.origin == EventOrigin.society;
-      case EventSource.friends:
-        return event.origin == EventOrigin.friend;
-      case EventSource.personal:
-        return event.origin == EventOrigin.user || 
-               event.category == EventCategory.personal || 
-               event.category == EventCategory.academic;
-      case EventSource.shared:
-        return true; // Show all events for shared view
-    }
-  }
 
   // Helper methods for enhanced event details modal
   Widget _buildRelationshipBadge(EventRelationship relationship) {
@@ -4211,6 +4232,8 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
   }
 
   void _createEvent() async {
+    print('🎯 DEBUG (Calendar): Starting event creation from dialog form');
+    
     if (!_formKey.currentState!.validate()) return;
 
     // Validate time logic
@@ -4223,6 +4246,8 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
 
     // Generate unique event ID
     final eventId = 'event_${DateTime.now().millisecondsSinceEpoch}';
+
+    print('🎯 DEBUG (Calendar): Creating event with ID: $eventId, Title: "${_titleController.text.trim()}"');
 
     // Create new EventV2
     final newEvent = EventV2(
@@ -4242,13 +4267,17 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
       isAllDay: _isAllDay,
     );
 
+    print('🎯 DEBUG (Calendar): Event object created, calling _addEventToDataManager...');
+
     // Add event to data manager (in a real app, this would be an API call)
     bool success = await _addEventToDataManager(newEvent);
     
     if (success) {
+      print('🎯 DEBUG (Calendar): Event added successfully, closing dialog and calling callback');
       Navigator.pop(context);
       widget.onEventCreated(newEvent);
     } else {
+      print('🎯 DEBUG (Calendar): Event creation failed');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Failed to create event. Please try again.'),
@@ -4261,15 +4290,20 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
   /// Add event to data manager (demo implementation)
   Future<bool> _addEventToDataManager(EventV2 newEvent) async {
     try {
+      print('🎯 DEBUG (Calendar): Adding new event "${newEvent.title}" to data manager');
+      
       // For demo purposes, we'll add the event to the in-memory data
       // In a real app, this would be an API call followed by local data refresh
       
       final events = _demoData.enhancedEventsSync;
       events.add(newEvent);
       
+      print('🎯 DEBUG (Calendar): Event added to in-memory list. Total events: ${events.length}');
+      print('🎯 DEBUG (Calendar): New event details - Start: ${newEvent.startTime}, Category: ${newEvent.category}');
+      
       return true;
     } catch (e) {
-      print('Error creating event: $e');
+      print('🎯 DEBUG (Calendar): Error creating event: $e');
       return false;
     }
   }
@@ -4342,310 +4376,4 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
   }
 }
 
-class _TimetableManagementDialog extends StatefulWidget {
-  @override
-  State<_TimetableManagementDialog> createState() => _TimetableManagementDialogState();
-}
-
-class _TimetableManagementDialogState extends State<_TimetableManagementDialog> {
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.8,
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.personalColor, AppColors.personalColor.withValues(alpha: 0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.edit_calendar, color: Colors.white, size: 28),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Timetable Management',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Manage Your Academic Schedule',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Import your university timetable or manually add your classes, labs, and tutorials.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    
-                    // Import from University System
-                    _buildActionCard(
-                      icon: Icons.cloud_download,
-                      title: 'Import from University',
-                      subtitle: 'Connect to UTS Student Portal (MyStudentAdmin)',
-                      buttonText: 'Import Timetable',
-                      onPressed: _showImportDialog,
-                      color: AppColors.personalColor,
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Manual Entry
-                    _buildActionCard(
-                      icon: Icons.edit_calendar,
-                      title: 'Manual Entry',
-                      subtitle: 'Add classes, labs, and tutorials manually',
-                      buttonText: 'Add Classes',
-                      onPressed: _showManualEntryDialog,
-                      color: AppColors.homeColor,
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Current Timetable Overview
-                    _buildActionCard(
-                      icon: Icons.view_agenda,
-                      title: 'Current Timetable',
-                      subtitle: 'View and edit your existing academic schedule',
-                      buttonText: 'View Schedule',
-                      onPressed: _showCurrentTimetable,
-                      color: AppColors.socialColor,
-                    ),
-                    
-                    const Spacer(),
-                    
-                    // Tips
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, color: Colors.blue.shade600),
-                          const SizedBox(width: 12),
-                          const Expanded(
-                            child: Text(
-                              'Your timetable will automatically sync with your calendar and help suggest study times.',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String buttonText,
-    required VoidCallback onPressed,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton(
-            onPressed: onPressed,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: color,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            ),
-            child: Text(
-              buttonText,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showImportDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Import from University'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Connect to UTS Student Portal to automatically import your timetable.',
-              style: TextStyle(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange.shade600),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'This is a demo feature. Real integration would require university API access.',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('University timetable import would connect here'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.personalColor,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Connect'),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  void _showManualEntryDialog() {
-    Navigator.of(context).pop(); // Close current dialog
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TimetableManagementScreen(),
-      ),
-    );
-  }
-  
-  void _showCurrentTimetable() {
-    Navigator.of(context).pop(); // Close current dialog
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const TimetableManagementScreen(),
-      ),
-    );
-  }
-
-}
+// Removed _TimetableManagementDialog - navigation now goes directly to TimetableManagementScreen tabs
