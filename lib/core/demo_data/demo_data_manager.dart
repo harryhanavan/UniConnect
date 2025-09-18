@@ -481,22 +481,172 @@ class DemoDataManager {
     }
     final user = getUserById(userId);
     if (user == null) return [];
-    
+
     return user.friendIds.map((friendId) => getUserById(friendId))
         .where((friend) => friend != null)
         .cast<User>()
         .toList();
   }
-  
+
   Future<List<User>> getFriendsForUserAsync(String userId) async {
     await _initializeData();
     final user = getUserById(userId);
     if (user == null) return [];
-    
+
     return user.friendIds.map((friendId) => getUserById(friendId))
         .where((friend) => friend != null)
         .cast<User>()
         .toList();
+  }
+
+  // Friend management methods - add/remove friends and handle requests
+  bool acceptFriendRequest(String requestId) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.friendRequests first.');
+    }
+
+    final requestIndex = _friendRequests!.indexWhere((r) => r.id == requestId);
+    if (requestIndex == -1) return false;
+
+    final request = _friendRequests![requestIndex];
+    if (!request.isPending) return false;
+
+    // Update the friend request status
+    _friendRequests![requestIndex] = request.accept();
+
+    // Add bidirectional friend relationship
+    _addFriendRelationship(request.senderId, request.receiverId);
+
+    return true;
+  }
+
+  bool declineFriendRequest(String requestId) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.friendRequests first.');
+    }
+
+    final requestIndex = _friendRequests!.indexWhere((r) => r.id == requestId);
+    if (requestIndex == -1) return false;
+
+    final request = _friendRequests![requestIndex];
+    if (!request.isPending) return false;
+
+    // Update the friend request status
+    _friendRequests![requestIndex] = request.decline();
+
+    return true;
+  }
+
+  bool cancelFriendRequest(String requestId) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.friendRequests first.');
+    }
+
+    final requestIndex = _friendRequests!.indexWhere((r) => r.id == requestId);
+    if (requestIndex == -1) return false;
+
+    final request = _friendRequests![requestIndex];
+    if (!request.isPending) return false;
+
+    // Update the friend request status to cancelled
+    _friendRequests![requestIndex] = request.cancel();
+
+    return true;
+  }
+
+  bool addFriendRequest(FriendRequest request) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.friendRequests first.');
+    }
+
+    // Check if request already exists
+    final existingRequest = _friendRequests!.any((r) =>
+      (r.senderId == request.senderId && r.receiverId == request.receiverId && r.isPending) ||
+      (r.senderId == request.receiverId && r.receiverId == request.senderId && r.isPending)
+    );
+
+    if (existingRequest) return false;
+
+    // Check if they're already friends
+    if (areFriends(request.senderId, request.receiverId)) return false;
+
+    _friendRequests!.add(request);
+    return true;
+  }
+
+  bool removeFriend(String userId1, String userId2) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.users first.');
+    }
+
+    if (!areFriends(userId1, userId2)) return false;
+
+    _removeFriendRelationship(userId1, userId2);
+    return true;
+  }
+
+  void _addFriendRelationship(String userId1, String userId2) {
+    // Update first user
+    final user1Index = _users!.indexWhere((u) => u.id == userId1);
+    if (user1Index != -1) {
+      final user1 = _users![user1Index];
+      if (!user1.friendIds.contains(userId2)) {
+        final updatedFriendIds = List<String>.from(user1.friendIds)..add(userId2);
+        _users![user1Index] = user1.copyWith(friendIds: updatedFriendIds);
+
+        // Update current user reference if applicable
+        if (userId1 == currentUser.id) {
+          _currentUser = _users![user1Index];
+        }
+      }
+    }
+
+    // Update second user
+    final user2Index = _users!.indexWhere((u) => u.id == userId2);
+    if (user2Index != -1) {
+      final user2 = _users![user2Index];
+      if (!user2.friendIds.contains(userId1)) {
+        final updatedFriendIds = List<String>.from(user2.friendIds)..add(userId1);
+        _users![user2Index] = user2.copyWith(friendIds: updatedFriendIds);
+
+        // Update current user reference if applicable
+        if (userId2 == currentUser.id) {
+          _currentUser = _users![user2Index];
+        }
+      }
+    }
+  }
+
+  void _removeFriendRelationship(String userId1, String userId2) {
+    // Update first user
+    final user1Index = _users!.indexWhere((u) => u.id == userId1);
+    if (user1Index != -1) {
+      final user1 = _users![user1Index];
+      if (user1.friendIds.contains(userId2)) {
+        final updatedFriendIds = List<String>.from(user1.friendIds)..remove(userId2);
+        _users![user1Index] = user1.copyWith(friendIds: updatedFriendIds);
+
+        // Update current user reference if applicable
+        if (userId1 == currentUser.id) {
+          _currentUser = _users![user1Index];
+        }
+      }
+    }
+
+    // Update second user
+    final user2Index = _users!.indexWhere((u) => u.id == userId2);
+    if (user2Index != -1) {
+      final user2 = _users![user2Index];
+      if (user2.friendIds.contains(userId1)) {
+        final updatedFriendIds = List<String>.from(user2.friendIds)..remove(userId1);
+        _users![user2Index] = user2.copyWith(friendIds: updatedFriendIds);
+
+        // Update current user reference if applicable
+        if (userId2 == currentUser.id) {
+          _currentUser = _users![user2Index];
+        }
+      }
+    }
   }
 
   // Check if using v2 events

@@ -858,5 +858,142 @@ class CalendarService {
     filteredEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
     return filteredEvents;
   }
+  
+  /// Get events by CalendarFilter (sync version)
+  List<EventV2> getEventsByCalendarFilterSync(String userId, CalendarFilter filter, {
+    DateTime? startDate,
+    DateTime? endDate,
+    Map<String, bool>? relationshipFilters,
+    bool includeDiscoverable = true,
+  }) {
+    if (!_isInitialized) {
+      throw StateError('Calendar service not initialized. Call async method first.');
+    }
+
+    final start = startDate ?? DateTime.now();
+    final end = endDate ?? start.add(const Duration(days: 30));
+    final allEventsV2 = _demoData.enhancedEventsSync;
+    List<EventV2> filteredEvents = [];
+    
+    switch (filter) {
+      case CalendarFilter.allEvents:
+        // All events user can see (owned, attending, invited, public discoverable)
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return (relationship != EventRelationship.none || 
+                  event.privacyLevel == EventPrivacyLevel.public ||
+                  event.privacyLevel == EventPrivacyLevel.university) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+        
+      case CalendarFilter.mySchedule:
+        // Events I'm actively involved with (owner or confirmed attendee)
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return (relationship == EventRelationship.owner ||
+                  relationship == EventRelationship.attendee ||
+                  relationship == EventRelationship.organizer) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+        
+      case CalendarFilter.academic:
+        // Academic events (classes, assignments, exams)
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return event.category == EventCategory.academic &&
+                 (relationship == EventRelationship.owner || 
+                  relationship == EventRelationship.attendee ||
+                  relationship == EventRelationship.organizer) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+        
+      case CalendarFilter.social:
+        // Social events (parties, meetups, hangouts) - both attending and discoverable
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return event.category == EventCategory.social &&
+                 (relationship != EventRelationship.none || 
+                  event.privacyLevel == EventPrivacyLevel.public ||
+                  event.privacyLevel == EventPrivacyLevel.university) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+        
+      case CalendarFilter.societies:
+        // Society events (both joined and discoverable)
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return event.category == EventCategory.society &&
+                 (relationship != EventRelationship.none || 
+                  event.privacyLevel == EventPrivacyLevel.public ||
+                  event.privacyLevel == EventPrivacyLevel.university) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+        
+      case CalendarFilter.discover:
+        // Public events I'm NOT attending yet
+        filteredEvents = allEventsV2.where((event) {
+          final relationship = event.getUserRelationship(userId);
+          return (relationship == EventRelationship.none ||
+                  relationship == EventRelationship.observer) &&
+                 (event.privacyLevel == EventPrivacyLevel.public ||
+                  event.privacyLevel == EventPrivacyLevel.university) &&
+                 event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
+                 event.startTime.isBefore(end);
+        }).toList();
+        break;
+    }
+
+    // Apply relationship filters if provided
+    if (relationshipFilters != null && relationshipFilters.isNotEmpty) {
+      final activeRelationships = relationshipFilters.entries
+          .where((entry) => entry.value)
+          .map((entry) => entry.key.toLowerCase())
+          .toSet();
+
+      if (activeRelationships.isNotEmpty) {
+        filteredEvents = filteredEvents.where((event) {
+          final relationship = event.getUserRelationship(userId);
+
+          // Map UI relationship names to EventRelationship enum
+          if (activeRelationships.contains('attending') &&
+              relationship == EventRelationship.attendee) return true;
+          if (activeRelationships.contains('organizing') &&
+              (relationship == EventRelationship.organizer ||
+               relationship == EventRelationship.owner)) return true;
+          if (activeRelationships.contains('invited') &&
+              relationship == EventRelationship.invited) return true;
+          if (activeRelationships.contains('interested') &&
+              relationship == EventRelationship.interested) return true;
+
+          return false;
+        }).toList();
+      }
+    }
+
+    // Apply discoverable filter for social and society events
+    if (!includeDiscoverable &&
+        (filter == CalendarFilter.social || filter == CalendarFilter.societies)) {
+      filteredEvents = filteredEvents.where((event) {
+        final relationship = event.getUserRelationship(userId);
+        // Only show events where user has confirmed relationship
+        return relationship == EventRelationship.owner ||
+               relationship == EventRelationship.organizer ||
+               relationship == EventRelationship.attendee;
+      }).toList();
+    }
+
+    filteredEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+    return filteredEvents;
+  }
 
 }

@@ -12,6 +12,10 @@ import '../achievements/achievements_screen.dart';
 import '../search/advanced_search_screen.dart';
 import '../privacy/privacy_settings_screen.dart';
 import '../friends/interactive_map_screen.dart';
+import '../friends/enhanced_friends_screen.dart';
+import '../societies/enhanced_societies_screen.dart';
+import '../../shared/models/event_enums.dart';
+import '../calendar/enhanced_calendar_screen.dart';
 import '../design_system/design_system_showcase_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -101,29 +105,39 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome Back, $firstName!',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Logo + App Name row (no SizedBox wrapper)
+                  Row(
+                    children: [
+                      Image.asset(
+                        'assets/Logos/UniConnect Logo.png',
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.contain,
                       ),
-                    ),
-                    const Text(
-                      'Ready to connect and learn today?',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                        fontWeight: FontWeight.w400,
+                      const SizedBox(width: 8),
+                      const Text(
+                        'UniConnect',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                      overflow: TextOverflow.ellipsis,
+                    ],
+                  ),
+                  Text(
+                    'Welcome Back, $firstName!',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w400,
                     ),
-                  ],
-                ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
               GestureDetector(
                 onTap: () {
@@ -352,91 +366,71 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 1.33,
           ),
         ),
-        
-        const SizedBox(height: 12),
-        
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Campus Map',
-                Icons.map,
-                AppColors.socialColor,  // Campus map uses social palette
+              child: _buildActionCard(
+                'Timetable',
+                Icons.schedule,
+                AppColors.personalColor,  // Timetable is personal schedule
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const InteractiveMapScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const EnhancedCalendarScreen(
+                      initialFilter: CalendarFilter.academic,
+                      initialView: CalendarView.week,
+                      initialUseTimetableView: true,
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Study Groups',
-                Icons.groups,
-                AppColors.studyGroupColor,
+              child: _buildActionCard(
+                'Find Friends',
+                Icons.person_add,
+                AppColors.socialColor,
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const StudyGroupsScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Achievements',
-                Icons.emoji_events,
-                AppColors.studyGroupColor,  // Orange color for achievements
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AchievementsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const EnhancedFriendsScreen(
+                      initialTabIndex: 2, // Requests tab
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        
-        const SizedBox(height: 8),
-        
+        const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Design System',
-                Icons.palette,
-                AppColors.homeColor,  // Purple for design system
+              child: _buildActionCard(
+                'Society Events',
+                Icons.event,
+                AppColors.societyColor,
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const DesignSystemShowcaseScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const EnhancedSocietiesScreen(
+                      initialTabIndex: 2, // Events tab
+                    ),
+                  ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Advanced Search',
-                Icons.search,
-                AppColors.personalColor,
+              child: _buildActionCard(
+                'Study Groups',
+                Icons.menu_book,
+                AppColors.studyGroupColor,
                 () => Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdvancedSearchScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Privacy Settings',
-                Icons.privacy_tip,
-                AppColors.personalColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PrivacySettingsScreen()),
+                  MaterialPageRoute(builder: (context) => const StudyGroupsScreen()),
                 ),
               ),
             ),
@@ -870,142 +864,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Campus Map',
-                Icons.map,
-                AppColors.socialColor,  // Campus map uses social palette
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const InteractiveMapScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Study Groups',
-                Icons.groups,
-                AppColors.studyGroupColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StudyGroupsScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Achievements',
-                Icons.emoji_events,
-                AppColors.studyGroupColor,  // Orange color for achievements
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AchievementsScreen()),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Smart Search',
-                Icons.search,
-                AppColors.homeColor,  // Purple for search
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AdvancedSearchScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildQuickActionCard(
-                context,
-                'Privacy',
-                Icons.security,
-                AppColors.socialColor,  // Bright green for privacy
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PrivacySettingsScreen()),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(child: SizedBox()), // Empty space for alignment
-          ],
-        ),
-      ],
-    );
-  }
 
-
-  Widget _buildQuickActionCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _buildActionCard(String title, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: ShapeDecoration(
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              width: 1,
-              color: Colors.black.withValues(alpha: 0.10),
-            ),
-            borderRadius: BorderRadius.circular(6),
-          ),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: ShapeDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
-            ),
-            
+            Icon(icon, color: color, size: 32),
             const SizedBox(height: 8),
-            
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.black,
+              style: TextStyle(
                 fontSize: 12,
-                fontFamily: 'Roboto',
                 fontWeight: FontWeight.w500,
+                color: color,
               ),
             ),
           ],

@@ -9,9 +9,15 @@ import '../../shared/models/friend_request.dart';
 import '../../shared/models/location.dart';
 import '../../shared/models/event.dart';
 import 'interactive_map_screen.dart';
+import '../search/advanced_search_screen.dart';
 
 class EnhancedFriendsScreen extends StatefulWidget {
-  const EnhancedFriendsScreen({super.key});
+  final int? initialTabIndex;
+
+  const EnhancedFriendsScreen({
+    super.key,
+    this.initialTabIndex,
+  });
 
   @override
   State<EnhancedFriendsScreen> createState() => _EnhancedFriendsScreenState();
@@ -33,7 +39,11 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
+    );
     _initializeData();
   }
   
@@ -159,7 +169,9 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
 
   Widget _buildTabBar() {
     final pendingCount = _demoData.getPendingFriendRequests(_demoData.currentUser.id).length;
-    
+    final sentCount = _demoData.getSentFriendRequests(_demoData.currentUser.id).length;
+    final totalRequestCount = pendingCount + sentCount;
+
     return Container(
       color: Colors.white,
       child: TabBar(
@@ -175,23 +187,41 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Flexible(child: Text('Requests', overflow: TextOverflow.ellipsis)),
-                if (pendingCount > 0) ...[
+                if (totalRequestCount > 0) ...[
                   const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    child: Text(
-                      '$pendingCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: pendingCount > 0 ? Colors.red : Colors.orange,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          '$totalRequestCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                      // Show a small indicator if there are both types
+                      if (pendingCount > 0 && sentCount > 0)
+                        Positioned(
+                          right: -2,
+                          top: -2,
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: const BoxDecoration(
+                              color: Colors.orange,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ],
@@ -272,10 +302,12 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   // Friend Requests Tab
   Widget _buildRequestsTab(User currentUser) {
     final pendingRequests = _demoData.getPendingFriendRequests(currentUser.id);
-    
+    final sentRequests = _demoData.getSentFriendRequests(currentUser.id);
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // Incoming friend requests
         if (pendingRequests.isNotEmpty) ...[
           const Text(
             'Pending Requests',
@@ -288,7 +320,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           ...pendingRequests.map((request) => _buildFriendRequestCard(request)),
           const SizedBox(height: 20),
         ],
-        
+
+        // Outgoing friend requests
+        if (sentRequests.isNotEmpty) ...[
+          const Text(
+            'Sent Requests',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...sentRequests.map((request) => _buildSentFriendRequestCard(request)),
+          const SizedBox(height: 20),
+        ],
+
         const Text(
           'Add Friends',
           style: TextStyle(
@@ -742,7 +788,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   Widget _buildFriendRequestCard(FriendRequest request) {
     final sender = _demoData.getUserById(request.senderId);
     if (sender == null) return const SizedBox();
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: ShapeDecoration(
@@ -883,6 +929,182 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
+  Widget _buildSentFriendRequestCard(FriendRequest request) {
+    final recipient = _demoData.getUserById(request.receiverId);
+    if (recipient == null) return const SizedBox();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            width: 1,
+            color: Colors.orange.withValues(alpha: 0.20),
+          ),
+          borderRadius: BorderRadius.circular(6),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: const Color(0xFF0D99FF),
+                      child: Text(
+                        recipient.name[0],
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontFamily: 'Roboto',
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.schedule,
+                          size: 8,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              recipient.name,
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontSize: 16,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Pending',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontFamily: 'Roboto',
+                                color: Colors.orange,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${recipient.course} • ${recipient.year}',
+                        style: TextStyle(
+                          color: Colors.black.withValues(alpha: 0.50),
+                          fontSize: 14,
+                          fontFamily: 'Roboto',
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (request.message != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: ShapeDecoration(
+                  color: Colors.orange.withValues(alpha: 0.05),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                child: Text(
+                  request.message!,
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 14,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Sent ${_formatTimeAgo(request.createdAt)}',
+                  style: TextStyle(
+                    color: Colors.black.withValues(alpha: 0.50),
+                    fontSize: 12,
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                Container(
+                  decoration: ShapeDecoration(
+                    color: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      side: const BorderSide(
+                        width: 1,
+                        color: Colors.orange,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: TextButton(
+                    onPressed: () => _cancelFriendRequest(request),
+                    child: const Text(
+                      'Cancel Request',
+                      style: TextStyle(
+                        color: Colors.orange,
+                        fontSize: 14,
+                        fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMeetupSuggestions(User currentUser) {
     final suggestions = _locationService.getMeetupSuggestions(currentUser.id);
     
@@ -955,7 +1177,17 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           leading: const Icon(Icons.school, color: AppColors.socialColor),
           title: const Text('Find from Classes & Societies'),
           subtitle: const Text('Discover people from your courses and societies'),
-          onTap: () => _tabController.animateTo(3), // Navigate to Discover tab
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdvancedSearchScreen.people(),
+              ),
+            ).then((_) {
+              // Refresh when returning from search
+              if (mounted) setState(() {});
+            });
+          },
         ),
       ],
     );
@@ -1259,20 +1491,18 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   }
 
   void _showSearchDialog() {
-    // Implementation for search dialog
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Search Friends'),
-        content: const Text('Friend search functionality would be implemented here.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AdvancedSearchScreen.people(),
       ),
-    );
+    ).then((_) {
+      // Refresh the friends screen when returning from search
+      // in case any friend requests were made
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   void _showContactsImport() {
@@ -1282,47 +1512,242 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   }
 
   void _sendFriendRequest(User user) async {
+    // Show loading immediately
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 16),
+            Text('Sending friend request to ${user.name}...'),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
     try {
       await _friendshipService.sendFriendRequest(
         _demoData.currentUser.id,
         user.id,
         message: 'Hi ${user.name}! Let\'s connect on UniConnect.',
       );
-      
+
       if (mounted) {
+        // Clear loading snackbar
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Friend request sent to ${user.name}')),
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.send, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Friend request sent to ${user.name}'),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+          ),
         );
         setState(() {}); // Refresh UI
       }
     } catch (e) {
+      // Clear loading snackbar
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send friend request')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Failed to send friend request: ${e.toString()}'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }
 
   void _handleFriendRequest(FriendRequest request, bool accept) async {
+    // Show loading immediately
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: 16),
+            Text(accept ? 'Accepting friend request...' : 'Declining friend request...'),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
     try {
       if (accept) {
         await _friendshipService.acceptFriendRequest(request.id);
         if (mounted) {
+          // Clear any existing snackbars
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Friend request accepted! 🎉')),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('You and ${_demoData.getUserById(request.senderId)?.name ?? 'this user'} are now friends! 🎉'),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
       } else {
         await _friendshipService.declineFriendRequest(request.id);
         if (mounted) {
+          // Clear any existing snackbars
+          ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Friend request declined')),
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  const Text('Friend request declined'),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+            ),
           );
         }
       }
-      setState(() {}); // Refresh UI
+
+      // Refresh UI data
+      setState(() {});
+
+      // Also refresh the tab controller to update badge counts
+      if (mounted) {
+        // Force rebuild of tab bar with updated counts
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() {});
+        });
+      }
     } catch (e) {
+      // Clear loading snackbar
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to handle friend request')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Failed to handle friend request: ${e.toString()}'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
+
+  void _cancelFriendRequest(FriendRequest request) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancel Friend Request'),
+        content: Text('Are you sure you want to cancel your friend request to ${_demoData.getUserById(request.receiverId)?.name ?? 'this user'}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Request'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Cancel Request'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Show loading immediately
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Text('Cancelling friend request...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      await _friendshipService.cancelFriendRequest(request.id);
+      if (mounted) {
+        // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.cancel_outlined, color: Colors.white),
+                const SizedBox(width: 8),
+                Text('Friend request to ${_demoData.getUserById(request.receiverId)?.name ?? 'this user'} cancelled'),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+
+      // Refresh UI data
+      setState(() {});
+
+      // Also refresh the tab controller to update badge counts
+      if (mounted) {
+        // Force rebuild of tab bar with updated counts
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) setState(() {});
+        });
+      }
+    } catch (e) {
+      // Clear loading snackbar
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Failed to cancel friend request: ${e.toString()}'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
       );
     }
   }
@@ -1701,6 +2126,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
         ),
       ),
     );
+  }
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} ${difference.inMinutes == 1 ? 'minute' : 'minutes'} ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   @override

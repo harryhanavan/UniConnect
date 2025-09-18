@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../../core/services/search_service.dart';
+import '../../core/services/friendship_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/constants/app_colors.dart';
 import '../../shared/models/user.dart';
 import '../../shared/models/event.dart';
 import '../../shared/models/society.dart';
 import '../../shared/models/location.dart';
+import '../../shared/widgets/user_profile_card.dart';
 
 class AdvancedSearchScreen extends StatefulWidget {
-  const AdvancedSearchScreen({super.key});
+  final SearchCategory? initialTab;
+
+  const AdvancedSearchScreen({super.key, this.initialTab});
+
+  // Named constructors for convenience
+  const AdvancedSearchScreen.people({super.key}) : initialTab = SearchCategory.people;
+  const AdvancedSearchScreen.events({super.key}) : initialTab = SearchCategory.events;
+  const AdvancedSearchScreen.societies({super.key}) : initialTab = SearchCategory.societies;
 
   @override
   State<AdvancedSearchScreen> createState() => _AdvancedSearchScreenState();
@@ -22,6 +31,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   final FocusNode _searchFocusNode = FocusNode();
   
   final SearchService _searchService = SearchService();
+  final FriendshipService _friendshipService = FriendshipService();
   final DemoDataManager _demoData = DemoDataManager.instance;
   
   List<SearchResult> _searchResults = [];
@@ -36,12 +46,29 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+
+    // Determine initial tab index
+    int initialIndex = 0;
+    if (widget.initialTab != null) {
+      final categories = [
+        SearchCategory.all,
+        SearchCategory.people,
+        SearchCategory.events,
+        SearchCategory.societies,
+        SearchCategory.locations,
+        SearchCategory.courses,
+      ];
+      initialIndex = categories.indexOf(widget.initialTab!);
+      if (initialIndex == -1) initialIndex = 0;
+      _selectedCategory = widget.initialTab!;
+    }
+
+    _tabController = TabController(length: 6, vsync: this, initialIndex: initialIndex);
     _tabController.addListener(_onTabChanged);
-    
+
     _searchController.addListener(_onSearchChanged);
     _searchFocusNode.addListener(_onFocusChanged);
-    
+
     _loadInitialContent();
   }
 
@@ -214,13 +241,15 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   }
 
   Widget _buildSearchBar() {
+    String placeholder = _getSearchPlaceholder();
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
         decoration: InputDecoration(
-          hintText: 'Search people, events, societies...',
+          hintText: placeholder,
           prefixIcon: const Icon(Icons.search, color: AppColors.primary),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
@@ -244,6 +273,24 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         ),
       ),
     );
+  }
+
+  String _getSearchPlaceholder() {
+    switch (_selectedCategory) {
+      case SearchCategory.people:
+        return 'Search for people...';
+      case SearchCategory.events:
+        return 'Search for events...';
+      case SearchCategory.societies:
+        return 'Search for societies...';
+      case SearchCategory.locations:
+        return 'Search for locations...';
+      case SearchCategory.courses:
+        return 'Search for courses...';
+      case SearchCategory.all:
+      default:
+        return 'Search people, events, societies...';
+    }
   }
 
   Widget _buildSuggestionsList() {
@@ -338,6 +385,24 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   }
 
   Widget _buildDiscoverContent() {
+    switch (_selectedCategory) {
+      case SearchCategory.people:
+        return _buildPeopleDiscoverContent();
+      case SearchCategory.events:
+        return _buildEventsDiscoverContent();
+      case SearchCategory.societies:
+        return _buildSocietiesDiscoverContent();
+      case SearchCategory.locations:
+        return _buildLocationsDiscoverContent();
+      case SearchCategory.courses:
+        return _buildCoursesDiscoverContent();
+      case SearchCategory.all:
+      default:
+        return _buildAllDiscoverContent();
+    }
+  }
+
+  Widget _buildAllDiscoverContent() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -351,7 +416,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
+
           _buildQuickActionCard(
             'Find Study Partners',
             'Connect with classmates for collaborative learning',
@@ -359,7 +424,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             Colors.blue,
             () => _selectSuggestion('study group'),
           ),
-          
+
           _buildQuickActionCard(
             'Upcoming Events',
             'Discover events happening on campus',
@@ -367,7 +432,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             Colors.green,
             () => _selectSuggestion('events this week'),
           ),
-          
+
           _buildQuickActionCard(
             'Join Societies',
             'Find communities that match your interests',
@@ -375,7 +440,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             Colors.purple,
             () => _selectSuggestion('programming society'),
           ),
-          
+
           _buildQuickActionCard(
             'Campus Locations',
             'Explore study spaces and facilities',
@@ -393,8 +458,8 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             ),
           ),
           const SizedBox(height: 16),
-          
-          ...(_searchService.getTrendingSearches().take(5).map((trend) => 
+
+          ...(_searchService.getTrendingSearches().take(5).map((trend) =>
             ListTile(
               leading: const Icon(Icons.trending_up, color: AppColors.primary),
               title: Text(trend),
@@ -402,6 +467,408 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               onTap: () => _selectSuggestion(trend),
             )
           )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeopleDiscoverContent() {
+    final currentUser = _demoData.currentUser;
+    final friendSuggestions = _friendshipService.getFriendSuggestionsSync(currentUser.id).take(3).toList();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Find People',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildQuickActionCard(
+            'Find Classmates',
+            'Connect with people from your courses',
+            Icons.school,
+            AppColors.personalColor,
+            () => _selectSuggestion('${currentUser.course} students'),
+          ),
+
+          _buildQuickActionCard(
+            'Study Partners',
+            'Find study buddies for collaborative learning',
+            Icons.groups,
+            AppColors.studyGroupColor,
+            () => _selectSuggestion('study partners'),
+          ),
+
+          _buildQuickActionCard(
+            'Society Members',
+            'Discover people from your joined societies',
+            Icons.people_outline,
+            AppColors.societyColor,
+            () => _selectSuggestion('society members'),
+          ),
+
+          _buildQuickActionCard(
+            'Friends Nearby',
+            'Find friends currently on campus',
+            Icons.location_on,
+            AppColors.socialColor,
+            () => _selectSuggestion('friends nearby'),
+          ),
+
+          if (friendSuggestions.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            const Text(
+              'Suggested for You',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...friendSuggestions.map((user) => _buildSuggestedPersonCard(user)),
+          ],
+
+          const SizedBox(height: 24),
+          const Text(
+            'Popular Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          ..._getPeopleSearchTrends().map((trend) =>
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: AppColors.primary),
+              title: Text(trend),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _selectSuggestion(trend),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestedPersonCard(User user) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: ListTile(
+        onTap: () => _showUserProfile(user),
+        leading: CircleAvatar(
+          backgroundColor: AppColors.primary,
+          child: Text(
+            user.name[0],
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+        ),
+        title: Text(
+          user.name,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Text('${user.course} • ${user.year}'),
+        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      ),
+    );
+  }
+
+  List<String> _getPeopleSearchTrends() {
+    return [
+      'Computer Science students',
+      'Study groups',
+      'Engineering majors',
+      'International students',
+      'Final year students',
+    ];
+  }
+
+  Widget _buildEventsDiscoverContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Discover Events',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildQuickActionCard(
+            'This Week',
+            'Events happening in the next 7 days',
+            Icons.calendar_today,
+            Colors.blue,
+            () => _selectSuggestion('events this week'),
+          ),
+
+          _buildQuickActionCard(
+            'Society Events',
+            'Events from societies you\'ve joined',
+            Icons.groups,
+            AppColors.societyColor,
+            () => _selectSuggestion('society events'),
+          ),
+
+          _buildQuickActionCard(
+            'Academic Events',
+            'Lectures, workshops, and study sessions',
+            Icons.school,
+            AppColors.personalColor,
+            () => _selectSuggestion('academic events'),
+          ),
+
+          _buildQuickActionCard(
+            'Social Events',
+            'Parties, meetups, and social gatherings',
+            Icons.celebration,
+            AppColors.socialColor,
+            () => _selectSuggestion('social events'),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'Popular Event Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          ...['Networking events', 'Tech talks', 'Study sessions', 'Sports events', 'Career fairs'].map((trend) =>
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: AppColors.primary),
+              title: Text(trend),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _selectSuggestion(trend),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSocietiesDiscoverContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Discover Societies',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildQuickActionCard(
+            'Recommended',
+            'Societies based on your interests and courses',
+            Icons.recommend,
+            AppColors.societyColor,
+            () => _selectSuggestion('recommended societies'),
+          ),
+
+          _buildQuickActionCard(
+            'Most Active',
+            'Societies with high engagement and events',
+            Icons.trending_up,
+            Colors.orange,
+            () => _selectSuggestion('active societies'),
+          ),
+
+          _buildQuickActionCard(
+            'Tech & Programming',
+            'Technology and coding focused societies',
+            Icons.computer,
+            Colors.blue,
+            () => _selectSuggestion('programming societies'),
+          ),
+
+          _buildQuickActionCard(
+            'Sports & Fitness',
+            'Athletic and recreational societies',
+            Icons.sports,
+            Colors.green,
+            () => _selectSuggestion('sports societies'),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'Popular Society Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          ...['Programming Society', 'Student Government', 'Photography Club', 'Debate Society', 'Gaming Society'].map((trend) =>
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: AppColors.primary),
+              title: Text(trend),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _selectSuggestion(trend),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLocationsDiscoverContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Discover Locations',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildQuickActionCard(
+            'Study Spaces',
+            'Libraries, quiet areas, and study rooms',
+            Icons.menu_book,
+            Colors.blue,
+            () => _selectSuggestion('study spaces'),
+          ),
+
+          _buildQuickActionCard(
+            'Food & Dining',
+            'Cafeterias, cafes, and food courts',
+            Icons.restaurant,
+            Colors.orange,
+            () => _selectSuggestion('dining options'),
+          ),
+
+          _buildQuickActionCard(
+            'Recreation',
+            'Gyms, sports facilities, and common areas',
+            Icons.fitness_center,
+            Colors.green,
+            () => _selectSuggestion('recreation facilities'),
+          ),
+
+          _buildQuickActionCard(
+            'Academic Buildings',
+            'Lecture halls, labs, and department buildings',
+            Icons.business,
+            Colors.purple,
+            () => _selectSuggestion('academic buildings'),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'Popular Location Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          ...['Main Library', 'Engineering Building', 'Student Center', 'Computer Labs', 'Study Rooms'].map((trend) =>
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: AppColors.primary),
+              title: Text(trend),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _selectSuggestion(trend),
+            )
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCoursesDiscoverContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Discover Courses',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          _buildQuickActionCard(
+            'My Courses',
+            'Courses you\'re currently enrolled in',
+            Icons.book,
+            AppColors.personalColor,
+            () => _selectSuggestion('my courses'),
+          ),
+
+          _buildQuickActionCard(
+            'Popular Electives',
+            'Most enrolled elective courses',
+            Icons.star,
+            Colors.yellow[700]!,
+            () => _selectSuggestion('popular electives'),
+          ),
+
+          _buildQuickActionCard(
+            'Prerequisites',
+            'Find prerequisite information for courses',
+            Icons.arrow_forward,
+            Colors.blue,
+            () => _selectSuggestion('course prerequisites'),
+          ),
+
+          _buildQuickActionCard(
+            'Course Reviews',
+            'Student reviews and ratings for courses',
+            Icons.rate_review,
+            Colors.green,
+            () => _selectSuggestion('course reviews'),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'Popular Course Searches',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          ...['Computer Science', 'Mathematics', 'Engineering', 'Business', 'Design'].map((trend) =>
+            ListTile(
+              leading: const Icon(Icons.trending_up, color: AppColors.primary),
+              title: Text(trend),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () => _selectSuggestion(trend),
+            )
+          ),
         ],
       ),
     );
@@ -577,14 +1044,6 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '${(result.relevanceScore).toInt()}%',
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[500],
-              ),
-            ),
           ],
         ),
         onTap: () => _handleResultTap(result),
@@ -598,7 +1057,10 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
 
     switch (result.category) {
       case SearchCategory.people:
-        iconWidget = result.imageUrl != null
+        final user = result.data['user'] as User;
+        final friendshipStatus = _getFriendshipStatus(user);
+
+        Widget avatarWidget = result.imageUrl != null
             ? CircleAvatar(
                 radius: 20,
                 backgroundImage: NetworkImage(result.imageUrl!),
@@ -611,7 +1073,35 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               );
-        return iconWidget;
+
+        // Add friend status badge
+        if (friendshipStatus != FriendshipStatus.self) {
+          avatarWidget = Stack(
+            children: [
+              avatarWidget,
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: _getFriendshipStatusColor(friendshipStatus),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                  child: Icon(
+                    _getFriendshipStatusIcon(friendshipStatus),
+                    size: 8,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        return avatarWidget;
 
       case SearchCategory.events:
         backgroundColor = Colors.green;
@@ -690,59 +1180,17 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   void _showUserProfile(User user) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.primary,
-              child: Text(
-                user.name[0],
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              user.name,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              '${user.course} • ${user.year}',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.person_add),
-                  label: const Text('Add Friend'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.message),
-                  label: const Text('Message'),
-                ),
-              ],
-            ),
-          ],
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: UserProfileCard(
+            user: user,
+            onClose: () => Navigator.pop(context),
+          ),
         ),
       ),
     );
@@ -1081,7 +1529,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     final now = DateTime.now();
     final eventDate = event.startTime;
     final difference = eventDate.difference(now);
-    
+
     if (difference.inDays > 0) {
       return 'In ${difference.inDays} ${difference.inDays == 1 ? 'day' : 'days'}';
     } else if (difference.inHours > 0) {
@@ -1092,6 +1540,58 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       return 'Just started';
     } else {
       return 'Ended';
+    }
+  }
+
+  FriendshipStatus _getFriendshipStatus(User user) {
+    final currentUser = _demoData.currentUser;
+
+    if (user.id == currentUser.id) {
+      return FriendshipStatus.self;
+    } else if (_demoData.areFriends(currentUser.id, user.id)) {
+      return FriendshipStatus.friend;
+    } else {
+      // Check for pending requests
+      final sentRequests = _demoData.getSentFriendRequests(currentUser.id);
+      final receivedRequests = _demoData.getPendingFriendRequests(currentUser.id);
+
+      if (sentRequests.any((r) => r.receiverId == user.id)) {
+        return FriendshipStatus.requestSent;
+      } else if (receivedRequests.any((r) => r.senderId == user.id)) {
+        return FriendshipStatus.requestReceived;
+      } else {
+        return FriendshipStatus.notFriend;
+      }
+    }
+  }
+
+  Color _getFriendshipStatusColor(FriendshipStatus status) {
+    switch (status) {
+      case FriendshipStatus.friend:
+        return Colors.green;
+      case FriendshipStatus.requestSent:
+        return Colors.orange;
+      case FriendshipStatus.requestReceived:
+        return Colors.blue;
+      case FriendshipStatus.notFriend:
+        return Colors.grey;
+      case FriendshipStatus.self:
+        return Colors.purple;
+    }
+  }
+
+  IconData _getFriendshipStatusIcon(FriendshipStatus status) {
+    switch (status) {
+      case FriendshipStatus.friend:
+        return Icons.check;
+      case FriendshipStatus.requestSent:
+        return Icons.schedule;
+      case FriendshipStatus.requestReceived:
+        return Icons.person_add;
+      case FriendshipStatus.notFriend:
+        return Icons.person_add_alt;
+      case FriendshipStatus.self:
+        return Icons.person;
     }
   }
 }

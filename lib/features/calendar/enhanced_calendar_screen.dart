@@ -16,7 +16,16 @@ import '../../shared/widgets/enhanced_event_card.dart';
 import '../timetable/timetable_management_screen.dart';
 
 class EnhancedCalendarScreen extends StatefulWidget {
-  const EnhancedCalendarScreen({super.key});
+  final CalendarFilter? initialFilter;
+  final CalendarView? initialView;
+  final bool? initialUseTimetableView;
+
+  const EnhancedCalendarScreen({
+    super.key,
+    this.initialFilter,
+    this.initialView,
+    this.initialUseTimetableView,
+  });
 
   @override
   State<EnhancedCalendarScreen> createState() => _EnhancedCalendarScreenState();
@@ -24,17 +33,35 @@ class EnhancedCalendarScreen extends StatefulWidget {
 
 enum CalendarView { day, threeDays, week, month }
 
-class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen> 
-    with SingleTickerProviderStateMixin {
+class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
+    with TickerProviderStateMixin {
   late TabController _tabController;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late ScrollController _timetableScrollController;
+
   DateTime selectedDate = DateTime.now();
   DateTime currentMonth = DateTime.now();
-  EventSource selectedSource = EventSource.personal;
-  CalendarView currentView = CalendarView.day;
-  
+  DateTime? _lastScrolledDate; // Track the last date we scrolled for
+  late CalendarFilter selectedFilter;
+  late CalendarView currentView;
+
   // Toggle states for UI elements - hidden by default
   bool _showViewSelector = false;
-  bool _useTimetableView = false;
+  late bool _useTimetableView;
+  bool _showFriendsSchedule = false; // Friends schedule collapsed by default
+
+  // Advanced Filter states
+  bool showAdvancedFilters = false;
+  Map<String, bool> relationshipFilters = {
+    'Attending': true,
+    'Organizing': true,
+    'Invited': false,
+    'Interested': false,
+  };
+  bool includeDiscoverableEvents = true;
+  bool showFriendOverlay = false;
+  bool showConflictWarnings = true;
   
   final DemoDataManager _demoData = DemoDataManager.instance;
   final CalendarService _calendarService = CalendarService();
@@ -43,15 +70,58 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   
   bool _isInitialized = false;
 
+  // Initialize calendar data asynchronously
+  Future<void> _initializeCalendarData() async {
+    try {
+      // Ensure demo data is loaded
+      await _demoData.enhancedEvents;
+      // Ensure calendar service is initialized
+      await _calendarService.getEnhancedUnifiedCalendar(_demoData.currentUser.id);
+
+      setState(() {
+        _isInitialized = true;
+      });
+      print('📅 Calendar: Data initialization completed - ${_demoData.enhancedEventsSync.length} events loaded');
+
+      // Force a rebuild and autoscroll recalculation now that data is fully loaded
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            // Trigger rebuild with fully loaded data
+          });
+        }
+      });
+    } catch (e) {
+      print('📅 Calendar: Error during initialization: $e');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+
+    // Initialize with widget parameters or defaults
+    selectedFilter = widget.initialFilter ?? CalendarFilter.mySchedule;
+    currentView = widget.initialView ?? CalendarView.day;
+    _useTimetableView = widget.initialUseTimetableView ?? false;
+
+    // Ensure data is loaded asynchronously
+    _initializeCalendarData();
+
+    _tabController = TabController(length: 6, vsync: this);
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _timetableScrollController = ScrollController();
     _initializeData();
-    
+
     // Listen for event relationship changes to refresh calendar
     _eventRelationshipService.relationshipChangeNotifier.addListener(_onEventRelationshipChange);
-    
+
     // Listen for society membership changes to refresh calendar
     _demoData.societyMembershipNotifier.addListener(_onSocietyMembershipChanged);
   }
@@ -113,12 +183,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         child: Column(
           children: [
             _buildHeader(),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              child: _showViewSelector 
-                  ? _buildViewSelector()
-                  : const SizedBox(height: 0),
-            ),
+            if (_showViewSelector) _buildViewSelector(),
             Expanded(child: _buildCalendarView()),
           ],
         ),
@@ -196,11 +261,11 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   ),
                   IconButton(
                     icon: Icon(
-                      Icons.calendar_view_week, 
+                      Icons.filter_list,
                       color: _showViewSelector ? Colors.yellow : Colors.white,
                     ),
                     onPressed: _toggleViewSelector,
-                    tooltip: 'View & Filter Options',
+                    tooltip: 'Filters & View Options',
                     padding: const EdgeInsets.all(8),
                     constraints: const BoxConstraints(
                       minWidth: 40,
@@ -231,45 +296,49 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
 
   Widget _buildViewSelector() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // View selector
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(25),
+      constraints: BoxConstraints(
+        maxHeight: showAdvancedFilters
+            ? MediaQuery.of(context).size.height * 0.6  // Limit to 60% of screen height when expanded
+            : 250,  // Normal height when collapsed
+      ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // View selector
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Row(
+                children: [
+                  _buildViewButton('Day', CalendarView.day),
+                  _buildViewButton('3 Days', CalendarView.threeDays),
+                  _buildViewButton('Week', CalendarView.week),
+                  _buildViewButton('Month', CalendarView.month),
+                ],
+              ),
             ),
-            child: Row(
-              children: [
-                _buildViewButton('Day', CalendarView.day),
-                _buildViewButton('3 Days', CalendarView.threeDays),
-                _buildViewButton('Week', CalendarView.week),
-                _buildViewButton('Month', CalendarView.month),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Event source filter
-          Container(
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            child: Row(
-              children: [
-                _buildSourceButton('Personal', EventSource.personal),
-                _buildSourceButton('Friends', EventSource.friends),
-                _buildSourceButton('Societies', EventSource.societies),
-                _buildSourceButton('Shared', EventSource.shared),
-              ],
-            ),
-          ),
-        ],
+
+            const SizedBox(height: 12),
+
+            // Primary Filters
+            _buildPrimaryFilters(),
+
+            const SizedBox(height: 12),
+
+            // Advanced Filter Toggle
+            _buildAdvancedFilterToggle(),
+
+            // Advanced Filter Menu
+            if (showAdvancedFilters) ...[
+              const SizedBox(height: 8),
+              _buildAdvancedFilterMenu(),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -303,19 +372,19 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  Widget _buildSourceButton(String title, EventSource source) {
-    final isSelected = selectedSource == source;
+  Widget _buildFilterButton(String title, CalendarFilter filter) {
+    final isSelected = selectedFilter == filter;
     return Expanded(
       child: GestureDetector(
         onTap: () {
           setState(() {
-            selectedSource = source;
+            selectedFilter = filter;
           });
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.personalColor : Colors.transparent,
+            color: isSelected ? _getFilterColor(filter) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
@@ -324,12 +393,493 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             style: TextStyle(
               color: isSelected ? Colors.white : Colors.black,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 12,
+              fontSize: 10, // Slightly smaller font to fit 6 buttons
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildPrimaryFilters() {
+    final primaryFilters = [
+      {'name': 'My Schedule', 'icon': '📅', 'filter': CalendarFilter.mySchedule},
+      {'name': 'Academic', 'icon': '📚', 'filter': CalendarFilter.academic},
+      {'name': 'Social', 'icon': '🎉', 'filter': CalendarFilter.social},
+      {'name': 'Societies', 'icon': '🏛️', 'filter': CalendarFilter.societies},
+      {'name': 'All', 'icon': '🌐', 'filter': CalendarFilter.allEvents},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Primary Filters',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: primaryFilters.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final filter = primaryFilters[index];
+              final isSelected = selectedFilter == filter['filter'];
+              return _buildPrimaryFilterChip(filter, isSelected);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrimaryFilterChip(Map<String, dynamic> filter, bool isSelected) {
+    Color getColor() {
+      switch (filter['filter'] as CalendarFilter) {
+        case CalendarFilter.academic:
+          return AppColors.personalColor;
+        case CalendarFilter.mySchedule:
+        case CalendarFilter.allEvents:
+          return AppColors.homeColor;
+        case CalendarFilter.societies:
+          return AppColors.societyColor;
+        case CalendarFilter.social:
+          return AppColors.socialColor;
+        default:
+          return AppColors.homeColor;
+      }
+    }
+
+    return GestureDetector(
+      onTap: () => setState(() => selectedFilter = filter['filter'] as CalendarFilter),
+      child: Container(
+        width: 100,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? getColor() : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? getColor() : Colors.grey[300]!,
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              filter['icon'] as String,
+              style: const TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              filter['name'] as String,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 11,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdvancedFilterToggle() {
+    final activeCount = _getActiveAdvancedFilterCount();
+    final hasActiveFilters = activeCount > 0;
+
+    return Row(
+      children: [
+        Text(
+          'Advanced Filters',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (hasActiveFilters && !showAdvancedFilters) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.homeColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '$activeCount active',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.homeColor,
+              ),
+            ),
+          ),
+        ],
+        const Spacer(),
+        Container(
+          decoration: BoxDecoration(
+            color: hasActiveFilters
+                ? AppColors.homeColor.withOpacity(0.1)
+                : Colors.grey[100],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hasActiveFilters
+                  ? AppColors.homeColor.withOpacity(0.3)
+                  : Colors.grey[300]!,
+            ),
+          ),
+          child: IconButton(
+            icon: Icon(
+              showAdvancedFilters ? Icons.remove : Icons.add,
+              color: hasActiveFilters ? AppColors.homeColor : Colors.grey[700],
+              size: 20,
+            ),
+            onPressed: () => setState(() => showAdvancedFilters = !showAdvancedFilters),
+            constraints: const BoxConstraints(
+              minWidth: 36,
+              minHeight: 36,
+            ),
+            padding: EdgeInsets.zero,
+          ),
+        ),
+      ],
+    );
+  }
+
+  int _getActiveAdvancedFilterCount() {
+    int count = 0;
+
+    // Count active relationship filters (excluding defaults)
+    final defaultRelationships = {
+      'Attending': true,
+      'Organizing': true,
+      'Invited': false,
+      'Interested': false
+    };
+    relationshipFilters.forEach((key, value) {
+      if (value != defaultRelationships[key]) count++;
+    });
+
+    // Check discovery control (default is true)
+    if (!includeDiscoverableEvents) count++;
+
+    // Check visual enhancements (defaults: Friend Overlay false, Conflict Warnings true)
+    if (showFriendOverlay) count++;
+    if (!showConflictWarnings) count++;
+
+    return count;
+  }
+
+  Widget _buildAdvancedFilterMenu() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.homeColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.tune,
+                  color: AppColors.homeColor,
+                  size: 16,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  'Advanced Options',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.homeColor,
+                    fontSize: 13,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: _resetAdvancedFilters,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    'Reset All',
+                    style: TextStyle(
+                      color: AppColors.homeColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Relationship Filters
+                _buildRelationshipFilters(),
+                const SizedBox(height: 12),
+
+                // Discovery Control
+                _buildDiscoveryControl(),
+                const SizedBox(height: 12),
+
+                // Visual Enhancements
+                _buildVisualEnhancements(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRelationshipFilters() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Relationship Filters',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.homeColor,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Select event relationships to include',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ...relationshipFilters.entries.map((entry) =>
+          _buildCheckboxRow(
+            entry.key,
+            entry.value,
+            (value) => setState(() => relationshipFilters[entry.key] = value ?? false),
+          ),
+        ).toList(),
+      ],
+    );
+  }
+
+  Widget _buildCheckboxRow(String title, bool value, Function(bool?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.homeColor,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiscoveryControl() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Discovery Control',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.homeColor,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Show discoverable events in Social & Societies',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: includeDiscoverableEvents
+                ? AppColors.socialColor.withOpacity(0.1)
+                : Colors.grey[50],
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: includeDiscoverableEvents
+                  ? AppColors.socialColor
+                  : Colors.grey[300]!,
+            ),
+          ),
+          child: Row(
+            children: [
+              Switch(
+                value: includeDiscoverableEvents,
+                onChanged: (value) => setState(() => includeDiscoverableEvents = value),
+                activeColor: AppColors.socialColor,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Include Discoverable Events',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: includeDiscoverableEvents
+                        ? AppColors.socialColor
+                        : Colors.grey[700],
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVisualEnhancements() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Visual Enhancements',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: AppColors.homeColor,
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Additional visual features for calendar',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Colors.grey[600],
+            fontSize: 10,
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Friend Overlay Toggle
+        _buildVisualToggle(
+          'Friend Overlay',
+          'Show friend attendance indicators',
+          showFriendOverlay,
+          (value) => setState(() => showFriendOverlay = value),
+          Icons.people,
+          AppColors.socialColor,
+        ),
+        const SizedBox(height: 8),
+
+        // Conflict Warnings Toggle
+        _buildVisualToggle(
+          'Conflict Warnings',
+          'Highlight scheduling conflicts',
+          showConflictWarnings,
+          (value) => setState(() => showConflictWarnings = value),
+          Icons.warning,
+          Colors.orange,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVisualToggle(String title, String description, bool value,
+      Function(bool) onChanged, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: value ? color.withOpacity(0.1) : Colors.grey[50],
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: value ? color : Colors.grey[300]!,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: value ? color : Colors.grey[500],
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: value ? color : Colors.grey[700],
+                fontSize: 12,
+              ),
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: color,
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetAdvancedFilters() {
+    setState(() {
+      // Reset relationship filters to defaults
+      relationshipFilters = {
+        'Attending': true,
+        'Organizing': true,
+        'Invited': false,
+        'Interested': false,
+      };
+
+      // Reset discovery control to default
+      includeDiscoverableEvents = true;
+
+      // Reset visual enhancements to defaults
+      showFriendOverlay = false;
+      showConflictWarnings = true;
+    });
   }
 
   Widget _buildDateCard(DateTime date) {
@@ -518,20 +1068,15 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    // Get events based on selected source using EventV2 - use consistent filtering across all views
-    List<EventV2> events;
-    
-    switch (selectedSource) {
-      case EventSource.shared:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-      case EventSource.personal:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-      default:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-    }
+    // Get events based on selected filter using EventV2 with advanced filters
+    List<EventV2> events = _calendarService.getEventsByCalendarFilterSync(
+      _demoData.currentUser.id,
+      selectedFilter,
+      startDate: startOfDay,
+      endDate: endOfDay,
+      relationshipFilters: relationshipFilters,
+      includeDiscoverable: includeDiscoverableEvents,
+    );
 
     if (events.isEmpty) {
       return _buildEmptyDay();
@@ -539,20 +1084,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
 
     final overlayData = _calendarService.getEventsWithFriendOverlaySync(_demoData.currentUser.id, selectedDate);
     
-    return Column(
+    return ListView(
+      padding: const EdgeInsets.all(16),
       children: [
-        if (selectedSource == EventSource.personal)
+        if (selectedFilter == CalendarFilter.mySchedule || selectedFilter == CalendarFilter.academic)
           _buildFriendOverlaySection(overlayData),
-        
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: events.length,
-            itemBuilder: (context, index) {
-              return _buildEnhancedEventCard(events[index], overlayData);
-            },
-          ),
-        ),
+
+        ...events.map((event) => _buildEnhancedEventCard(event, overlayData)).toList(),
       ],
     );
   }
@@ -652,40 +1190,49 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
-    // Get events for the day using EventV2 - use consistent filtering across all views
-    List<EventV2> events;
-    switch (selectedSource) {
-      case EventSource.shared:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-      case EventSource.personal:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-      default:
-        events = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startOfDay, endDate: endOfDay);
-        break;
-    }
+    // Get events for the day using EventV2 with advanced filters
+    List<EventV2> events = _calendarService.getEventsByCalendarFilterSync(
+      _demoData.currentUser.id,
+      selectedFilter,
+      startDate: startOfDay,
+      endDate: endOfDay,
+      relationshipFilters: relationshipFilters,
+      includeDiscoverable: includeDiscoverableEvents,
+    );
 
     return _buildTimetableGrid([selectedDate], events, 1, false);
   }
 
   Widget _buildMultiDayTimetable(DateTime startDate, int displayDays) {
-    final endDate = startDate.add(Duration(days: displayDays));
-    
-    // Get events using EventV2 with consistent filtering across all views
-    List<EventV2> allEvents;
-    switch (selectedSource) {
-      case EventSource.shared:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
-      case EventSource.personal:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
-      default:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
+    // Show loading indicator if data isn't ready
+    if (!_isInitialized) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Loading calendar data...'),
+          ],
+        ),
+      );
     }
-    
+
+    // Use exact same event loading logic as _buildMultiDayEventsContent to ensure consistency
+    final endDate = startDate.add(Duration(days: displayDays));
+
+    List<EventV2> allEvents = _calendarService.getEventsByCalendarFilterSync(
+      _demoData.currentUser.id,
+      selectedFilter,
+      startDate: startDate,
+      endDate: endDate,
+      relationshipFilters: relationshipFilters,
+      includeDiscoverable: includeDiscoverableEvents,
+    );
+
+    // Debug logging for event count verification
+    print('🔍 Timetable view: Loaded ${allEvents.length} events for display and autoscroll');
+
     final dates = List.generate(displayDays, (index) => startDate.add(Duration(days: index)));
     return _buildTimetableGrid(dates, allEvents, displayDays, true);
   }
@@ -695,22 +1242,96 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     const int startHour = 0;  // Midnight (24-hour view)
     const int endHour = 24;   // End of day
     const int totalHours = endHour - startHour;
-    
+
+    // Check if date has changed
+    final currentDateKey = dates.isNotEmpty ? DateFormat('yyyy-MM-dd').format(dates.first) : null;
+    final bool dateChanged = _lastScrolledDate == null ||
+        (currentDateKey != null && DateFormat('yyyy-MM-dd').format(_lastScrolledDate!) != currentDateKey);
+
+    if (dateChanged && currentDateKey != null) {
+      _lastScrolledDate = dates.first;
+      print('🎯 Auto-scroll: Date changed to ${DateFormat('MMM dd').format(dates.first)}');
+
+      // Reset scroll controller position immediately when date changes
+      if (_timetableScrollController.hasClients) {
+        _timetableScrollController.jumpTo(0);
+      }
+    }
+
     // Group events by date
     final Map<String, List<EventV2>> eventsByDate = {};
     for (final date in dates) {
       final dateKey = DateFormat('yyyy-MM-dd').format(date);
       eventsByDate[dateKey] = [];
     }
-    
+
     for (final event in events) {
       final dateKey = DateFormat('yyyy-MM-dd').format(event.startTime);
       if (eventsByDate.containsKey(dateKey)) {
         eventsByDate[dateKey]!.add(event);
       }
     }
-    
+
+    // Find the earliest event to auto-scroll to - context-aware for single vs multi-day views
+    DateTime? earliestEventTime;
+    final isMultiDayView = dates.length > 1;
+
+    if (isMultiDayView) {
+      // Multi-day view: Find earliest event across ALL visible dates
+      if (events.isNotEmpty) {
+        earliestEventTime = events
+            .map((e) => e.startTime)
+            .reduce((a, b) => a.isBefore(b) ? a : b);
+
+        print('🎯 Auto-scroll: Multi-day view (${dates.length} days) - Finding earliest across all dates');
+        print('🎯 Auto-scroll: Date range: ${DateFormat('MMM dd').format(dates.first)} to ${DateFormat('MMM dd').format(dates.last)}');
+        print('🎯 Auto-scroll: Found ${events.length} total events, earliest: ${DateFormat('MMM dd HH:mm').format(earliestEventTime!)}');
+
+        // Show earliest events for debugging
+        final sortedEvents = List<EventV2>.from(events)..sort((a, b) => a.startTime.compareTo(b.startTime));
+        for (var i = 0; i < sortedEvents.length && i < 3; i++) {
+          final e = sortedEvents[i];
+          print('  - ${DateFormat('MMM dd HH:mm').format(e.startTime)}: ${e.title}');
+        }
+      }
+    } else {
+      // Single-day view: Use events from the specific selected date only
+      final primaryDate = dates.first;
+      final primaryDateKey = DateFormat('yyyy-MM-dd').format(primaryDate);
+      final primaryDateEvents = eventsByDate[primaryDateKey] ?? [];
+
+      if (primaryDateEvents.isNotEmpty) {
+        earliestEventTime = primaryDateEvents
+            .map((e) => e.startTime)
+            .reduce((a, b) => a.isBefore(b) ? a : b);
+
+        print('🎯 Auto-scroll: Single-day view - Targeting earliest event on ${DateFormat('MMM dd').format(primaryDate)}');
+        print('🎯 Auto-scroll: Found ${primaryDateEvents.length} events on selected date');
+        final sortedEvents = List<EventV2>.from(primaryDateEvents)..sort((a, b) => a.startTime.compareTo(b.startTime));
+        for (var i = 0; i < sortedEvents.length && i < 3; i++) {
+          final e = sortedEvents[i];
+          print('  - ${DateFormat('MMM dd HH:mm').format(e.startTime)}: ${e.title}');
+        }
+      } else {
+        print('🎯 Auto-scroll: No events found on selected date ${DateFormat('MMM dd').format(primaryDate)}');
+      }
+    }
+
+    // Schedule auto-scroll only if date changed, we're initializing, and we're in timetable view
+    if (earliestEventTime != null && dateChanged && _useTimetableView) {
+      // Use multiple frame callbacks to ensure all data is stable
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Add a small delay to ensure all data loading is complete
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted && _useTimetableView) {
+            _scrollToEarliestEvent(earliestEventTime!, hourHeight);
+          }
+        });
+      });
+    }
+
     return SingleChildScrollView(
+      controller: _timetableScrollController,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Row(
@@ -1013,18 +1634,14 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     // Get events for the entire date range using EventV2 with filtering
     final endDate = startDate.add(Duration(days: displayDays));
     
-    List<EventV2> allEvents;
-    switch (selectedSource) {
-      case EventSource.shared:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
-      case EventSource.personal:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
-      default:
-        allEvents = _calendarService.getEnhancedEventsBySourceSync(_demoData.currentUser.id, selectedSource, startDate: startDate, endDate: endDate);
-        break;
-    }
+    List<EventV2> allEvents = _calendarService.getEventsByCalendarFilterSync(
+      _demoData.currentUser.id,
+      selectedFilter,
+      startDate: startDate,
+      endDate: endDate,
+      relationshipFilters: relationshipFilters,
+      includeDiscoverable: includeDiscoverableEvents,
+    );
     
     // Group events by date
     final Map<String, List<EventV2>> eventsByDate = {};
@@ -1278,9 +1895,9 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final friendsSchedules = overlayData['friendsSchedules'] as Map<String, List<Event>>;
     final overlaps = overlayData['overlaps'] as Map<String, List<Event>>;
     final commonFreeTimes = overlayData['commonFreeTimes'] as List<Map<String, dynamic>>;
-    
+
     if (friendsSchedules.isEmpty && commonFreeTimes.isEmpty) return const SizedBox();
-    
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(12),
@@ -1292,74 +1909,93 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Icon(Icons.people, size: 16, color: Colors.blue),
-              SizedBox(width: 6),
-              Text(
-                'Friend Schedules',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
+          InkWell(
+            onTap: () {
+              setState(() {
+                _showFriendsSchedule = !_showFriendsSchedule;
+              });
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.people, size: 16, color: Colors.blue),
+                    SizedBox(width: 6),
+                    Text(
+                      'Friend Schedules',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  _showFriendsSchedule ? Icons.expand_less : Icons.expand_more,
+                  size: 20,
                   color: Colors.blue,
                 ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Show friends with visible schedules
-          ...friendsSchedules.entries.take(3).map((entry) {
-            final friendId = entry.key;
-            final friend = _demoData.getUserById(friendId);
-            final friendEvents = entry.value;
-            final hasOverlap = overlaps.containsKey(friendId);
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Row(
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: hasOverlap ? Colors.orange : Colors.green,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      '${friend?.name}: ${friendEvents.length} events${hasOverlap ? ' (overlap!)' : ''}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-          
-          // Common free times
-          if (commonFreeTimes.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            const Text(
-              '🕒 Common Free Time:',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.green,
-              ),
+              ],
             ),
-            ...commonFreeTimes.take(2).map((timeData) {
-              final friend = timeData['friend'] as User;
-              final timeSlot = timeData['timeSlot'] as Map<String, dynamic>;
-              final startTime = timeSlot['startTime'] as DateTime;
-              
-              return Text(
-                '${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} with ${friend.name}',
-                style: const TextStyle(fontSize: 11, color: Colors.green),
+          ),
+
+          if (_showFriendsSchedule || showFriendOverlay) ...[
+            const SizedBox(height: 8),
+
+            // Show friends with visible schedules
+            ...friendsSchedules.entries.take(3).map((entry) {
+              final friendId = entry.key;
+              final friend = _demoData.getUserById(friendId);
+              final friendEvents = entry.value;
+              final hasOverlap = overlaps.containsKey(friendId);
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: hasOverlap ? Colors.orange : Colors.green,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${friend?.name}: ${friendEvents.length} events${hasOverlap ? ' (overlap!)' : ''}',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
               );
             }),
+
+            // Common free times
+            if (commonFreeTimes.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              const Text(
+                '🕒 Common Free Time:',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.green,
+                ),
+              ),
+              ...commonFreeTimes.take(2).map((timeData) {
+                final friend = timeData['friend'] as User;
+                final timeSlot = timeData['timeSlot'] as Map<String, dynamic>;
+                final startTime = timeSlot['startTime'] as DateTime;
+
+                return Text(
+                  '${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} with ${friend.name}',
+                  style: const TextStyle(fontSize: 11, color: Colors.green),
+                );
+              }),
+            ],
           ],
         ],
       ),
@@ -1429,29 +2065,20 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   // Helper Methods
-  Color _getSourceColor(EventSource source) {
-    switch (source) {
-      case EventSource.personal:
-        return AppColors.personalColor;  // Personal events use personal color
-      case EventSource.friends:
-        return AppColors.socialColor;  // Friends events use social color
-      case EventSource.societies:
-        return AppColors.societyColor;
-      case EventSource.shared:
-        return AppColors.personalColor;
-    }
-  }
-
-  String _getSourceLabel(EventSource source) {
-    switch (source) {
-      case EventSource.personal:
-        return 'Personal';
-      case EventSource.friends:
-        return 'Friends';
-      case EventSource.societies:
-        return 'Societies';
-      case EventSource.shared:
-        return 'Shared';
+  Color _getFilterColor(CalendarFilter filter) {
+    switch (filter) {
+      case CalendarFilter.allEvents:
+        return AppColors.homeColor;      // Purple for all events
+      case CalendarFilter.mySchedule:
+        return AppColors.personalColor;  // Blue for my schedule
+      case CalendarFilter.academic:
+        return AppColors.personalColor;  // Blue for academic
+      case CalendarFilter.social:
+        return AppColors.socialColor;    // Bright green for social
+      case CalendarFilter.societies:
+        return AppColors.societyColor;   // Green for societies
+      case CalendarFilter.discover:
+        return AppColors.studyGroupColor; // Orange for discover
     }
   }
 
@@ -1470,11 +2097,6 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
   }
 
-  EventSource _determineEventSource(EventV2 event) {
-    // Use the actual event source from the data model
-    return EventDisplayProperties.getEventSource(event.toLegacyEvent(), _demoData.currentUser.id);
-  }
-  
   String _getEventDisplayType(EventV2 event) {
     // Get the display type based on actual event type
     final displayProps = EventDisplayProperties.fromEventV2(event, _demoData.currentUser.id);
@@ -1706,10 +2328,61 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     });
   }
 
+  void _scrollToEarliestEvent(DateTime earliestEventTime, double hourHeight) {
+    // Calculate the hour of the earliest event
+    final hour = earliestEventTime.hour;
+    final minute = earliestEventTime.minute;
+
+    // Debug logging
+    print('🎯 Auto-scroll: Scrolling to earliest event at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+
+    // Calculate scroll position (hour * hourHeight + proportion of minutes)
+    // Subtract a small buffer (30 pixels) so the event isn't right at the top
+    final scrollPosition = (hour * hourHeight + (minute / 60) * hourHeight) - 30;
+
+    // Wait for next frame then check if controller is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_timetableScrollController.hasClients) {
+        print('🎯 Auto-scroll: ScrollController not ready, retrying...');
+        // Try again after a delay if controller isn't ready
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _performScroll(scrollPosition, hourHeight);
+        });
+      } else {
+        _performScroll(scrollPosition, hourHeight);
+      }
+    });
+  }
+
+  void _performScroll(double scrollPosition, double hourHeight) {
+    if (!_timetableScrollController.hasClients) {
+      print('🎯 Auto-scroll: ScrollController still not ready, aborting');
+      return;
+    }
+
+    // Ensure we don't scroll beyond bounds
+    final clampedPosition = scrollPosition.clamp(
+      0.0,
+      _timetableScrollController.position.maxScrollExtent,
+    );
+
+    print('🎯 Auto-scroll: Scrolling to position = $clampedPosition (max: ${_timetableScrollController.position.maxScrollExtent})');
+
+    // Perform the animated scroll
+    _timetableScrollController.animateTo(
+      clampedPosition,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+    );
+  }
 
   void _toggleTimetableView() {
     setState(() {
       _useTimetableView = !_useTimetableView;
+      if (_useTimetableView) {
+        // Reset last scrolled date when enabling timetable view
+        _lastScrolledDate = null;
+      }
     });
   }
 
@@ -3120,6 +3793,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _animationController.dispose();
+    _timetableScrollController.dispose();
     _eventRelationshipService.relationshipChangeNotifier.removeListener(_onEventRelationshipChange);
     _demoData.societyMembershipNotifier.removeListener(_onSocietyMembershipChanged);
     super.dispose();

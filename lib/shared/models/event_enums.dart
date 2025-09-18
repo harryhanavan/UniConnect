@@ -1,6 +1,16 @@
 /// Enhanced event enums for Phase 2 implementation
 /// Provides two-tier event categorization and relationship modeling
 
+// Calendar Filter Types - User-centric filtering options
+enum CalendarFilter {
+  allEvents,     // All events user can see (full picture)
+  mySchedule,    // Events I'm actively involved with (owner/attendee)
+  academic,      // Classes, assignments, exams
+  social,        // Parties, meetups, hangouts
+  societies,     // Society events (both joined and discoverable)
+  discover,      // Public events I could join
+}
+
 // Event Category - Top level grouping
 enum EventCategory {
   academic,
@@ -191,6 +201,42 @@ class EventTypeHelper {
         return EventSubType.task;
       default:
         return EventSubType.task;
+    }
+  }
+  
+  /// Get display name for CalendarFilter
+  static String getCalendarFilterDisplayName(CalendarFilter filter) {
+    switch (filter) {
+      case CalendarFilter.allEvents:
+        return 'All Events';
+      case CalendarFilter.mySchedule:
+        return 'My Schedule';
+      case CalendarFilter.academic:
+        return 'Academic';
+      case CalendarFilter.social:
+        return 'Social';
+      case CalendarFilter.societies:
+        return 'Societies';
+      case CalendarFilter.discover:
+        return 'Discover';
+    }
+  }
+  
+  /// Get icon for CalendarFilter
+  static String getCalendarFilterIcon(CalendarFilter filter) {
+    switch (filter) {
+      case CalendarFilter.allEvents:
+        return '🗓️';
+      case CalendarFilter.mySchedule:
+        return '📅';
+      case CalendarFilter.academic:
+        return '📚';
+      case CalendarFilter.social:
+        return '🎉';
+      case CalendarFilter.societies:
+        return '🏢';
+      case CalendarFilter.discover:
+        return '🔍';
     }
   }
 }

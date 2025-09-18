@@ -13,7 +13,12 @@ import '../../shared/widgets/enhanced_event_card.dart';
 import 'society_detail_screen.dart';
 
 class EnhancedSocietiesScreen extends StatefulWidget {
-  const EnhancedSocietiesScreen({super.key});
+  final int? initialTabIndex;
+
+  const EnhancedSocietiesScreen({
+    super.key,
+    this.initialTabIndex,
+  });
 
   @override
   State<EnhancedSocietiesScreen> createState() => _EnhancedSocietiesScreenState();
@@ -40,7 +45,11 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex ?? 0,
+    );
     _initializeData();
     
     // Listen for society membership changes

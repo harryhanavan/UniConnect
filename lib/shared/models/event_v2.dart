@@ -44,7 +44,14 @@ class EventV2 {
   final DateTime? semesterEndDate;
   final int? academicWeek; // Week number within semester
   
-  // Enhanced date handling
+  // Direct date scheduling (NEW - replaces complex timing system)
+  final DateTime? scheduledDate; // Primary scheduling field - when event occurs
+  final DateTime? endDate; // When event ends (if different from calculated endTime)
+  final bool isRecurringInstance; // True if this is an instance of a recurring event
+  final DateTime? nextOccurrence; // For recurring events, when is the next occurrence
+  final String? recurringRule; // RRULE or simple pattern for recurring events
+
+  // Legacy date handling (DEPRECATED - to be removed after migration)
   final bool useAbsoluteDate; // If true, use exactDate instead of relative calculation
   final DateTime? exactDate; // For specific dated events
   final String? dayOfWeek; // For recurring weekly events
@@ -87,6 +94,13 @@ class EventV2 {
     this.semesterStartDate,
     this.semesterEndDate,
     this.academicWeek,
+    // New direct date scheduling fields
+    this.scheduledDate,
+    this.endDate,
+    this.isRecurringInstance = false,
+    this.nextOccurrence,
+    this.recurringRule,
+    // Legacy fields (DEPRECATED)
     this.useAbsoluteDate = false,
     this.exactDate,
     this.dayOfWeek,
@@ -304,6 +318,13 @@ class EventV2 {
     String? recurringPattern,
     String? parentEventId,
     Map<String, dynamic>? customFields,
+    // New direct date scheduling fields
+    DateTime? scheduledDate,
+    DateTime? endDate,
+    bool? isRecurringInstance,
+    DateTime? nextOccurrence,
+    String? recurringRule,
+    // Legacy fields
     String? importSource,
     String? importId,
     DateTime? lastSyncTime,
@@ -333,9 +354,25 @@ class EventV2 {
       recurringPattern: recurringPattern ?? this.recurringPattern,
       parentEventId: parentEventId ?? this.parentEventId,
       customFields: customFields ?? this.customFields,
+      // New direct date scheduling fields
+      scheduledDate: scheduledDate ?? this.scheduledDate,
+      endDate: endDate ?? this.endDate,
+      isRecurringInstance: isRecurringInstance ?? this.isRecurringInstance,
+      nextOccurrence: nextOccurrence ?? this.nextOccurrence,
+      recurringRule: recurringRule ?? this.recurringRule,
+      // Legacy fields
       importSource: importSource ?? this.importSource,
       importId: importId ?? this.importId,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
     );
   }
+
+  /// Get the actual date when this event occurs (prioritizes scheduledDate over startTime)
+  DateTime get actualEventDate => scheduledDate ?? startTime;
+
+  /// Get the actual end date when this event ends (prioritizes endDate over endTime)
+  DateTime get actualEndDate => endDate ?? endTime;
+
+  /// Check if this event uses the new direct date scheduling system
+  bool get usesDirectDateScheduling => scheduledDate != null;
 }

@@ -33,9 +33,11 @@ class FriendshipService {
       message: message,
     );
 
-    // Note: Friend request updates temporarily disabled in JSON-based demo data
-    // In a real app, this would update the database
-    // Friend request sent from $senderId to $receiverId. Data updates not yet supported in JSON-based demo data.
+    // Add the request to demo data
+    final success = _demoData.addFriendRequest(newRequest);
+    if (!success) {
+      throw Exception('Failed to send friend request - request already exists or users are already friends');
+    }
 
     return newRequest;
   }
@@ -45,12 +47,15 @@ class FriendshipService {
     await _ensureInitialized();
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Note: Friend request acceptance temporarily disabled in JSON-based demo data
-    // In a real app, this would update the database with the accepted friend request
+    // Get the request before accepting to get user IDs
     final friendRequests = _demoData.friendRequestsSync;
     final request = friendRequests.firstWhere((r) => r.id == requestId, orElse: () => throw Exception('Request not found'));
-    
-    // Friend request would be accepted: ${request.senderId} -> ${request.receiverId}
+
+    // Accept the friend request and update friend lists
+    final success = _demoData.acceptFriendRequest(requestId);
+    if (!success) {
+      throw Exception('Failed to accept friend request');
+    }
 
     // Auto-setup default timetable sharing
     await _setupDefaultTimetableSharing(request.senderId, request.receiverId);
@@ -66,12 +71,25 @@ class FriendshipService {
     await _ensureInitialized();
     await Future.delayed(const Duration(milliseconds: 300));
 
-    // Note: Friend request declining temporarily disabled in JSON-based demo data
-    // In a real app, this would update the database with the declined friend request
-    final friendRequests = _demoData.friendRequestsSync;
-    final request = friendRequests.firstWhere((r) => r.id == requestId, orElse: () => throw Exception('Request not found'));
-    
-    // Friend request would be declined: ${request.senderId} -> ${request.receiverId}
+    // Decline the friend request
+    final success = _demoData.declineFriendRequest(requestId);
+    if (!success) {
+      throw Exception('Failed to decline friend request');
+    }
+
+    return true;
+  }
+
+  // Cancel friend request (by sender)
+  Future<bool> cancelFriendRequest(String requestId) async {
+    await _ensureInitialized();
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // Cancel the friend request
+    final success = _demoData.cancelFriendRequest(requestId);
+    if (!success) {
+      throw Exception('Failed to cancel friend request');
+    }
 
     return true;
   }
@@ -81,9 +99,11 @@ class FriendshipService {
     await _ensureInitialized();
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // Note: Friend removal temporarily disabled in JSON-based demo data
-    // In a real app, this would update the database
-    // Friend removed: $userId1 <-> $userId2. Data updates not yet supported in JSON-based demo data.
+    // Remove the friend relationship
+    final success = _demoData.removeFriend(userId1, userId2);
+    if (!success) {
+      throw Exception('Failed to remove friend - users are not friends');
+    }
 
     return true;
   }

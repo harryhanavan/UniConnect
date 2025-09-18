@@ -34,71 +34,54 @@ class DemoDataLoader {
     return loadEnhancedEvents();
   }
 
-  /// Parse enhanced events from JSON with advanced properties
+  /// Parse enhanced events from JSON using direct date scheduling system
+  /// All events now use scheduledDate and endDate for consistent timing
   static List<EventV2> _parseV2Events(List<dynamic> eventsList) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    
     return eventsList.map((json) {
+      // Parse direct dates from scheduledDate and endDate
       DateTime startTime;
       DateTime endTime;
-      
-      // Check if this event uses absolute date or enhanced academic scheduling
-      final useAbsoluteDate = json['useAbsoluteDate'] ?? false;
-      final category = _parseEventCategory(json['category']);
-      final isAllDay = json['isAllDay'] ?? false;
-      final duration = json['duration'] ?? 1;
-      
-      if (useAbsoluteDate && json['exactDate'] != null) {
-        // Use exact date with time
-        final exactDate = DateTime.parse(json['exactDate']);
-        final timeOfDay = json['timeOfDay'] ?? '09:00';
-        final timeParts = timeOfDay.split(':');
-        final hour = int.parse(timeParts[0]);
-        final minute = timeParts.length > 1 ? int.parse(timeParts[1]) : 0;
-        
-        startTime = DateTime(exactDate.year, exactDate.month, exactDate.day, hour, minute);
-        
-        // Apply drift adjustment for society events if needed
-        if (json['driftAdjustment'] == true) {
-          startTime = _applyDriftAdjustment(startTime);
-        }
-        
-        if (isAllDay) {
-          endTime = startTime;
+      DateTime? scheduledDate;
+      DateTime? endDateFromJson;
+
+      if (json['scheduledDate'] != null) {
+        // New direct date system
+        scheduledDate = DateTime.parse(json['scheduledDate']);
+        startTime = scheduledDate;
+
+        if (json['endDate'] != null) {
+          endDateFromJson = DateTime.parse(json['endDate']);
+          endTime = endDateFromJson;
         } else {
-          endTime = startTime.add(Duration(
-            hours: duration.toInt(),
-            minutes: ((duration % 1) * 60).toInt(),
-          ));
+          // Calculate end time from duration if endDate not provided
+          final duration = json['duration'] ?? 1;
+          final isAllDay = json['isAllDay'] ?? false;
+          if (isAllDay) {
+            endTime = startTime;
+          } else {
+            endTime = startTime.add(Duration(
+              hours: duration is int ? duration : duration.toInt(),
+              minutes: duration is int ? 0 : ((duration % 1) * 60).toInt(),
+            ));
+          }
         }
-      } else if (category == EventCategory.academic && json['dayOfWeek'] != null) {
-        // Use academic semester calendar for classes
-        final result = _calculateAcademicEventTime(json);
-        startTime = result['startTime'] as DateTime;
-        endTime = result['endTime'] as DateTime;
       } else {
-        // Fall back to original daysFromNow system
-        final daysFromNow = json['daysFromNow'] ?? 0;
-        final hoursFromStart = json['hoursFromStart'] ?? 0;
-        
-        if (isAllDay) {
-          startTime = today.add(Duration(days: daysFromNow));
-          endTime = startTime;
-        } else {
-          startTime = today.add(Duration(
-            days: daysFromNow,
-            hours: hoursFromStart.toInt(),
-            minutes: ((hoursFromStart % 1) * 60).toInt(),
-          ));
-          endTime = startTime.add(Duration(
-            hours: duration.toInt(),
-            minutes: ((duration % 1) * 60).toInt(),
-          ));
-        }
+        // Legacy fallback: should not happen with migrated data
+        print('⚠️ WARNING: Event ${json['id']} missing scheduledDate, using fallback');
+        startTime = DateTime.now();
+        endTime = startTime.add(const Duration(hours: 1));
       }
 
-      // Parse enhanced enums  
+      // Parse recurring event fields
+      final isRecurring = json['isRecurring'] ?? false;
+      final recurringRule = json['recurringRule'];
+      final isRecurringInstance = json['isRecurringInstance'] ?? false;
+      final nextOccurrence = json['nextOccurrence'] != null
+          ? DateTime.parse(json['nextOccurrence'])
+          : null;
+
+      // Parse enhanced enums
+      final category = _parseEventCategory(json['category']);
       final subType = _parseEventSubType(json['subType'], json['type']);
       final origin = _parseEventOrigin(json['origin'], json['source']);
       final privacyLevel = _parseEventPrivacyLevel(json['privacyLevel']);
@@ -125,29 +108,36 @@ class DemoDataLoader {
         discoverability: discoverability,
         courseCode: json['courseCode'],
         societyId: json['societyId'],
-        isAllDay: isAllDay,
-        isRecurring: json['isRecurring'] ?? false,
-        recurringPattern: json['recurringPattern'],
-        customFields: json['customFields'] != null 
+        isAllDay: json['isAllDay'] ?? false,
+        isRecurring: isRecurring,
+        recurringPattern: json['recurringPattern'], // Legacy field for backward compatibility
+        customFields: json['customFields'] != null
             ? Map<String, dynamic>.from(json['customFields'])
             : null,
+        // New direct date scheduling fields
+        scheduledDate: scheduledDate,
+        endDate: endDateFromJson,
+        isRecurringInstance: isRecurringInstance,
+        nextOccurrence: nextOccurrence,
+        recurringRule: recurringRule,
+        // Legacy fields (kept for backward compatibility but unused in new system)
         semesterType: json['semesterType'],
         semesterYear: json['semesterYear'],
-        semesterStartDate: json['semesterStartDate'] != null 
-            ? DateTime.parse(json['semesterStartDate']) 
+        semesterStartDate: json['semesterStartDate'] != null
+            ? DateTime.parse(json['semesterStartDate'])
             : null,
-        semesterEndDate: json['semesterEndDate'] != null 
-            ? DateTime.parse(json['semesterEndDate']) 
+        semesterEndDate: json['semesterEndDate'] != null
+            ? DateTime.parse(json['semesterEndDate'])
             : null,
         academicWeek: json['academicWeek'],
         useAbsoluteDate: json['useAbsoluteDate'] ?? false,
-        exactDate: json['exactDate'] != null 
-            ? DateTime.parse(json['exactDate']) 
+        exactDate: json['exactDate'] != null
+            ? DateTime.parse(json['exactDate'])
             : null,
         dayOfWeek: json['dayOfWeek'],
         timeOfDay: json['timeOfDay'],
         driftAdjustment: json['driftAdjustment'] ?? false,
-        importPeriod: json['importPeriod'] != null 
+        importPeriod: json['importPeriod'] != null
             ? Map<String, dynamic>.from(json['importPeriod'])
             : null,
       );
@@ -620,8 +610,10 @@ class DemoDataLoader {
     return warnings;
   }
 
-  /// Calculate academic event time based on semester calendar and day of week
-  /// TODO: TEMPORARY DEMO CALCULATION - Replace with proper semester system
+  /// DEPRECATED: Calculate academic event time based on semester calendar and day of week
+  /// This method is no longer used since migration to direct date scheduling system
+  /// All events now use scheduledDate and endDate for consistent timing
+  @Deprecated('Use direct date scheduling with scheduledDate instead')
   static Map<String, DateTime> _calculateAcademicEventTime(Map<String, dynamic> json) {
     print('⚠️ DEMO: Using simplified academic calendar calculation');
     
@@ -660,8 +652,10 @@ class DemoDataLoader {
     return {'startTime': startTime, 'endTime': endTime};
   }
 
-  /// Apply drift adjustment for society events to keep them relevant
-  /// TODO: TEMPORARY DEMO ADJUSTMENT - Replace with proper event scheduling
+  /// DEPRECATED: Apply drift adjustment for society events to keep them relevant
+  /// This method is no longer used since migration to direct date scheduling system
+  /// All events now have fixed absolute dates that don't require drift adjustment
+  @Deprecated('Use direct date scheduling with scheduledDate instead')
   static DateTime _applyDriftAdjustment(DateTime originalDate) {
     print('⚠️ DEMO: Applying drift adjustment for society event');
     

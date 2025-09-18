@@ -58,9 +58,9 @@ class _MainNavigationState extends State<MainNavigation> {
     switch (index) {
       case 0: return AppColors.homeColor;       // Home - Purple
       case 1: return AppColors.personalColor;  // Calendar - Blue
-      case 2: return AppColors.socialColor;    // Messages - Bright Green (social)
-      case 3: return AppColors.societyColor;   // Societies - Green
-      case 4: return AppColors.socialColor;    // Friends - Bright Green (social)
+      case 2: return AppColors.societyColor;   // Societies - Green
+      case 3: return AppColors.socialColor;    // Friends - Bright Green (social)
+      case 4: return AppColors.socialColor;    // Messages - Bright Green (social)
       default: return AppColors.homeColor;
     }
   }
@@ -75,9 +75,9 @@ class _MainNavigationState extends State<MainNavigation> {
             children: const [
               HomeScreen(),
               EnhancedCalendarScreen(),
-              ChatListScreen(),
-              EnhancedSocietiesScreen(), 
+              EnhancedSocietiesScreen(),
               EnhancedFriendsScreen(),
+              ChatListScreen(),
             ],
           ),
           bottomNavigationBar: BottomNavigationBar(
@@ -96,6 +96,14 @@ class _MainNavigationState extends State<MainNavigation> {
               const BottomNavigationBarItem(
                 icon: Icon(Icons.calendar_today),
                 label: 'Calendar',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.groups),
+                label: 'Societies',
+              ),
+              const BottomNavigationBarItem(
+                icon: Icon(Icons.people),
+                label: 'Friends',
               ),
               BottomNavigationBarItem(
                 icon: Stack(
@@ -128,14 +136,6 @@ class _MainNavigationState extends State<MainNavigation> {
                   ],
                 ),
                 label: 'Messages',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.groups),
-                label: 'Societies',
-              ),
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.people),
-                label: 'Friends',
               ),
             ],
           ),

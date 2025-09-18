@@ -61,6 +61,228 @@ Container(
 | Event Details | `#PLACEHOLDER` | Expanded event information |
 | Free Time | `#PLACEHOLDER` | Available time slot styling |
 
+## Overlap Detection System
+
+### Overview
+
+UniConnect's timetable views implement intelligent overlap detection to handle simultaneous events with view-specific display strategies. The system automatically detects time conflicts and positions event chips for optimal visibility and usability.
+
+### Overlap Detection Algorithm
+
+The overlap detection system uses a comprehensive algorithm that:
+
+1. **Time-based Detection**: Compares event start/end times to identify overlapping events
+2. **Column Assignment**: Assigns overlapping events to display columns for side-by-side positioning
+3. **View-specific Strategies**: Applies different display approaches based on calendar view constraints
+
+#### Core Algorithm Implementation
+
+```dart
+/// Detects and calculates overlap information for events on the same day
+Map<EventV2, Map<String, dynamic>> _calculateEventOverlaps(List<EventV2> dayEvents) {
+  final Map<EventV2, Map<String, dynamic>> overlapInfo = {};
+  
+  // Initialize each event with no overlap
+  for (final event in dayEvents) {
+    overlapInfo[event] = {
+      'columnIndex': 0,
+      'totalColumns': 1,
+      'overlappingEvents': <EventV2>[],
+    };
+  }
+  
+  // Sort events by start time for processing
+  final sortedEvents = List<EventV2>.from(dayEvents);
+  sortedEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+  
+  // Detect overlaps and assign columns
+  for (int i = 0; i < sortedEvents.length; i++) {
+    final eventA = sortedEvents[i];
+    final overlappingEvents = <EventV2>[];
+    
+    for (int j = i + 1; j < sortedEvents.length; j++) {
+      final eventB = sortedEvents[j];
+      if (_eventsOverlap(eventA, eventB)) {
+        overlappingEvents.add(eventB);
+      }
+    }
+    
+    if (overlappingEvents.isNotEmpty) {
+      // Assign column positions for overlapping events
+      final totalColumns = overlappingEvents.length + 1;
+      overlapInfo[eventA]!['totalColumns'] = totalColumns;
+      overlapInfo[eventA]!['overlappingEvents'] = overlappingEvents;
+      
+      for (int k = 0; k < overlappingEvents.length; k++) {
+        overlapInfo[overlappingEvents[k]]!['columnIndex'] = k + 1;
+        overlapInfo[overlappingEvents[k]]!['totalColumns'] = totalColumns;
+      }
+    }
+  }
+  
+  return overlapInfo;
+}
+
+/// Check if two events overlap in time
+bool _eventsOverlap(EventV2 eventA, EventV2 eventB) {
+  return eventA.startTime.isBefore(eventB.endTime) && 
+         eventB.startTime.isBefore(eventA.endTime);
+}
+```
+
+### View-Specific Display Strategies
+
+#### 3-Day View Overlap Handling
+
+The 3-day view provides more horizontal space, enabling sophisticated overlap display:
+
+**Two Overlapping Events**: Side-by-side positioning
+```dart
+// Side-by-side for 2 overlapping events using responsive width calculation
+case CalendarView.threeDays:
+  if (hasOverlap && totalColumns == 2) {
+    return Positioned(
+      top: top,
+      left: 1,
+      right: 1,
+      height: height.clamp(40.0, double.infinity),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columnWidth = (constraints.maxWidth / 2) - 1;
+          final leftPosition = columnIndex * (columnWidth + 2);
+          return Positioned(
+            left: leftPosition,
+            width: columnWidth,
+            child: eventWidget,
+          );
+        },
+      ),
+    );
+  }
+```
+
+**Three or More Events**: Cascade effect with transparency
+```dart
+// Cascade effect for 3+ overlapping events
+else if (hasOverlap && totalColumns >= 3) {
+  final opacity = 1.0 - (columnIndex * 0.15);
+  final offset = columnIndex * 8.0;
+  
+  return Positioned(
+    top: top + offset,
+    left: 1 + offset,
+    right: 1,
+    height: height.clamp(40.0, double.infinity),
+    child: Opacity(
+      opacity: opacity.clamp(0.4, 1.0),
+      child: eventWidget,
+    ),
+  );
+}
+```
+
+#### Week View Overlap Handling
+
+Week view has limited horizontal space, requiring a different approach:
+
+**All Overlapping Events**: Full-width with transparency and offset
+```dart
+case CalendarView.week:
+  if (hasOverlap) {
+    final opacity = 1.0 - (columnIndex * 0.2);
+    final offset = columnIndex * 4.0;
+    
+    return Positioned(
+      top: top + offset,
+      left: 1 + offset,
+      right: 1,
+      height: height.clamp(30.0, double.infinity),
+      child: Opacity(
+        opacity: opacity.clamp(0.3, 1.0),
+        child: eventWidget,
+      ),
+    );
+  }
+```
+
+### Responsive Width System
+
+#### Previous Fixed Width Issues
+
+The original system used fixed pixel widths that caused display problems:
+- **3-Day View**: Fixed 61px width (appeared as ~50% of day width)  
+- **Week View**: Fixed 43px width (appeared as ~75% of day width)
+- **Type Tags**: Fixed 23px width caused text truncation
+
+#### Current Responsive Solution
+
+**Container Sizing**: Event chips now use responsive constraints
+```dart
+// Responsive width implementation
+Container(
+  // Height specified, width determined by parent constraints
+  height: 123, // or 111 for week view
+  // No width specified - allows responsive sizing
+  child: Stack(
+    children: [
+      // Event content with flexible positioning
+      Positioned(
+        left: 6,
+        top: 4,
+        right: 6, // Right constraint enables responsive width
+        child: SizedBox(
+          height: 48,
+          child: Text(event.title, /* styling */),
+        ),
+      ),
+    ],
+  ),
+)
+```
+
+**Type Tag Improvements**: Content-based sizing with proper padding
+```dart
+// Responsive type tag implementation
+Positioned(
+  left: 6,
+  top: 90,
+  // No right constraint - sizes to content
+  child: Container(
+    height: 14,
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    decoration: ShapeDecoration(
+      color: eventBgColor,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ),
+    child: Center(
+      child: Text(
+        eventLabel,
+        style: TextStyle(
+          fontSize: 7, // Improved from 6px
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.30, // Reduced from 0.50 for better fit
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+    ),
+  ),
+),
+```
+
+### Performance Considerations
+
+#### Optimized Processing
+- **Single Pass Algorithm**: Overlap detection processes each day's events once
+- **Sorted Processing**: Events sorted by start time for efficient comparison
+- **Column Reuse**: Column assignments reused across similar overlap patterns
+- **Conditional Calculation**: Overlap detection only runs when multiple events exist
+
+#### Memory Management
+- **Temporary Maps**: Overlap information stored in temporary maps during processing
+- **Garbage Collection**: Overlap data cleared after positioning calculations complete
+- **Event Caching**: Processed events cached to avoid recalculation on minor updates
+
 ## Event Styling
 
 ### Event Colors by Feature Palette

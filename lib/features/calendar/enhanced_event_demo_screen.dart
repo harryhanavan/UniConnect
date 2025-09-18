@@ -67,7 +67,7 @@ class _EnhancedEventDemoScreenState extends State<EnhancedEventDemoScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Enhanced Event System Demo'),
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.personalColor,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -177,11 +177,38 @@ class _EnhancedEventDemoScreenState extends State<EnhancedEventDemoScreen> {
           Wrap(
             spacing: 12,
             children: categoryStats.entries.map((entry) {
-              final props = EventDisplayProperties._getCategoryProperties(entry.key);
+              // Simple category color mapping for demo
+              Color color;
+              IconData icon;
+              switch (entry.key) {
+                case EventCategory.academic:
+                  color = const Color(0xFF2196F3);
+                  icon = Icons.school;
+                  break;
+                case EventCategory.social:
+                  color = const Color(0xFF8BC34A);
+                  icon = Icons.people;
+                  break;
+                case EventCategory.society:
+                  color = const Color(0xFF4CAF50);
+                  icon = Icons.group;
+                  break;
+                case EventCategory.personal:
+                  color = const Color(0xFF9C27B0);
+                  icon = Icons.person;
+                  break;
+                case EventCategory.university:
+                  color = const Color(0xFFFF9800);
+                  icon = Icons.account_balance;
+                  break;
+                default:
+                  color = Colors.grey;
+                  icon = Icons.event;
+              }
               return Chip(
-                avatar: Icon(props.icon, size: 16, color: props.color),
+                avatar: Icon(icon, size: 16, color: color),
                 label: Text('${entry.key.toString().split('.').last}: ${entry.value}'),
-                backgroundColor: props.backgroundColor,
+                backgroundColor: color.withAlpha(25),
               );
             }).toList(),
           ),
