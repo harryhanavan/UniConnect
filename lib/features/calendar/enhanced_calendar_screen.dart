@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../core/services/app_state.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
 import '../../core/constants/event_colors.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
@@ -170,7 +173,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -178,20 +181,18 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
     
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            if (_showViewSelector) _buildViewSelector(),
-            Expanded(child: _buildCalendarView()),
-          ],
-        ),
+      backgroundColor: AppTheme.getBackgroundColor(context),
+      body: Column(
+        children: [
+          _buildHeader(),
+          if (_showViewSelector) _buildViewSelector(),
+          Expanded(child: _buildCalendarView()),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showCreateEventDialog(),
         backgroundColor: AppColors.personalColor,
-        foregroundColor: Colors.white,
+        foregroundColor: AppTheme.getButtonTextColor(context),
         icon: const Icon(Icons.add),
         label: const Text('Create Event'),
       ),
@@ -199,16 +200,22 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   Widget _buildHeader() {
+    final appState = Provider.of<AppState>(context, listen: true);
+
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.personalColor, AppColors.personalColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark] // Option 3: Solid dark blue
+              : [AppColors.personalColor, AppColors.personalColor.withValues(alpha: 0.8)], // Original blue
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -290,6 +297,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             ],
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -309,7 +318,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: AppTheme.getSurfaceColor(context),
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -362,7 +371,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected ? Colors.white : AppTheme.getTextColor(context),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 14,
             ),
@@ -391,7 +400,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.black,
+              color: isSelected ? Colors.white : AppTheme.getTextColor(context),
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               fontSize: 10, // Slightly smaller font to fit 6 buttons
             ),
@@ -460,10 +469,10 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         width: 100,
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? getColor() : Colors.grey[50],
+          color: isSelected ? getColor() : AppTheme.getInputBackgroundColor(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? getColor() : Colors.grey[300]!,
+            color: isSelected ? getColor() : AppTheme.getBorderColor(context),
             width: 1.5,
           ),
         ),
@@ -479,7 +488,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             Text(
               filter['name'] as String,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
+                color: isSelected ? Colors.white : AppTheme.getTextColor(context),
                 fontWeight: FontWeight.w600,
                 fontSize: 11,
               ),
@@ -539,7 +548,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
           child: IconButton(
             icon: Icon(
               showAdvancedFilters ? Icons.remove : Icons.add,
-              color: hasActiveFilters ? AppColors.homeColor : Colors.grey[700],
+              color: hasActiveFilters ? AppColors.homeColor : AppTheme.getSecondaryTextColor(context),
               size: 20,
             ),
             onPressed: () => setState(() => showAdvancedFilters = !showAdvancedFilters),
@@ -581,7 +590,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   Widget _buildAdvancedFilterMenu() {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -673,7 +682,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         Text(
           'Select event relationships to include',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
             fontSize: 10,
           ),
         ),
@@ -731,7 +740,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         Text(
           'Show discoverable events in Social & Societies',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
             fontSize: 10,
           ),
         ),
@@ -793,7 +802,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         Text(
           'Additional visual features for calendar',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: Colors.grey[600],
+            color: AppTheme.getSecondaryTextColor(context),
             fontSize: 10,
           ),
         ),
@@ -828,17 +837,17 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: value ? color.withOpacity(0.1) : Colors.grey[50],
+        color: value ? color.withOpacity(0.1) : AppTheme.getInputBackgroundColor(context),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: value ? color : Colors.grey[300]!,
+          color: value ? color : AppTheme.getBorderColor(context),
         ),
       ),
       child: Row(
         children: [
           Icon(
             icon,
-            color: value ? color : Colors.grey[500],
+            color: value ? color : AppTheme.getSecondaryTextColor(context),
             size: 16,
           ),
           const SizedBox(width: 8),
@@ -847,7 +856,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               title,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: value ? color : Colors.grey[700],
+                color: value ? color : AppTheme.getSecondaryTextColor(context),
                 fontSize: 12,
               ),
             ),
@@ -1143,7 +1152,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                         Text(
                           DateFormat('EEE').format(date),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey,
+                            color: isSelected ? Colors.white : AppTheme.getSecondaryIconColor(context),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
@@ -1152,7 +1161,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                         Text(
                           date.day.toString(),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
+                            color: isSelected ? Colors.white : AppTheme.getTextColor(context),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -1355,7 +1364,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                       '${hour.toString().padLeft(2, '0')}:00',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade600,
+                        color: AppTheme.getSecondaryTextColor(context),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -1377,7 +1386,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                        color: Colors.grey.shade200,
+                        color: AppTheme.getSubtleBorderColor(context),
                         width: 0.5,
                       ),
                     ),
@@ -1390,7 +1399,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                             decoration: BoxDecoration(
                               border: Border(
                                 bottom: BorderSide(
-                                  color: Colors.grey.shade200,
+                                  color: AppTheme.getSubtleBorderColor(context),
                                   width: 1,
                                 ),
                               ),
@@ -1410,7 +1419,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                                   right: 0,
                                   child: Container(
                                     height: 1,
-                                    color: Colors.grey.shade100,
+                                    color: AppTheme.getSubtleBorderColor(context),
                                   ),
                                 );
                               }),
@@ -1716,7 +1725,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
           Icon(
             Icons.event_available,
             size: 48,
-            color: Colors.grey.shade400,
+            color: AppTheme.getBorderColor(context),
           ),
           const SizedBox(height: 12),
           Text(
@@ -1726,7 +1735,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
           const SizedBox(height: 6),
@@ -1734,7 +1743,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             'Perfect time to plan ahead!',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
         ],
@@ -1749,7 +1758,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         child: Text(
           'Free',
           style: TextStyle(
-            color: Colors.grey.shade400,
+            color: AppTheme.getBorderColor(context),
             fontSize: 11,
             fontStyle: FontStyle.italic,
           ),
@@ -1768,6 +1777,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       return Container(
         margin: const EdgeInsets.only(bottom: 4),
         child: EventCards.buildWeekViewCard(
+          context: context,
           event: legacyEvent,
           eventType: eventDisplayProperties.colorKey,
           attendeeCount: event.attendeeIds.length,
@@ -1779,6 +1789,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       return Container(
         margin: const EdgeInsets.only(bottom: 4),
         child: EventCards.buildDayViewCard(
+          context: context,
           event: legacyEvent,
           eventType: eventDisplayProperties.colorKey,
           attendeeCount: event.attendeeIds.length,
@@ -1864,7 +1875,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                         Text(
                           dayOffset.toString(),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
+                            color: isSelected ? Colors.white : AppTheme.getTextColor(context),
                             fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                             fontSize: 14,
                           ),
@@ -2013,6 +2024,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: EventCards.buildDayViewCard(
+        context: context,
         event: event.toLegacyEvent(),
         eventType: eventTypeStr,
         attendeeCount: attendeeCount,
@@ -2030,7 +2042,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
           Icon(
             Icons.event_available,
             size: 64,
-            color: Colors.grey.shade400,
+            color: AppTheme.getBorderColor(context),
           ),
           const SizedBox(height: 16),
           Text(
@@ -2038,7 +2050,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey.shade600,
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -2046,7 +2058,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             'Perfect time for a study session!',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey.shade500,
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
           const SizedBox(height: 24),
@@ -2297,14 +2309,14 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                       child: Container(
                         margin: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.personalColor : Colors.grey.shade100,
+                          color: isSelected ? AppColors.personalColor : AppTheme.getInputBackgroundColor(context),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
                           child: Text(
                             DateFormat('MMM').format(month),
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.black,
+                              color: isSelected ? Colors.white : AppTheme.getTextColor(context),
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -2483,7 +2495,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   // Time and location
                   Row(
                     children: [
-                      const Icon(Icons.schedule, size: 16, color: Colors.grey),
+                      Icon(Icons.schedule, size: 16, color: AppTheme.getSecondaryIconColor(context)),
                       const SizedBox(width: 8),
                       Text(
                         '${DateFormat('EEEE, MMM d, HH:mm').format(event.startTime)} - ${DateFormat('HH:mm').format(event.endTime)}',
@@ -2496,7 +2508,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                        Icon(Icons.location_on, size: 16, color: AppTheme.getSecondaryIconColor(context)),
                         const SizedBox(width: 8),
                         Expanded(child: Text(event.location, style: const TextStyle(fontSize: 16))),
                       ],
@@ -2535,7 +2547,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('• ', style: TextStyle(color: Colors.grey)),
+                          Text('• ', style: TextStyle(color: AppTheme.getSecondaryTextColor(context))),
                           Expanded(child: Text(s)),
                         ],
                       ),
@@ -2604,11 +2616,11 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         label = 'Invited';
         break;
       case EventRelationship.observer:
-        badgeColor = Colors.grey;
+        badgeColor = AppTheme.getSecondaryIconColor(context);
         label = 'Observer';
         break;
       default:
-        badgeColor = Colors.grey.shade300;
+        badgeColor = AppTheme.getSecondaryIconColor(context);
         label = 'Not Participating';
         break;
     }
@@ -2635,19 +2647,19 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey.shade600),
+          Icon(icon, size: 14, color: AppTheme.getSecondaryIconColor(context)),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade700,
+              color: AppTheme.getSecondaryTextColor(context),
             ),
           ),
         ],
@@ -2724,7 +2736,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   label: const Text('Edit'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.personalColor,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.getButtonTextColor(context),
                   ),
                 ),
               ),
@@ -2736,7 +2748,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   label: const Text('Join'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.getButtonTextColor(context),
                   ),
                 ),
               ),
@@ -2751,7 +2763,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: userRelationship == EventRelationship.attendee 
                         ? Colors.orange : Colors.green,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppTheme.getButtonTextColor(context),
                   ),
                 ),
               ),
@@ -3096,21 +3108,21 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.transfer_within_a_station, color: Colors.white),
+                    Icon(Icons.transfer_within_a_station, color: AppTheme.getButtonTextColor(context)),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Transfer Ownership',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppTheme.getButtonTextColor(context),
                         ),
                       ),
                     ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: Icon(Icons.close, color: AppTheme.getButtonTextColor(context)),
                     ),
                   ],
                 ),
@@ -3127,9 +3139,9 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       'You will be removed from the event after transfer.',
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(fontSize: 14, color: AppTheme.getSecondaryTextColor(context)),
                     ),
                     const SizedBox(height: 20),
                     
@@ -3143,7 +3155,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                               backgroundColor: AppColors.personalColor,
                               child: Text(
                                 user.name.substring(0, 1).toUpperCase(),
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: AppTheme.getButtonTextColor(context), fontWeight: FontWeight.bold),
                               ),
                             ),
                             title: Text(user.name),
@@ -3299,7 +3311,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
+            child: Text('Delete Permanently', style: TextStyle(color: AppTheme.getButtonTextColor(context))),
           ),
         ],
       ),
@@ -3367,13 +3379,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         height: safeHeight,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -3406,8 +3418,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               right: showTypeLabel ? 60 : 12,
               child: Text(
                 event.title,
-                style: const TextStyle(
-                  color: EventColors.primaryText,
+                style: TextStyle(
+                  color: EventColors.getPrimaryTextColor(context),
                   fontSize: 12,
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w700,
@@ -3467,13 +3479,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 right: 12,
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on, size: 10, color: EventColors.secondaryText),
+                    Icon(Icons.location_on, size: 10, color: EventColors.getSecondaryTextColor(context)),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         event.location,
-                        style: const TextStyle(
-                          color: EventColors.secondaryText,
+                        style: TextStyle(
+                          color: EventColors.getSecondaryTextColor(context),
                           fontSize: 9,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w400,
@@ -3494,12 +3506,12 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.people, size: 10, color: EventColors.secondaryText),
+                    Icon(Icons.people, size: 10, color: EventColors.getSecondaryTextColor(context)),
                     const SizedBox(width: 2),
                     Text(
                       event.attendeeIds.length.toString(),
-                      style: const TextStyle(
-                        color: EventColors.secondaryText,
+                      style: TextStyle(
+                        color: EventColors.getSecondaryTextColor(context),
                         fontSize: 9,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w500,
@@ -3530,13 +3542,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         height: 123,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -3571,8 +3583,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 height: 48,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 10,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -3607,8 +3619,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               top: 72,
               child: Text(
                 '${event.startTime.hour.toString().padLeft(2, '0')}:${event.startTime.minute.toString().padLeft(2, '0')} - ${event.endTime.hour.toString().padLeft(2, '0')}:${event.endTime.minute.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  color: EventColors.secondaryText,
+                style: TextStyle(
+                  color: EventColors.getSecondaryTextColor(context),
                   fontSize: 8,
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w400,
@@ -3665,13 +3677,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         height: 111,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -3706,8 +3718,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 height: 32,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 7,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -3769,13 +3781,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, size: 12, color: EventColors.secondaryText),
+                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   Text(
                     event.attendeeIds.length.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 8,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -4798,7 +4810,7 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
                         onPressed: _createEvent,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.socialColor,
-                          foregroundColor: Colors.white,
+                          foregroundColor: AppTheme.getButtonTextColor(context),
                         ),
                         child: const Text('Create Event'),
                       ),
@@ -4816,10 +4828,10 @@ class _EventCreationDialogState extends State<_EventCreationDialog> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Colors.black87,
+        color: AppTheme.getTextColor(context),
       ),
     );
   }

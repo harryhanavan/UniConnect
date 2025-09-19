@@ -25,15 +25,20 @@ class FriendCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 24,
-                backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
-                child: Text(
-                  user.name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: AppColors.socialColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                  ),
-                ),
+                backgroundImage: user.profileImageUrl != null
+                    ? NetworkImage(user.profileImageUrl!)
+                    : null,
+                backgroundColor: const Color(0xFFF5F5F0),
+                child: user.profileImageUrl == null
+                    ? Text(
+                        user.name[0].toUpperCase(),
+                        style: const TextStyle(
+                          color: const Color(0xFF2C2C2C),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      )
+                    : null,
               ),
               if (!showAddButton) // Only show status for existing friends
                 Positioned(

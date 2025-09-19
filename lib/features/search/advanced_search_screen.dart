@@ -195,12 +195,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Search'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
             onPressed: _showFilterBottomSheet,
@@ -262,14 +262,14 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
+            borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: AppColors.primary),
           ),
           filled: true,
-          fillColor: Colors.grey[50],
+          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
         ),
       ),
     );
@@ -297,12 +297,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -316,7 +316,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             padding: const EdgeInsets.all(16),
             child: Text(
               _searchController.text.isEmpty ? 'Trending Searches' : 'Suggestions',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -326,7 +326,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             dense: true,
             leading: Icon(
               _searchController.text.isEmpty ? Icons.trending_up : Icons.search,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 20,
             ),
             title: Text(suggestion),
@@ -349,9 +349,9 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             child: Chip(
               label: Text(_getFilterLabel(filter)),
               onDeleted: () => _toggleFilter(filter),
-              deleteIconColor: Colors.white,
+              deleteIconColor: Theme.of(context).colorScheme.surface,
               backgroundColor: AppColors.primary,
-              labelStyle: const TextStyle(color: Colors.white),
+              labelStyle: TextStyle(color: Colors.white),
             ),
           );
         }).toList(),
@@ -563,7 +563,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: ListTile(
         onTap: () => _showUserProfile(user),
@@ -571,12 +571,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           backgroundColor: AppColors.primary,
           child: Text(
             user.name[0],
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            style: TextStyle(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold),
           ),
         ),
         title: Text(
           user.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
         subtitle: Text('${user.course} • ${user.year}'),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -879,7 +879,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: ListTile(
         onTap: onTap,
@@ -893,7 +893,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         ),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Text(description),
         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -909,7 +909,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           Icon(
             Icons.search_off,
             size: 64,
-            color: Colors.grey[400],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           const SizedBox(height: 16),
           Text(
@@ -917,7 +917,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey[600],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 8),
@@ -925,7 +925,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             'Try a different search term or adjust your filters',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
           ),
@@ -943,7 +943,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             label: const Text('Clear Filters'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
+              foregroundColor: Theme.of(context).colorScheme.surface,
             ),
           ),
         ],
@@ -964,7 +964,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           );
@@ -980,12 +980,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -996,7 +996,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
         leading: _buildResultIcon(result),
         title: Text(
           result.title,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
           ),
@@ -1008,7 +1008,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
             Text(
               result.subtitle,
               style: TextStyle(
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 14,
               ),
             ),
@@ -1017,7 +1017,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               Text(
                 result.description,
                 style: TextStyle(
-                  color: Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                 ),
                 maxLines: 2,
@@ -1070,7 +1070,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 backgroundColor: AppColors.primary,
                 child: Text(
                   result.title.isNotEmpty ? result.title[0] : '?',
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Theme.of(context).colorScheme.surface, fontWeight: FontWeight.bold),
                 ),
               );
 
@@ -1088,12 +1088,12 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                   decoration: BoxDecoration(
                     color: _getFriendshipStatusColor(friendshipStatus),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
                   ),
                   child: Icon(
                     _getFriendshipStatusIcon(friendshipStatus),
                     size: 8,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                   ),
                 ),
               ),
@@ -1207,7 +1207,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           children: [
             Text(
               event.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -1217,7 +1217,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               event.description,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -1243,7 +1243,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                 ),
                 child: const Text('Add to Calendar'),
               ),
@@ -1265,7 +1265,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           children: [
             Text(
               society.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -1275,7 +1275,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               '${society.category} • ${society.memberCount} members',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
@@ -1295,7 +1295,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                 ),
                 child: Text(_demoData.currentUser.societyIds.contains(society.id) ? 'View Society' : 'Join Society'),
               ),
@@ -1317,7 +1317,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           children: [
             Text(
               location.name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
@@ -1327,7 +1327,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               '${location.building} • ${location.type.toString().split('.').last}',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             if (location.description != null) ...[
@@ -1344,7 +1344,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                     label: const Text('Get Directions'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                     ),
                   ),
                 ),
@@ -1375,7 +1375,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
           children: [
             Text(
               '$courseCode - ${courseData['title']}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -1385,7 +1385,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
               '${(courseData['students'] as Set).length} students • ${(courseData['events'] as List).length} events',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
@@ -1398,7 +1398,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                     label: const Text('Find Classmates'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                     ),
                   ),
                 ),
@@ -1459,7 +1459,7 @@ class _AdvancedSearchScreenState extends State<AdvancedSearchScreen>
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: Theme.of(context).colorScheme.surface,
                 ),
                 child: const Text('Apply Filters'),
               ),

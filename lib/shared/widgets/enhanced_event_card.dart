@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../shared/models/event_v2.dart';
 import '../../shared/models/event_enums.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
 import '../../core/services/event_relationship_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 
@@ -154,13 +155,18 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: ShapeDecoration(
+          color: AppTheme.getCardColor(context),
           shape: RoundedRectangleBorder(
-            side: BorderSide(
-              width: 1,
-              color: _getRelationshipColor(_currentRelationship).withValues(alpha: 0.3),
-            ),
             borderRadius: BorderRadius.circular(8),
           ),
+          shadows: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            )
+          ],
         ),
         child: InkWell(
           onTap: () => widget.onEventTap?.call(widget.event),
@@ -190,7 +196,7 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _getRelationshipColor(_currentRelationship).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8), // Match calendar cards
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -271,7 +277,7 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
                         height: 20,
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(8), // Match calendar cards
                         ),
                         child: society.logoUrl != null
                             ? CachedNetworkImage(

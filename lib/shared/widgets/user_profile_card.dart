@@ -273,15 +273,20 @@ class _UserProfileCardState extends State<UserProfileCard> {
           // Avatar
           CircleAvatar(
             radius: 30,
+            backgroundImage: widget.user.profileImageUrl != null
+                ? NetworkImage(widget.user.profileImageUrl!)
+                : null,
             backgroundColor: AppColors.primary,
-            child: Text(
-              widget.user.name[0],
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+            child: widget.user.profileImageUrl == null
+                ? Text(
+                    widget.user.name[0],
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 16),
 
@@ -324,15 +329,20 @@ class _UserProfileCardState extends State<UserProfileCard> {
           children: [
             CircleAvatar(
               radius: 50,
+              backgroundImage: widget.user.profileImageUrl != null
+                  ? NetworkImage(widget.user.profileImageUrl!)
+                  : null,
               backgroundColor: AppColors.primary,
-              child: Text(
-                widget.user.name[0],
-                style: const TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child: widget.user.profileImageUrl == null
+                  ? Text(
+                      widget.user.name[0],
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    )
+                  : null,
             ),
             Positioned(
               right: 4,

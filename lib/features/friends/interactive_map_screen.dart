@@ -62,7 +62,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -70,7 +70,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
     }
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
@@ -102,13 +102,13 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
         children: [
           Row(
             children: [
-              Icon(Icons.map, color: Colors.white, size: 28),
+              Icon(Icons.map, color: Theme.of(context).colorScheme.surface, size: 28),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Campus Map',
                       style: TextStyle(
                         color: Colors.white,
@@ -170,12 +170,12 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
               Expanded(
                 child: Row(
                   children: [
-                    Icon(Icons.my_location, size: 16, color: Colors.grey.shade600),
+                    Icon(Icons.my_location, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
                     const SizedBox(width: 4),
                     Text(
                       'UTS Sydney Campus',
                       style: TextStyle(
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 14,
                       ),
                     ),
@@ -192,9 +192,12 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                 activeThumbColor: AppColors.socialColor,
               ),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Heatmap',
-                style: TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -215,7 +218,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color : Colors.grey.shade100,
+          color: isSelected ? color : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -224,13 +227,13 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
             Icon(
               icon,
               size: 16,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
+              color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey.shade600,
+                color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 14,
               ),
@@ -248,7 +251,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -296,7 +299,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 3),
           ),
-          child: const Icon(
+          child: Icon(
             Icons.person,
             color: Colors.white,
             size: 20,
@@ -358,7 +361,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                     border: Border.all(color: Colors.white, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -370,7 +373,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                             imageUrl: friend.profileImageUrl!,
                             fit: BoxFit.cover,
                             placeholder: (context, url) => Container(
-                              color: Colors.grey.shade300,
+                              color: Theme.of(context).colorScheme.surfaceContainerHighest,
                               child: const Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
@@ -400,12 +403,12 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
+                    color: Colors.black.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     friend.name.split(' ').first,
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -457,13 +460,13 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.event,
                 color: Colors.white,
                 size: 20,
@@ -497,7 +500,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -585,7 +588,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -617,7 +620,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.red.withValues(alpha: 0.3),
+              color: Colors.red.withOpacity(0.3),
             ),
           ),
         ),
@@ -629,7 +632,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.orange.withValues(alpha: 0.3),
+              color: Colors.orange.withOpacity(0.3),
             ),
           ),
         ),
@@ -641,7 +644,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.orange.withValues(alpha: 0.25),
+              color: Colors.orange.withOpacity(0.25),
             ),
           ),
         ),
@@ -653,7 +656,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.yellow.withValues(alpha: 0.3),
+              color: Colors.yellow.withOpacity(0.3),
             ),
           ),
         ),
@@ -665,7 +668,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.yellow.withValues(alpha: 0.25),
+              color: Colors.yellow.withOpacity(0.25),
             ),
           ),
         ),
@@ -677,10 +680,10 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
@@ -701,7 +704,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                     label: const Text('Center on Campus'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.socialColor,
-                      foregroundColor: Colors.white,
+                      foregroundColor: Theme.of(context).colorScheme.surface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -715,7 +718,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                   },
                   icon: const Icon(Icons.directions),
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey.shade100,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     foregroundColor: AppColors.socialColor,
                   ),
                 ),

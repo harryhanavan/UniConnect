@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
@@ -165,17 +166,22 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
   Widget _buildUserTile(User user, {bool showSelect = false, VoidCallback? onTap}) {
     final isSelected = _selectedUsers.contains(user);
     
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: showSelect && isSelected
-              ? AppColors.socialColor
-              : Colors.grey.shade200,
-          width: showSelect && isSelected ? 2 : 1,
-        ),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(8),
+        border: showSelect && isSelected
+            ? Border.all(color: AppColors.socialColor, width: 2)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -186,11 +192,11 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               backgroundImage: user.profileImageUrl != null
                   ? NetworkImage(user.profileImageUrl!)
                   : null,
-              backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
+              backgroundColor: AppColors.socialColor.withOpacity(0.1),
               child: user.profileImageUrl == null
                   ? Text(
                       user.name.substring(0, 1),
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.socialColor,
                         fontWeight: FontWeight.bold,
                       ),
@@ -209,7 +215,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.check,
                     size: 12,
                     color: Colors.white,
@@ -220,7 +226,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
         ),
         title: Text(
           user.name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -234,7 +240,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                 ),
               ),
@@ -244,7 +250,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
             ? null
             : Icon(
                 Icons.chevron_right,
-                color: Colors.grey.shade400,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         onTap: onTap ?? () {
           if (showSelect) {
@@ -272,7 +278,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               Icon(
                 Icons.people_outline,
                 size: 64,
-                color: Colors.grey.shade400,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
               Text(
@@ -281,7 +287,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                     : 'No friends match your search',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 8),
@@ -289,7 +295,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                 'Connect with classmates to start chatting',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Colors.grey.shade500,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -322,14 +328,14 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               Icon(
                 Icons.search_off,
                 size: 64,
-                color: Colors.grey.shade400,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
               const SizedBox(height: 16),
               Text(
                 'No users match your search',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -395,11 +401,11 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                                   backgroundImage: user.profileImageUrl != null
                                       ? NetworkImage(user.profileImageUrl!)
                                       : null,
-                                  backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
+                                  backgroundColor: AppColors.socialColor.withOpacity(0.1),
                                   child: user.profileImageUrl == null
                                       ? Text(
                                           user.name.substring(0, 1),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: AppColors.socialColor,
                                           ),
                                         )
@@ -418,7 +424,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                                         shape: BoxShape.circle,
                                         border: Border.all(color: Colors.white, width: 2),
                                       ),
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.close,
                                         size: 12,
                                         color: Colors.white,
@@ -431,7 +437,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                             const SizedBox(height: 4),
                             Text(
                               user.name.split(' ').first,
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(fontSize: 12),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -476,7 +482,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                 ),
                 child: Text(
                   'Create Group (${_selectedUsers.length})',
-                  style: const TextStyle(fontSize: 16),
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
             ),
@@ -491,7 +497,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          colors: [AppColors.socialColor, AppColors.socialColor.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -519,8 +525,8 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
             ),
             TabBar(
               controller: _tabController,
-              indicatorColor: Colors.white,
-              labelColor: Colors.white,
+              indicatorColor: Theme.of(context).colorScheme.surface,
+              labelColor: Theme.of(context).colorScheme.surface,
               unselectedLabelColor: Colors.white70,
               tabs: const [
                 Tab(text: 'Friends'),
@@ -537,7 +543,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
           _buildHeader(),
@@ -553,7 +559,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               onChanged: _filterUsers,
             ),

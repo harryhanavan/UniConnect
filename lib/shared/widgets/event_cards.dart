@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/event_colors.dart';
+import '../../core/constants/app_theme.dart';
 import '../models/event.dart';
 
 /// Event card widgets based on Figma designs
@@ -8,6 +9,7 @@ class EventCards {
 
   /// 1 Day View - Full detailed card
   static Widget buildDayViewCard({
+    required BuildContext context,
     required Event event,
     required String eventType,
     required int attendeeCount,
@@ -25,13 +27,13 @@ class EventCards {
         height: 148,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -66,8 +68,8 @@ class EventCards {
                 height: 19,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 16,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -102,8 +104,8 @@ class EventCards {
               top: 55.58,
               child: Text(
                 '${event.startTime.hour.toString().padLeft(2, '0')}:${event.startTime.minute.toString().padLeft(2, '0')} - ${event.endTime.hour.toString().padLeft(2, '0')}:${event.endTime.minute.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  color: EventColors.secondaryText,
+                style: TextStyle(
+                  color: EventColors.getSecondaryTextColor(context),
                   fontSize: 14,
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w400,
@@ -141,12 +143,12 @@ class EventCards {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, size: 12, color: EventColors.secondaryText),
+                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   Text(
                     attendeeCount.toString(),
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 10,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
@@ -162,12 +164,12 @@ class EventCards {
               top: 83.58,
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: EventColors.secondaryText),
+                  Icon(Icons.location_on, size: 14, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 4),
                   Text(
                     event.location,
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 12,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -188,7 +190,7 @@ class EventCards {
                       margin: const EdgeInsets.only(right: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: ShapeDecoration(
-                        color: EventColors.suggestionBackground,
+                        color: EventColors.getSuggestionBackgroundColor(context),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -207,8 +209,8 @@ class EventCards {
                           const SizedBox(width: 4),
                           Text(
                             suggestion.replaceFirst(RegExp(r'^[📚👥]\s*'), ''),
-                            style: const TextStyle(
-                              color: EventColors.tertiaryText,
+                            style: TextStyle(
+                              color: EventColors.getTertiaryTextColor(context),
                               fontSize: 11,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w500,
@@ -228,6 +230,7 @@ class EventCards {
 
   /// 1 Day Timetable Chip - Simplified version for timetable view
   static Widget buildDayTimetableChip({
+    required BuildContext context,
     required Event event,
     required String eventType,
     required int attendeeCount,
@@ -244,13 +247,13 @@ class EventCards {
         height: 128,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -285,8 +288,8 @@ class EventCards {
                 height: 19,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 16,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -345,12 +348,12 @@ class EventCards {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, size: 12, color: EventColors.secondaryText),
+                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   Text(
                     attendeeCount.toString(),
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 10,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
@@ -366,12 +369,12 @@ class EventCards {
               top: 51,
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, size: 14, color: EventColors.secondaryText),
+                  Icon(Icons.location_on, size: 14, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 4),
                   Text(
                     event.location,
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 12,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -388,6 +391,7 @@ class EventCards {
 
   /// 7 Day Week Card - Compact card for week view
   static Widget buildWeekViewCard({
+    required BuildContext context,
     required Event event,
     required String eventType,
     required int attendeeCount,
@@ -404,13 +408,13 @@ class EventCards {
         height: 123,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -445,8 +449,8 @@ class EventCards {
                 height: 48,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 10,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -481,8 +485,8 @@ class EventCards {
               top: 72,
               child: Text(
                 '${event.startTime.hour.toString().padLeft(2, '0')}:${event.startTime.minute.toString().padLeft(2, '0')} - ${event.endTime.hour.toString().padLeft(2, '0')}:${event.endTime.minute.toString().padLeft(2, '0')}',
-                style: const TextStyle(
-                  color: EventColors.secondaryText,
+                style: TextStyle(
+                  color: EventColors.getSecondaryTextColor(context),
                   fontSize: 8,
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w400,
@@ -523,13 +527,13 @@ class EventCards {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, size: 12, color: EventColors.secondaryText),
+                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   Text(
                     attendeeCount.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 5,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
@@ -545,14 +549,14 @@ class EventCards {
               top: 112,
               child: Row(
                 children: [
-                  const Icon(Icons.location_on, size: 8, color: EventColors.secondaryText),
+                  Icon(Icons.location_on, size: 8, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   SizedBox(
                     width: 43,
                     child: Text(
                       event.location,
-                      style: const TextStyle(
-                        color: EventColors.secondaryText,
+                      style: TextStyle(
+                        color: EventColors.getSecondaryTextColor(context),
                         fontSize: 3,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w400,
@@ -572,6 +576,7 @@ class EventCards {
 
   /// 7 Day Week Timetable Chip - Ultra compact for week timetable
   static Widget buildWeekTimetableChip({
+    required BuildContext context,
     required Event event,
     required String eventType,
     required int attendeeCount,
@@ -588,13 +593,13 @@ class EventCards {
         height: 111,
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
-          color: EventColors.cardBackground,
+          color: EventColors.getCardBackgroundColor(context),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: const [
+          shadows: [
             BoxShadow(
-              color: EventColors.shadowColor,
+              color: EventColors.getShadowColor(context),
               blurRadius: 4,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
               spreadRadius: 0,
             )
           ],
@@ -629,8 +634,8 @@ class EventCards {
                 height: 32,
                 child: Text(
                   event.title,
-                  style: const TextStyle(
-                    color: EventColors.primaryText,
+                  style: TextStyle(
+                    color: EventColors.getPrimaryTextColor(context),
                     fontSize: 7,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w700,
@@ -692,13 +697,13 @@ class EventCards {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, size: 12, color: EventColors.secondaryText),
+                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
                   const SizedBox(width: 2),
                   Text(
                     attendeeCount.toString(),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: EventColors.secondaryText,
+                    style: TextStyle(
+                      color: EventColors.getSecondaryTextColor(context),
                       fontSize: 5,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,

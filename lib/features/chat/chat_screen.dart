@@ -189,13 +189,13 @@ class _ChatScreenState extends State<ChatScreen> {
               backgroundImage: user?.profileImageUrl != null
                   ? NetworkImage(user!.profileImageUrl!)
                   : null,
-              backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
+              backgroundColor: const Color(0xFFF5F5F0),
               child: user?.profileImageUrl == null
                   ? Text(
                       user?.name.substring(0, 1) ?? '?',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppColors.socialColor,
+                        color: Color(0xFF2C2C2C),
                       ),
                     )
                   : null,
@@ -302,6 +302,14 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 3,
           ),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -338,12 +346,12 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           CircleAvatar(
             radius: 12,
-            backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
+            backgroundColor: const Color(0xFFF5F5F0),
             child: Text(
               _userCache[_typingUsers.first]?.name.substring(0, 1) ?? '?',
               style: const TextStyle(
                 fontSize: 10,
-                color: AppColors.socialColor,
+                color: Color(0xFF2C2C2C),
               ),
             ),
           ),

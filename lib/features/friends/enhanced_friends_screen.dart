@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/services/location_service.dart';
@@ -64,7 +67,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -74,18 +77,17 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     final currentUser = _demoData.currentUser;
     
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header with real-time status
-            _buildHeader(currentUser),
-            
-            // Tab Navigation
-            _buildTabBar(),
-            
-            // Tab Content
-            Expanded(
+      backgroundColor: AppTheme.getBackgroundColor(context),
+      body: Column(
+        children: [
+          // Header with real-time status
+          _buildHeader(currentUser),
+
+          // Tab Navigation
+          _buildTabBar(),
+
+          // Tab Content
+          Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -94,27 +96,31 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   _buildRequestsTab(currentUser),
                   _buildSuggestionsTab(currentUser),
                 ],
-              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(User currentUser) {
     final friendsCount = currentUser.friendIds.length;
-    
+    final appState = Provider.of<AppState>(context, listen: true);
+
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark] // Option 3: Solid dark blue
+              : [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)], // Original bright green
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -123,7 +129,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'UniMates',
                     style: TextStyle(
                       fontSize: 28,
@@ -135,7 +141,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     friendsCount == 0
                         ? 'Connect with fellow students'
                         : 'Stay connected with your friends',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                       fontWeight: FontWeight.w400,
@@ -163,6 +169,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             ],
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -173,11 +181,11 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     final totalRequestCount = pendingCount + sentCount;
 
     return Container(
-      color: Colors.white,
+      color: AppTheme.getSurfaceColor(context),
       child: TabBar(
         controller: _tabController,
         labelColor: AppColors.socialColor,
-        unselectedLabelColor: Colors.grey,
+        unselectedLabelColor: AppTheme.getSecondaryTextColor(context),
         indicatorColor: AppColors.socialColor,
         tabs: [
           const Tab(text: 'Friends'),
@@ -200,8 +208,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                         constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                         child: Text(
                           '$totalRequestCount',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: const Color(0xFF2C2C2C),
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
@@ -282,7 +290,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
         
         Text(
           'Friends on Campus (${friendsOnCampus.length})',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -361,11 +369,11 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             fontWeight: FontWeight.bold,
           ),
         ),
-        const Text(
+        Text(
           'Find friends based on shared interests and activities',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 20),
@@ -474,7 +482,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             final startTime = slot['startTime'] as DateTime;
             return Text(
               '${startTime.hour}:${startTime.minute.toString().padLeft(2, '0')} - ${slot['suggestion']} with ${friend.name}',
-              style: const TextStyle(fontSize: 14),
+              style: TextStyle(fontSize: 14),
             );
           }),
         ],
@@ -488,23 +496,14 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     final currentLocation = friend.currentLocationId != null
         ? _demoData.getLocationById(friend.currentLocationId!)
         : null;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
+      decoration: AppTheme.getCardDecoration(context),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           onTap: () => _showFriendProfile(friend),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -515,16 +514,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: const Color(0xFF0D99FF),
-                      child: Text(
-                        friend.name[0],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      backgroundImage: friend.profileImageUrl != null
+                          ? NetworkImage(friend.profileImageUrl!)
+                          : null,
+                      backgroundColor: const Color(0xFFF5F5F0),
+                      child: friend.profileImageUrl == null
+                          ? Text(
+                              friend.name[0],
+                              style: TextStyle(
+                                color: const Color(0xFF2C2C2C),
+                                fontSize: 20,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          : null,
                     ),
                     Positioned(
                       right: 0,
@@ -550,8 +554,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     children: [
                       Text(
                         friend.name,
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w600,
@@ -561,7 +565,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                       Text(
                         '${friend.course} • ${friend.year}',
                         style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.50),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w400,
@@ -584,7 +588,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                             Icon(
                               Icons.location_on,
                               size: 14,
-                              color: Colors.black.withValues(alpha: 0.50),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -593,7 +597,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                                 fontSize: 12,
                                 fontFamily: 'Roboto',
                                 fontWeight: FontWeight.w400,
-                                color: Colors.black.withValues(alpha: 0.50),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],
@@ -612,23 +616,25 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                         onTap: () => _showTimetableOverlay(currentUser, friend),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: ShapeDecoration(
-                            color: const Color(0xFF0D99FF).withValues(alpha: 0.1),
-                            shape: RoundedRectangleBorder(
-                              side: BorderSide(
-                                width: 1,
-                                color: const Color(0xFF0D99FF).withValues(alpha: 0.3),
-                              ),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                          decoration: BoxDecoration(
+                            color: AppColors.personalColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Theme.of(context).shadowColor.withOpacity(0.05),
+                                blurRadius: 2,
+                                offset: const Offset(0, 1),
+                                spreadRadius: 0,
+                              )
+                            ],
                           ),
-                          child: const Text(
+                          child: Text(
                             'Timetable',
                             style: TextStyle(
                               fontSize: 12,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF0D99FF),
+                              color: AppColors.personalColor,
                             ),
                           ),
                         ),
@@ -665,20 +671,11 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   Widget _buildLocationFriendCard(User friend, Location? location, double? distance) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
+      decoration: AppTheme.getCardDecoration(context),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           onTap: () => _showFriendProfile(friend),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -687,16 +684,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 // Avatar
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: const Color(0xFF0D99FF),
-                  child: Text(
-                    friend.name[0],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  backgroundImage: friend.profileImageUrl != null
+                      ? NetworkImage(friend.profileImageUrl!)
+                      : null,
+                  backgroundColor: const Color(0xFFF5F5F0),
+                  child: friend.profileImageUrl == null
+                      ? Text(
+                          friend.name[0],
+                          style: TextStyle(
+                            color: const Color(0xFF2C2C2C),
+                            fontSize: 20,
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 16),
                 
@@ -707,8 +709,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     children: [
                       Text(
                         friend.name,
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w600,
@@ -721,7 +723,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                             Icon(
                               Icons.location_on,
                               size: 14,
-                              color: Colors.black.withValues(alpha: 0.50),
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 4),
                             Expanded(
@@ -729,7 +731,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                                 location.displayName,
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                color: Colors.black.withValues(alpha: 0.70),
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 fontSize: 14,
                                 fontFamily: 'Roboto',
                                 fontWeight: FontWeight.w500,
@@ -745,7 +747,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                               ? '${distance.round()}m away'
                               : '${(distance / 1000).toStringAsFixed(1)}km away',
                           style: TextStyle(
-                            color: Colors.black.withValues(alpha: 0.50),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                             fontSize: 12,
                             fontFamily: 'Roboto',
                             fontWeight: FontWeight.w400,
@@ -758,15 +760,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 
                 // Meet button
                 Container(
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFF0D99FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                  decoration: BoxDecoration(
+                    color: AppColors.personalColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).shadowColor.withOpacity(0.1),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                        spreadRadius: 0,
+                      )
+                    ],
                   ),
                   child: TextButton(
                     onPressed: () => _suggestMeetup(friend),
-                    child: const Text(
+                    child: Text(
                       'Meet',
                       style: TextStyle(
                         color: Colors.white,
@@ -791,16 +799,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
-          ),
-          borderRadius: BorderRadius.circular(6),
-        ),
-      ),
+      decoration: AppTheme.getCardDecoration(context),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -810,16 +809,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: const Color(0xFF0D99FF),
-                  child: Text(
-                    sender.name[0],
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  backgroundImage: sender.profileImageUrl != null
+                      ? NetworkImage(sender.profileImageUrl!)
+                      : null,
+                  backgroundColor: const Color(0xFFF5F5F0),
+                  child: sender.profileImageUrl == null
+                      ? Text(
+                          sender.name[0],
+                          style: TextStyle(
+                            color: const Color(0xFF2C2C2C),
+                            fontSize: 20,
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -828,8 +832,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     children: [
                       Text(
                         sender.name,
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 16,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w600,
@@ -839,7 +843,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                       Text(
                         '${sender.course} • ${sender.year}',
                         style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.50),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w400,
@@ -854,16 +858,22 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: ShapeDecoration(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).shadowColor.withOpacity(0.05),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                      spreadRadius: 0,
+                    )
+                  ],
                 ),
                 child: Text(
                   request.message!,
-                  style: const TextStyle(
-                    color: Colors.black,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w400,
@@ -877,22 +887,28 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Container(
-                  decoration: ShapeDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      side: BorderSide(
-                        width: 1,
-                        color: Colors.black.withValues(alpha: 0.20),
-                      ),
-                      borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      width: 1,
+                      color: Theme.of(context).colorScheme.outline,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).shadowColor.withOpacity(0.05),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                        spreadRadius: 0,
+                      )
+                    ],
                   ),
                   child: TextButton(
                     onPressed: () => _handleFriendRequest(request, false),
-                    child: const Text(
+                    child: Text(
                       'Decline',
                       style: TextStyle(
-                        color: Colors.black,
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 14,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w500,
@@ -902,15 +918,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  decoration: const ShapeDecoration(
-                    color: Color(0xFF0D99FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(6)),
-                    ),
+                  decoration: BoxDecoration(
+                    color: AppColors.personalColor,
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).shadowColor.withOpacity(0.1),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                        spreadRadius: 0,
+                      )
+                    ],
                   ),
                   child: TextButton(
                     onPressed: () => _handleFriendRequest(request, true),
-                    child: const Text(
+                    child: Text(
                       'Accept',
                       style: TextStyle(
                         color: Colors.white,
@@ -935,15 +957,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      decoration: ShapeDecoration(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.orange.withValues(alpha: 0.20),
-          ),
-          borderRadius: BorderRadius.circular(6),
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          width: 1,
+          color: Colors.orange.withValues(alpha: 0.20),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -956,16 +984,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundColor: const Color(0xFF0D99FF),
-                      child: Text(
-                        recipient.name[0],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      backgroundImage: recipient.profileImageUrl != null
+                          ? NetworkImage(recipient.profileImageUrl!)
+                          : null,
+                      backgroundColor: const Color(0xFFF5F5F0),
+                      child: recipient.profileImageUrl == null
+                          ? Text(
+                              recipient.name[0],
+                              style: TextStyle(
+                                color: const Color(0xFF2C2C2C),
+                                fontSize: 20,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            )
+                          : null,
                     ),
                     Positioned(
                       right: 0,
@@ -978,7 +1011,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.schedule,
                           size: 8,
                           color: Colors.white,
@@ -997,8 +1030,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                           Expanded(
                             child: Text(
                               recipient.name,
-                              style: const TextStyle(
-                                color: Colors.black,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface,
                                 fontSize: 16,
                                 fontFamily: 'Roboto',
                                 fontWeight: FontWeight.w600,
@@ -1027,7 +1060,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                       Text(
                         '${recipient.course} • ${recipient.year}',
                         style: TextStyle(
-                          color: Colors.black.withValues(alpha: 0.50),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w400,
@@ -1042,16 +1075,22 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: ShapeDecoration(
+                decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.05),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).shadowColor.withOpacity(0.05),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                      spreadRadius: 0,
+                    )
+                  ],
                 ),
                 child: Text(
                   request.message!,
-                  style: const TextStyle(
-                    color: Colors.black,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 14,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w400,
@@ -1067,22 +1106,28 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 Text(
                   'Sent ${_formatTimeAgo(request.createdAt)}',
                   style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.50),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w400,
                   ),
                 ),
                 Container(
-                  decoration: ShapeDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      side: const BorderSide(
-                        width: 1,
-                        color: Colors.orange,
-                      ),
-                      borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      width: 1,
+                      color: Colors.orange,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).shadowColor.withOpacity(0.05),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                        spreadRadius: 0,
+                      )
+                    ],
                   ),
                   child: TextButton(
                     onPressed: () => _cancelFriendRequest(request),
@@ -1112,15 +1157,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: ShapeDecoration(
+      decoration: BoxDecoration(
         color: const Color(0xFFFFF3E0),
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.orange.withValues(alpha: 0.20),
-          ),
-          borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          width: 1,
+          color: Colors.orange.withValues(alpha: 0.20),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1144,7 +1195,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             final suggestionText = suggestion['suggestion'] as String;
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
-              child: Text(suggestionText, style: const TextStyle(fontSize: 14)),
+              child: Text(suggestionText, style: TextStyle(fontSize: 14)),
             );
           }),
         ],
@@ -1199,15 +1250,15 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        color: AppTheme.getCardColor(context),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
-          ),
+            spreadRadius: 0,
+          )
         ],
       ),
       child: Column(
@@ -1219,8 +1270,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.1),
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
               ),
             ),
             child: Row(
@@ -1243,7 +1294,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -1258,8 +1309,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     ),
                     child: Text(
                       '${discoveryData.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: const Color(0xFF2C2C2C),
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1276,7 +1327,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               child: Text(
                 'No suggestions available',
                 style: TextStyle(
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 14,
                 ),
               ),
@@ -1312,24 +1363,36 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.05),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: Row(
         children: [
           // Avatar
           CircleAvatar(
             radius: 24,
-            backgroundColor: accentColor,
-            child: Text(
-              user.name[0],
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            backgroundImage: user.profileImageUrl != null
+                ? NetworkImage(user.profileImageUrl!)
+                : null,
+            backgroundColor: const Color(0xFFF5F5F0),
+            child: user.profileImageUrl == null
+                ? Text(
+                    user.name[0],
+                    style: TextStyle(
+                      color: const Color(0xFF2C2C2C),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           
@@ -1340,7 +1403,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
               children: [
                 Text(
                   user.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1349,7 +1412,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   '${user.course} • ${user.year}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 Text(
@@ -1366,7 +1429,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     children: commonItems.take(2).map((item) => Chip(
                       label: Text(
                         item,
-                        style: const TextStyle(fontSize: 10),
+                        style: TextStyle(fontSize: 10),
                       ),
                       backgroundColor: accentColor.withValues(alpha: 0.1),
                       padding: EdgeInsets.zero,
@@ -1384,10 +1447,10 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             child: ElevatedButton(
               onPressed: () => _sendFriendRequest(user),
               style: ElevatedButton.styleFrom(
-                backgroundColor: accentColor,
-                foregroundColor: Colors.white,
+                backgroundColor: const Color(0xFFF5F5F0),
+                foregroundColor: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                textStyle: const TextStyle(fontSize: 12),
+                textStyle: TextStyle(fontSize: 12),
               ),
               child: const Text('Add'),
             ),
@@ -1402,19 +1465,24 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: AppColors.socialColor,
-          child: Text(
-            user.name[0],
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
+          backgroundImage: user.profileImageUrl != null
+              ? NetworkImage(user.profileImageUrl!)
+              : null,
+          backgroundColor: const Color(0xFFF5F5F0),
+          child: user.profileImageUrl == null
+              ? Text(
+                  user.name[0],
+                  style: TextStyle(color: const Color(0xFF2C2C2C), fontWeight: FontWeight.bold),
+                )
+              : null,
         ),
         title: Text(user.name),
         subtitle: Text('${user.course} • ${user.year}'),
         trailing: ElevatedButton(
           onPressed: () => _sendFriendRequest(user),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.socialColor,
-            foregroundColor: Colors.white,
+            backgroundColor: const Color(0xFFF5F5F0),
+            foregroundColor: Theme.of(context).colorScheme.surface,
             minimumSize: const Size(60, 30),
           ),
           child: const Text('Add', style: TextStyle(fontSize: 12)),
@@ -1434,13 +1502,13 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             const SizedBox(height: 16),
             Text(
               title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -1763,7 +1831,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             children: [
               Text(
                 '${friend.name}\'s Schedule',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               const Text('Timetable overlay functionality would be implemented here.'),
@@ -2068,8 +2136,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
         maxChildSize: 0.9,
         minChildSize: 0.5,
         builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C2C2C),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -2083,7 +2151,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Theme.of(context).colorScheme.outline,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

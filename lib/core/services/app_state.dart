@@ -11,6 +11,7 @@ import 'location_service.dart';
 class AppState extends ChangeNotifier {
   final DemoDataManager _demoData = DemoDataManager.instance;
   bool _isDarkMode = false;
+  bool _isTempStyleEnabled = false; // Temp style toggle for navigation and design changes
   bool _isAuthenticated = true; // Set to true for demo purposes
   int _currentNavIndex = 0; // Start on Home
   bool _isInitialized = false;
@@ -58,6 +59,7 @@ class AppState extends ChangeNotifier {
 
   // Getters
   bool get isDarkMode => _isDarkMode;
+  bool get isTempStyleEnabled => _isTempStyleEnabled;
   bool get isAuthenticated => _isAuthenticated && _isInitialized;
   int get currentNavIndex => _currentNavIndex;
   bool get isInitialized => _isInitialized;
@@ -72,6 +74,11 @@ class AppState extends ChangeNotifier {
   // Actions
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
+    notifyListeners();
+  }
+
+  void toggleTempStyle() {
+    _isTempStyleEnabled = !_isTempStyleEnabled;
     notifyListeners();
   }
 

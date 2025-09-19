@@ -86,8 +86,18 @@ class _MainNavigationState extends State<MainNavigation> {
               appState.setNavIndex(index);
             },
             type: BottomNavigationBarType.fixed,
-            selectedItemColor: _getTabColor(appState.currentNavIndex),
-            unselectedItemColor: AppColors.textSecondary,
+            // CONDITIONAL STYLING BASED ON TEMP STYLE TOGGLE:
+            // Original: Default background, colored selected icons, gray unselected
+            // Temp Style: Dark blue background, white selected/unselected icons
+            backgroundColor: appState.isTempStyleEnabled
+                ? AppColors.primaryDark    // Dark blue background matching headers
+                : null,                    // Default background when disabled
+            selectedItemColor: appState.isTempStyleEnabled
+                ? Colors.white             // White icons on blue background
+                : _getTabColor(appState.currentNavIndex), // Colored icons for original style
+            unselectedItemColor: appState.isTempStyleEnabled
+                ? Colors.white70           // Semi-transparent white on blue
+                : AppColors.textSecondary, // Gray for original style
             items: [
               const BottomNavigationBarItem(
                 icon: Icon(Icons.home),

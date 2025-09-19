@@ -7,6 +7,7 @@ import '../../shared/models/user.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/event_relationship_service.dart';
+import '../../core/constants/app_theme.dart';
 import '../../shared/widgets/enhanced_event_card.dart';
 
 class SocietyDetailScreen extends StatefulWidget {
@@ -22,28 +23,91 @@ class SocietyDetailScreen extends StatefulWidget {
 }
 
 class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
-  late Society currentSociety;
   List<EventV2> upcomingEvents = [];
   List<Map<String, dynamic>> eventsWithStatus = [];
   bool notificationsEnabled = true;
   bool _isInitialized = false;
+  bool _isProcessingJoin = false;
+  String? _lastError;
   
   final CalendarService _calendarService = CalendarService();
   final EventRelationshipService _eventRelationshipService = EventRelationshipService();
 
+  // Helper method to get current society data
+  Society? get currentSociety {
+    try {
+      return DemoDataManager.instance.getSocietyById(widget.society.id);
+    } catch (e) {
+      // Return the original society if demo data isn't initialized yet
+      return widget.society;
+    }
+  }
+
+  // Helper method to safely check if user is joined to society
+  // Returns null when state is unknown/loading
+  bool? get isUserJoined {
+    if (!_isInitialized || _isProcessingJoin) {
+      return null; // Unknown state - show loading
+    }
+    try {
+      final demoData = DemoDataManager.instance;
+      final society = currentSociety;
+      return society != null && demoData.currentUser.societyIds.contains(society.id);
+    } catch (e) {
+      print('Error checking join status: $e');
+      return null;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    currentSociety = widget.society;
     _initializeData();
-    
+
+    // Listen for society membership changes
+    DemoDataManager.instance.societyMembershipNotifier.addListener(_onMembershipChanged);
+
     // Listen for external event relationship changes
     _eventRelationshipService.relationshipChangeNotifier.addListener(_onExternalEventRelationshipChange);
+  }
+
+  void _onMembershipChanged() {
+    if (mounted) {
+      try {
+        final membershipChange = DemoDataManager.instance.societyMembershipNotifier.value;
+
+        // Check if this change is relevant to the current society
+        if (membershipChange.isNotEmpty && membershipChange['societyId'] == widget.society.id) {
+          print('Society membership changed: ${membershipChange['action']} for society ${membershipChange['societyId']}');
+
+          // Force a refresh of the current state
+          setState(() {}); // Refresh UI when membership changes
+
+          // Reload events if needed
+          if (_isInitialized && !_isProcessingJoin) {
+            _loadUpcomingEvents().then((_) {
+              if (mounted) setState(() {});
+            });
+          }
+        } else {
+          // Generic membership change, still refresh UI
+          setState(() {});
+        }
+      } catch (e) {
+        print('Error handling membership change: $e');
+        // Fallback to generic refresh
+        setState(() {});
+      }
+    }
   }
   
   Future<void> _initializeData() async {
     if (!_isInitialized) {
-      await DemoDataManager.instance.enhancedEvents; // Trigger EventV2 initialization
+      // Initialize all demo data first
+      final demoData = DemoDataManager.instance;
+      await demoData.users; // This triggers full initialization
+      await demoData.societies; // Ensure societies are loaded
+      await demoData.enhancedEvents; // Trigger EventV2 initialization
       await _loadUpcomingEvents();
       _isInitialized = true;
       if (mounted) setState(() {});
@@ -51,37 +115,113 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   }
 
   Future<void> _loadUpcomingEvents() async {
-    // Get events with relationship status for this society
-    eventsWithStatus = await _calendarService.getSocietyEventsWithStatus(
-      DemoDataManager.instance.currentUser.id,
-      widget.society.id,
-    );
-    
-    // Extract events for backward compatibility
-    upcomingEvents = eventsWithStatus
-        .map((eventData) => eventData['event'] as EventV2)
-        .take(5)
-        .toList();
+    try {
+      // Ensure demo data is initialized before accessing currentUser
+      final demoData = DemoDataManager.instance;
+      if (!_isInitialized) {
+        // Skip loading events if not initialized yet
+        eventsWithStatus = [];
+        upcomingEvents = [];
+        return;
+      }
+
+      // Get the current user ID safely
+      String currentUserId;
+      try {
+        currentUserId = demoData.currentUser.id;
+      } catch (e) {
+        // If currentUser fails, try async version
+        final user = await demoData.currentUserAsync;
+        currentUserId = user.id;
+      }
+
+      // Get events with relationship status for this society
+      eventsWithStatus = await _calendarService.getSocietyEventsWithStatus(
+        currentUserId,
+        widget.society.id,
+      );
+
+      // Extract events for backward compatibility
+      upcomingEvents = eventsWithStatus
+          .map((eventData) => eventData['event'] as EventV2)
+          .take(5)
+          .toList();
+    } catch (e) {
+      // If there's an error loading events, set empty lists
+      eventsWithStatus = [];
+      upcomingEvents = [];
+      print('Error loading upcoming events: $e');
+    }
   }
 
-  void _toggleJoinSociety() {
-    final demoData = DemoDataManager.instance;
-    final isCurrentlyJoined = demoData.currentUser.societyIds.contains(currentSociety.id);
-    
+  void _toggleJoinSociety() async {
+    // Prevent concurrent operations
+    if (_isProcessingJoin) return;
+
     setState(() {
-      if (isCurrentlyJoined) {
-        demoData.leaveSociety(currentSociety.id);
-      } else {
-        demoData.joinSociety(currentSociety.id);
+      _isProcessingJoin = true;
+      _lastError = null;
+    });
+
+    try {
+      if (!_isInitialized) {
+        await _initializeData();
       }
-      // Refresh the current society data from the updated data manager
-      currentSociety = demoData.getSocietyById(currentSociety.id) ?? currentSociety;
-    });
-    
-    // Reload events to reflect any membership changes
-    _loadUpcomingEvents().then((_) {
-      if (mounted) setState(() {});
-    });
+
+      final demoData = DemoDataManager.instance;
+      final society = demoData.getSocietyById(widget.society.id);
+
+      if (society == null) {
+        throw Exception('Society not found');
+      }
+
+      final isCurrentlyJoined = demoData.currentUser.societyIds.contains(society.id);
+      final action = isCurrentlyJoined ? 'leave' : 'join';
+
+      // Perform the operation
+      if (isCurrentlyJoined) {
+        demoData.leaveSociety(society.id);
+      } else {
+        demoData.joinSociety(society.id);
+      }
+
+      // Reload events to reflect membership changes
+      await _loadUpcomingEvents();
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isCurrentlyJoined ? 'Left ${society.name}' : 'Joined ${society.name}!',
+            ),
+            backgroundColor: isCurrentlyJoined ? Colors.orange : Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+
+    } catch (e) {
+      _lastError = e.toString();
+      print('Error toggling society membership: $e');
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to ${_isProcessingJoin ? "update membership" : "join society"}: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingJoin = false;
+        });
+      }
+    }
   }
 
   void _onEventRelationshipChanged(EventV2 event, EventRelationship newRelationship) {
@@ -169,7 +309,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -177,12 +317,12 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     }
     
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(''),
@@ -196,14 +336,18 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.all(12),
                     decoration: ShapeDecoration(
-                      color: Colors.white,
+                      color: AppTheme.getCardColor(context),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          width: 1,
-                          color: Colors.black.withValues(alpha: 0.10),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8), // Match calendar cards
                       ),
+                      shadows: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 0,
+                        )
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,19 +357,19 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                           width: double.infinity,
                           height: 200,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
                             borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(6),
-                              topRight: Radius.circular(6),
+                              topLeft: Radius.circular(8), // Match calendar cards
+                              topRight: Radius.circular(8), // Match calendar cards
                             ),
                           ),
                           child: Stack(
                             children: [
                               // Logo/Image
                               Center(
-                                child: currentSociety.logoUrl != null
+                                child: currentSociety?.logoUrl != null
                                     ? CachedNetworkImage(
-                                        imageUrl: currentSociety.logoUrl!,
+                                        imageUrl: currentSociety!.logoUrl!,
                                         fit: BoxFit.contain,
                                         height: 120,
                                         placeholder: (context, url) => SizedBox(
@@ -249,18 +393,18 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                                 child: Container(
                                   padding: const EdgeInsets.all(6),
                                   decoration: ShapeDecoration(
-                                    color: Colors.black.withValues(alpha: 0.05),
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                     shape: const RoundedRectangleBorder(
                                       borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(6),
-                                        bottomRight: Radius.circular(6),
+                                        topLeft: Radius.circular(8), // Match calendar cards
+                                        bottomRight: Radius.circular(8), // Match calendar cards
                                       ),
                                     ),
                                   ),
                                   child: Text(
-                                    currentSociety.category,
-                                    style: const TextStyle(
-                                      color: Colors.black,
+                                    currentSociety?.category ?? '',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface,
                                       fontSize: 12,
                                       fontFamily: 'Roboto',
                                       fontWeight: FontWeight.w500,
@@ -281,9 +425,9 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                             children: [
                               // Society Name
                               Text(
-                                currentSociety.name,
-                                style: const TextStyle(
-                                  color: Colors.black,
+                                currentSociety?.name ?? 'Unknown Society',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontSize: 24,
                                   fontFamily: 'Roboto',
                                   fontWeight: FontWeight.w700,
@@ -294,9 +438,9 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                               
                               // Member Count
                               Text(
-                                '${currentSociety.memberCount} members',
+                                '${currentSociety?.memberCount ?? 0} members',
                                 style: TextStyle(
-                                  color: Colors.black.withValues(alpha: 0.50),
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                                   fontSize: 14,
                                   fontFamily: 'Roboto',
                                   fontWeight: FontWeight.w400,
@@ -307,26 +451,26 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                               const SizedBox(height: 12),
                               
                               // Tags
-                              if (currentSociety.tags.isNotEmpty)
+                              if (currentSociety?.tags.isNotEmpty == true)
                                 Wrap(
                                   spacing: 6,
                                   runSpacing: 4,
-                                  children: currentSociety.tags.map((tag) => Container(
+                                  children: (currentSociety?.tags ?? []).map((tag) => Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                     decoration: ShapeDecoration(
-                                      color: Colors.black.withValues(alpha: 0.05),
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                       shape: RoundedRectangleBorder(
                                         side: BorderSide(
                                           width: 0.50,
-                                          color: Colors.black.withValues(alpha: 0.10),
+                                          color: Theme.of(context).colorScheme.outline,
                                         ),
-                                        borderRadius: BorderRadius.circular(3),
+                                        borderRadius: BorderRadius.circular(8), // Match calendar cards
                                       ),
                                     ),
                                     child: Text(
                                       tag,
-                                      style: const TextStyle(
-                                        color: Colors.black,
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.onSurface,
                                         fontSize: 12,
                                         fontFamily: 'Roboto',
                                         fontWeight: FontWeight.w400,
@@ -343,29 +487,14 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                                 width: double.infinity,
                                 height: 48,
                                 decoration: ShapeDecoration(
-                                  color: DemoDataManager.instance.currentUser.societyIds.contains(currentSociety.id)
-                                      ? const Color(0xFF34C759) 
-                                      : const Color(0xFF0D99FF),
+                                  color: _getButtonColor(),
                                   shape: RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      width: 1,
-                                      color: Colors.black.withValues(alpha: 0.1),
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
+                                    borderRadius: BorderRadius.circular(8), // Match calendar cards
                                   ),
                                 ),
                                 child: TextButton(
-                                  onPressed: _toggleJoinSociety,
-                                  child: Text(
-                                    DemoDataManager.instance.currentUser.societyIds.contains(currentSociety.id) ? 'Joined' : 'Join Society',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontFamily: 'Roboto',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  onPressed: isUserJoined == null ? null : _toggleJoinSociety,
+                                  child: _buildButtonContent(),
                                 ),
                               ),
                             ],
@@ -380,14 +509,18 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                     decoration: ShapeDecoration(
-                      color: Colors.white,
+                      color: AppTheme.getCardColor(context),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          width: 1,
-                          color: Colors.black.withValues(alpha: 0.10),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8), // Match calendar cards
                       ),
+                      shadows: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 0,
+                        )
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
@@ -395,9 +528,9 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            currentSociety.description,
-                            style: const TextStyle(
-                              color: Colors.black,
+                            currentSociety?.description ?? 'No description available.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 14,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w400,
@@ -406,7 +539,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                           ),
                           const SizedBox(height: 12),
                           // Contact email
-                          if (currentSociety.id == 'soc_001') ...
+                          if (currentSociety?.id == 'soc_001') ...
                           [
                             GestureDetector(
                               onTap: () {
@@ -436,24 +569,28 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                     decoration: ShapeDecoration(
-                      color: Colors.white,
+                      color: AppTheme.getCardColor(context),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          width: 1,
-                          color: Colors.black.withValues(alpha: 0.10),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8), // Match calendar cards
                       ),
+                      shadows: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 0,
+                        )
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'About Us',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 18,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w600,
@@ -461,9 +598,9 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                           ),
                           const SizedBox(height: 12),
                           Text(
-                            currentSociety.aboutUs ?? currentSociety.description,
-                            style: const TextStyle(
-                              color: Colors.black,
+                            currentSociety?.aboutUs ?? currentSociety?.description ?? 'No information available.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 14,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w400,
@@ -472,7 +609,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                           ),
                           const SizedBox(height: 12),
                           // Website link for UXID Society
-                          if (currentSociety.id == 'soc_001') ...
+                          if (currentSociety?.id == 'soc_001') ...
                           [
                             GestureDetector(
                               onTap: () {
@@ -507,21 +644,21 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                       width: double.infinity,
                       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       decoration: ShapeDecoration(
-                        color: Colors.white,
+                        color: AppTheme.getCardColor(context),
                         shape: RoundedRectangleBorder(
                           side: BorderSide(
                             width: 1,
-                            color: Colors.black.withValues(alpha: 0.10),
+                            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
                           ),
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(8), // Match calendar cards
                         ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Text(
                           '${upcomingEvents.length} upcoming events',
-                          style: const TextStyle(
-                            color: Colors.black,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 18,
                             fontFamily: 'Roboto',
                             fontWeight: FontWeight.w600,
@@ -550,24 +687,28 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                     width: double.infinity,
                     margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                     decoration: ShapeDecoration(
-                      color: Colors.white,
+                      color: AppTheme.getCardColor(context),
                       shape: RoundedRectangleBorder(
-                        side: BorderSide(
-                          width: 1,
-                          color: Colors.black.withValues(alpha: 0.10),
-                        ),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8), // Match calendar cards
                       ),
+                      shadows: [
+                        BoxShadow(
+                          color: Theme.of(context).shadowColor.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                          spreadRadius: 0,
+                        )
+                      ],
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Notifications',
                             style: TextStyle(
-                              color: Colors.black,
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontSize: 18,
                               fontFamily: 'Roboto',
                               fontWeight: FontWeight.w600,
@@ -597,13 +738,13 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       width: double.infinity,
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppTheme.getCardColor(context),
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
           ),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8), // Match calendar cards
         ),
       ),
       child: Padding(
@@ -614,10 +755,10 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Welcome New Members!',
                   style: TextStyle(
-                    color: Colors.black,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 16,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w500,
@@ -626,7 +767,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                 Text(
                   '2 days ago',
                   style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.6),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 12,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w400,
@@ -635,10 +776,10 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
               ],
             ),
             const SizedBox(height: 15),
-            const Text(
+            Text(
               'Welcome to all our new members! We\'re excited to have you join our community. Don\'t forget to introduce yourself in our Discord channel.',
               style: TextStyle(
-                color: Colors.black,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 12,
                 fontFamily: 'Roboto',
                 fontWeight: FontWeight.w400,
@@ -659,7 +800,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
         border: Border(
           bottom: BorderSide(
             width: 0.5,
-            color: Colors.black.withValues(alpha: 0.10),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
           ),
         ),
       ),
@@ -668,8 +809,8 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: Colors.black,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
               fontSize: 16,
               fontFamily: 'Roboto',
               fontWeight: FontWeight.w400,
@@ -714,7 +855,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   
   Widget _buildMembersSection() {
     final demoData = DemoDataManager.instance;
-    final members = demoData.usersSync.where((user) => currentSociety.memberIds.contains(user.id)).toList();
+    final members = demoData.usersSync.where((user) => currentSociety?.memberIds.contains(user.id) == true).toList();
     final currentUserFriends = demoData.getFriendsForUser(demoData.currentUser.id);
     final friendsInSociety = members.where((member) => currentUserFriends.any((friend) => friend.id == member.id)).toList();
     
@@ -722,13 +863,13 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       decoration: ShapeDecoration(
-        color: Colors.white,
+        color: AppTheme.getCardColor(context),
         shape: RoundedRectangleBorder(
           side: BorderSide(
             width: 1,
-            color: Colors.black.withValues(alpha: 0.10),
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
           ),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8), // Match calendar cards
         ),
       ),
       child: Padding(
@@ -741,8 +882,8 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
               children: [
                 Text(
                   'Members (${members.length})',
-                  style: const TextStyle(
-                    color: Colors.black,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 18,
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w600,
@@ -777,7 +918,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
               Text(
                 '... and ${members.length - 8} more members',
                 style: TextStyle(
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontFamily: 'Roboto',
                   fontWeight: FontWeight.w400,
@@ -805,7 +946,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
               ),
               child: ClipOval(
                 child: CachedNetworkImage(
-                  imageUrl: member.profileImageUrl ?? 'https://api.dicebear.com/7.x/avataaars/png?seed=${member.name}',
+                  imageUrl: member.profileImageUrl ?? 'https://api.dicebear.com/9.x/micah/png?seed=${member.name}&hair=dannyPhantom,fonze,full,pixie&mouth=laughing,smile,smirk',
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     color: Colors.grey[300],
@@ -850,7 +991,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
           child: Text(
             member.name.split(' ').first,
             style: TextStyle(
-              color: isFriend ? Colors.blue[600] : Colors.black,
+              color: isFriend ? Colors.blue[600] : Theme.of(context).colorScheme.onSurface,
               fontSize: 10,
               fontFamily: 'Roboto',
               fontWeight: isFriend ? FontWeight.w600 : FontWeight.w400,
@@ -880,8 +1021,66 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     );
   }
 
+  Color _getButtonColor() {
+    final joinStatus = isUserJoined;
+    if (joinStatus == null) {
+      // Loading state
+      return Colors.grey;
+    } else if (joinStatus) {
+      // Joined state
+      return const Color(0xFF34C759);
+    } else {
+      // Not joined state
+      return const Color(0xFF0D99FF);
+    }
+  }
+
+  Widget _buildButtonContent() {
+    final joinStatus = isUserJoined;
+
+    if (joinStatus == null) {
+      // Loading state
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _isProcessingJoin ? 'Processing...' : 'Loading...',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    } else {
+      // Normal state
+      return Text(
+        joinStatus ? 'Joined' : 'Join Society',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontFamily: 'Roboto',
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    DemoDataManager.instance.societyMembershipNotifier.removeListener(_onMembershipChanged);
     _eventRelationshipService.relationshipChangeNotifier.removeListener(_onExternalEventRelationshipChange);
     super.dispose();
   }

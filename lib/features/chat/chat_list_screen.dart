@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../shared/models/chat_message.dart';
@@ -86,13 +89,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final avatarUrl = _getChatAvatar(chat, currentUserId);
     final unreadCount = _chatService.getUnreadCount(chat.id, currentUserId);
     
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
+      decoration: AppTheme.getCardDecoration(context),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
@@ -100,11 +99,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
           backgroundImage: avatarUrl != null 
               ? NetworkImage(avatarUrl) 
               : null,
-          backgroundColor: AppColors.socialColor.withValues(alpha: 0.1),
+          backgroundColor: const Color(0xFFF5F5F0),
           child: avatarUrl == null 
               ? Icon(
                   chat.isDirectMessage ? Icons.person : Icons.group,
-                  color: AppColors.socialColor,
+                  color: const Color(0xFF2C2C2C),
                 )
               : null,
         ),
@@ -125,7 +124,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 _formatTime(chat.lastActivity!),
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: AppTheme.getSecondaryTextColor(context),
                 ),
               ),
           ],
@@ -142,7 +141,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           ? 'Start a conversation...' 
                           : 'No messages yet...',
                       style: TextStyle(
-                        color: Colors.grey.shade500,
+                        color: AppTheme.getSecondaryTextColor(context),
                         fontStyle: FontStyle.italic,
                       ),
                     );
@@ -160,9 +159,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: unreadCount > 0 
-                          ? Colors.grey.shade700 
-                          : Colors.grey.shade500,
+                      color: unreadCount > 0
+                          ? AppTheme.getTextColor(context)
+                          : AppTheme.getSecondaryTextColor(context),
                       fontWeight: unreadCount > 0 
                           ? FontWeight.w500 
                           : FontWeight.normal,
@@ -176,13 +175,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 margin: const EdgeInsets.only(left: 8),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.socialColor,
+                  color: const Color(0xFF2C2C2C),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   unreadCount > 99 ? '99+' : unreadCount.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.getButtonTextColor(context),
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
@@ -192,7 +191,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         ),
         trailing: Icon(
           Icons.chevron_right,
-          color: Colors.grey.shade400,
+          color: AppTheme.getSecondaryIconColor(context),
         ),
         onTap: () {
           Navigator.push(
@@ -243,11 +242,15 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildHeader() {
+    final appState = Provider.of<AppState>(context, listen: true);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark] // Option 3: Solid dark blue
+              : [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)], // Original bright green
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -312,7 +315,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       body: Column(
         children: [
           _buildHeader(),
@@ -336,7 +339,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: "new_chat",
-        backgroundColor: AppColors.socialColor,
+        backgroundColor: const Color(0xFFF5F5F0),
         onPressed: () {
           Navigator.push(
             context,
@@ -360,7 +363,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             Icon(
               Icons.chat_bubble_outline,
               size: 80,
-              color: Colors.grey.shade400,
+              color: AppTheme.getSecondaryIconColor(context),
             ),
             const SizedBox(height: 24),
             Text(
@@ -368,7 +371,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade600,
+                color: AppTheme.getTextColor(context),
               ),
             ),
             const SizedBox(height: 12),
@@ -377,7 +380,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey.shade500,
+                color: AppTheme.getSecondaryTextColor(context),
               ),
             ),
             const SizedBox(height: 32),

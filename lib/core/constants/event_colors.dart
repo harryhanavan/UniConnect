@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/app_theme.dart';
 
 /// Event color constants for consistent theming across the app
 class EventColors {
@@ -19,16 +20,30 @@ class EventColors {
   static const Color academicBackground = Color(0x192196F3);
   static const Color friendsBackground = Color(0x19FF9800);
 
-  // Text Colors
-  static const Color primaryText = Color(0xFF000000);
-  static const Color secondaryText = Color(0xFF9E9E9E);
-  static const Color tertiaryText = Color(0xFF795548);
+  // Text Colors - use theme-aware methods instead
+  static Color getPrimaryTextColor(BuildContext context) => AppTheme.getTextColor(context);
+  static Color getSecondaryTextColor(BuildContext context) => AppTheme.getSecondaryTextColor(context);
+  static Color getTertiaryTextColor(BuildContext context) => AppTheme.getSecondaryTextColor(context);
 
-  // Background Colors
+  // Background Colors - use theme-aware methods instead
+  static Color getCardBackgroundColor(BuildContext context) => AppTheme.getCardColor(context);
+  static Color getSuggestionBackgroundColor(BuildContext context) => AppTheme.getInputBackgroundColor(context);
+
+  // Shadow Color - use theme-aware method
+  static Color getShadowColor(BuildContext context) => Theme.of(context).shadowColor.withOpacity(0.1);
+
+  // Legacy constants for backward compatibility - deprecated
+  @deprecated
+  static const Color primaryText = Color(0xFF000000);
+  @deprecated
+  static const Color secondaryText = Color(0xFF9E9E9E);
+  @deprecated
+  static const Color tertiaryText = Color(0xFF795548);
+  @deprecated
   static const Color cardBackground = Color(0xFFFFFFFF);
+  @deprecated
   static const Color suggestionBackground = Color(0xFFFFF8E1);
-  
-  // Shadow Color
+  @deprecated
   static const Color shadowColor = Color(0x19000000);
 
   /// Get event color based on event source/type

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
 import '../testing/phase1_test_screen.dart';
 import '../testing/phase2_test_screen.dart';
 import '../testing/phase3_test_screen.dart';
@@ -11,6 +14,7 @@ import '../friends/enhanced_map_screen.dart';
 import '../timetable/smart_timetable_overlay.dart';
 import '../timetable/timetable_management_screen.dart';
 import '../notifications/notification_center_screen.dart';
+import '../privacy/privacy_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -21,7 +25,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool locationVisible = true;
-  bool darkMode = false;
   bool notificationsEnabled = true;
   String selectedLanguage = 'English';
   String selectedTimeZone = 'AEST (UTC+10)';
@@ -30,13 +33,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final user = DemoDataManager.instance.currentUser;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
         title: const Text('Settings'),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: AppTheme.getTextColor(context),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -53,15 +58,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   CircleAvatar(
                     radius: 30,
+                    backgroundImage: user.profileImageUrl != null
+                        ? NetworkImage(user.profileImageUrl!)
+                        : null,
                     backgroundColor: AppColors.primary,
-                    child: Text(
-                      user.name[0],
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: user.profileImageUrl == null
+                        ? Text(
+                            user.name[0],
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.getButtonTextColor(context),
+                            ),
+                          )
+                        : null,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -78,17 +88,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           user.email,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           '${user.course} • ${user.year}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey,
+                            color: AppTheme.getSecondaryTextColor(context),
                           ),
                         ),
                       ],
@@ -106,26 +116,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSettingsSection(
               'Privacy Settings',
               [
-                _buildSwitchTile(
-                  'Location visible to friends',
-                  'Allow friends to see your current campus location',
-                  locationVisible,
-                  (value) => setState(() => locationVisible = value),
-                  Icons.location_on,
-                ),
                 _buildTile(
-                  'Timetable Privacy',
-                  'Manage who can see your class schedule',
-                  Icons.schedule,
-                  () {},
-                  trailing: const Text('Friends Only', style: TextStyle(color: Colors.grey)),
-                ),
-                _buildTile(
-                  'Profile Visibility',
-                  'Control who can find you',
-                  Icons.visibility,
-                  () {},
-                  trailing: const Text('Public', style: TextStyle(color: Colors.grey)),
+                  'Privacy Settings',
+                  'Manage location, timetable, and online status privacy',
+                  Icons.privacy_tip,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PrivacySettingsScreen()),
+                    );
+                  },
                 ),
               ],
             ),
@@ -150,7 +150,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Control who can see your class schedule',
                   Icons.schedule,
                   () {},
-                  trailing: const Text('Friends Only', style: TextStyle(color: Colors.grey)),
+                  trailing: Text('Friends Only', style: TextStyle(color: AppTheme.getSecondaryTextColor(context))),
                 ),
                 _buildTile(
                   'Academic Notifications',
@@ -173,23 +173,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSwitchTile(
                   'Dark Mode',
                   'Use dark theme throughout the app',
-                  darkMode,
-                  (value) => setState(() => darkMode = value),
+                  appState.isDarkMode,
+                  (value) => appState.toggleTheme(),
                   Icons.dark_mode,
+                ),
+                _buildSwitchTile(
+                  'Temp Style',
+                  'Enable blue navigation and alternative design elements',
+                  appState.isTempStyleEnabled,
+                  (value) => appState.toggleTempStyle(),
+                  Icons.palette,
                 ),
                 _buildTile(
                   'Language',
                   'App language preference',
                   Icons.language,
                   () {},
-                  trailing: Text(selectedLanguage, style: const TextStyle(color: Colors.grey)),
+                  trailing: Text(selectedLanguage, style: TextStyle(color: AppTheme.getSecondaryTextColor(context))),
                 ),
                 _buildTile(
                   'Time Zone',
                   'Your local time zone',
                   Icons.access_time,
                   () {},
-                  trailing: Text(selectedTimeZone, style: const TextStyle(color: Colors.grey)),
+                  trailing: Text(selectedTimeZone, style: TextStyle(color: AppTheme.getSecondaryTextColor(context))),
                 ),
                 _buildSwitchTile(
                   'Push Notifications',
@@ -252,43 +259,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
 
-            // Enhanced Features Access
+            // Enhanced Features
             _buildSettingsSection(
-              'Enhanced Features (Phase 3)',
+              'Enhanced Features',
               [
-                _buildTile(
-                  'Enhanced Calendar',
-                  'Unified calendar with friend overlays and multi-source events',
-                  Icons.calendar_today,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EnhancedCalendarScreen()),
-                    );
-                  },
-                ),
-                _buildTile(
-                  'Enhanced Societies',
-                  'Society integration with auto-calendar updates',
-                  Icons.groups,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EnhancedSocietiesScreen()),
-                    );
-                  },
-                ),
-                _buildTile(
-                  'Enhanced Map',
-                  'Real-time friend tracking with UTS campus integration',
-                  Icons.map,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EnhancedMapScreen()),
-                    );
-                  },
-                ),
                 _buildTile(
                   'Smart Timetable',
                   'Interactive timetable with friend availability matrix',
@@ -314,57 +288,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
 
-            // Debug & Development (for testing)
-            _buildSettingsSection(
-              'Development & Testing',
-              [
-                _buildTile(
-                  'Phase 1: Data Architecture Test',
-                  'Test interconnected data models',
-                  Icons.storage,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Phase1TestScreen()),
-                    );
-                  },
-                ),
-                _buildTile(
-                  'Phase 2: Feature Interconnection Test',
-                  'Test cross-feature integrations',
-                  Icons.hub,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Phase2TestScreen()),
-                    );
-                  },
-                ),
-                _buildTile(
-                  'Phase 3: Enhanced UI Test',
-                  'Test all enhanced screens and cross-feature integration',
-                  Icons.science,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Phase3TestScreen()),
-                    );
-                  },
-                ),
-                _buildTile(
-                  'Enhanced Friends Screen',
-                  'View the new interconnected friends interface',
-                  Icons.people,
-                  () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const EnhancedFriendsScreen()),
-                    );
-                  },
-                ),
-              ],
-            ),
-
             const SizedBox(height: 20),
 
             // Sign Out Button
@@ -381,12 +304,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
+                  child: Text(
                     'Sign Out',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppTheme.getButtonTextColor(context),
                     ),
                   ),
                 ),
@@ -397,6 +320,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
@@ -416,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: AppTheme.getSurfaceColor(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(children: children),

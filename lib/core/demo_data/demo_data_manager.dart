@@ -15,9 +15,13 @@ class DemoDataManager {
   static DemoDataManager get instance => _instance ??= DemoDataManager._();
   DemoDataManager._();
 
-  // Notifier for society membership changes
-  final ValueNotifier<int> _societyMembershipNotifier = ValueNotifier<int>(0);
-  ValueNotifier<int> get societyMembershipNotifier => _societyMembershipNotifier;
+  // Enhanced notifier for society membership changes with more granular information
+  final ValueNotifier<Map<String, dynamic>> _societyMembershipNotifier = ValueNotifier<Map<String, dynamic>>({});
+  ValueNotifier<Map<String, dynamic>> get societyMembershipNotifier => _societyMembershipNotifier;
+
+  // Legacy support - simple counter for backwards compatibility
+  final ValueNotifier<int> _societyMembershipCounter = ValueNotifier<int>(0);
+  ValueNotifier<int> get societyMembershipCounter => _societyMembershipCounter;
 
   // Current logged in user - cached for performance
   User? _currentUser;
@@ -25,7 +29,13 @@ class DemoDataManager {
     if (!_isInitialized) {
       throw StateError('Demo data not initialized. Call await demoDataManager.users first.');
     }
-    return _currentUser ??= usersSync.first;
+    // Always return the updated cached user if available
+    // Otherwise get from users list (first user is current user)
+    if (_currentUser != null) {
+      return _currentUser!;
+    }
+    _currentUser = usersSync.first;
+    return _currentUser!;
   }
   
   Future<User> get currentUserAsync async {
@@ -77,8 +87,72 @@ class DemoDataManager {
         print('  - $warning');
       }
     }
-    
+
     _isInitialized = true;
+
+    // Restore runtime membership changes after loading from JSON
+    _restoreRuntimeMemberships();
+  }
+
+  // Restore runtime membership changes after data reload
+  void _restoreRuntimeMemberships() {
+    if (_users == null || _societies == null) return;
+
+    // Process each user's runtime changes
+    for (final userId in {..._runtimeJoinedSocieties.keys, ..._runtimeLeftSocieties.keys}) {
+      final userIndex = _users!.indexWhere((u) => u.id == userId);
+      if (userIndex == -1) continue;
+
+      final user = _users![userIndex];
+      final currentSocieties = Set<String>.from(user.societyIds);
+
+      // Add joined societies
+      if (_runtimeJoinedSocieties.containsKey(userId)) {
+        currentSocieties.addAll(_runtimeJoinedSocieties[userId]!);
+      }
+
+      // Remove left societies
+      if (_runtimeLeftSocieties.containsKey(userId)) {
+        currentSocieties.removeAll(_runtimeLeftSocieties[userId]!);
+      }
+
+      // Update user with new society list
+      _users![userIndex] = user.copyWith(societyIds: currentSocieties.toList());
+
+      // Update current user reference if needed
+      if (userId == _currentUser?.id || userId == _users!.first.id) {
+        _currentUser = _users![userIndex];
+      }
+    }
+
+    // Update society member lists based on runtime changes
+    for (final societyId in _societies!.map((s) => s.id)) {
+      final societyIndex = _societies!.indexWhere((s) => s.id == societyId);
+      if (societyIndex == -1) continue;
+
+      final society = _societies![societyIndex];
+      final currentMembers = Set<String>.from(society.memberIds);
+
+      // Add users who joined this society
+      for (final entry in _runtimeJoinedSocieties.entries) {
+        if (entry.value.contains(societyId)) {
+          currentMembers.add(entry.key);
+        }
+      }
+
+      // Remove users who left this society
+      for (final entry in _runtimeLeftSocieties.entries) {
+        if (entry.value.contains(societyId)) {
+          currentMembers.remove(entry.key);
+        }
+      }
+
+      // Update society with new member list
+      _societies![societyIndex] = society.copyWith(
+        memberIds: currentMembers.toList(),
+        memberCount: currentMembers.length,
+      );
+    }
   }
 
   // Enhanced Events API (primary)
@@ -298,12 +372,20 @@ class DemoDataManager {
     return getEnhancedEventsByDateRangeAsync(startDate, endDate);
   }
 
+  // Track runtime membership changes to preserve across cache clears
+  final Map<String, Set<String>> _runtimeJoinedSocieties = {}; // User -> Societies joined at runtime
+  final Map<String, Set<String>> _runtimeLeftSocieties = {}; // User -> Societies left at runtime
+
   // Society methods
   void joinSociety(String societyId) {
     if (!_isInitialized) {
       throw StateError('Demo data not initialized. Call await demoDataManager.societies first.');
     }
-    
+
+    // Track runtime change - add to joined list and remove from left list
+    _runtimeJoinedSocieties.putIfAbsent(currentUser.id, () => {}).add(societyId);
+    _runtimeLeftSocieties[currentUser.id]?.remove(societyId);
+
     // Update society to add current user to memberIds
     final societyIndex = _societies!.indexWhere((s) => s.id == societyId);
     if (societyIndex != -1) {
@@ -316,7 +398,7 @@ class DemoDataManager {
         );
       }
     }
-    
+
     // Update current user to add society to societyIds
     final userIndex = _users!.indexWhere((u) => u.id == currentUser.id);
     if (userIndex != -1) {
@@ -325,9 +407,15 @@ class DemoDataManager {
         final updatedSocietyIds = List<String>.from(user.societyIds)..add(societyId);
         _users![userIndex] = user.copyWith(societyIds: updatedSocietyIds);
         _currentUser = _users![userIndex]; // Update current user reference
-        
-        // Notify listeners of membership change
-        _societyMembershipNotifier.value++;
+
+        // Notify listeners of membership change with detailed information
+        _societyMembershipNotifier.value = {
+          'action': 'joined',
+          'societyId': societyId,
+          'userId': currentUser.id,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        _societyMembershipCounter.value++;
       }
     }
   }
@@ -336,7 +424,11 @@ class DemoDataManager {
     if (!_isInitialized) {
       throw StateError('Demo data not initialized. Call await demoDataManager.societies first.');
     }
-    
+
+    // Track runtime change - add to left list and remove from joined list
+    _runtimeLeftSocieties.putIfAbsent(currentUser.id, () => {}).add(societyId);
+    _runtimeJoinedSocieties[currentUser.id]?.remove(societyId);
+
     // Update society to remove current user from memberIds
     final societyIndex = _societies!.indexWhere((s) => s.id == societyId);
     if (societyIndex != -1) {
@@ -349,7 +441,7 @@ class DemoDataManager {
         );
       }
     }
-    
+
     // Update current user to remove society from societyIds
     final userIndex = _users!.indexWhere((u) => u.id == currentUser.id);
     if (userIndex != -1) {
@@ -358,9 +450,15 @@ class DemoDataManager {
         final updatedSocietyIds = List<String>.from(user.societyIds)..remove(societyId);
         _users![userIndex] = user.copyWith(societyIds: updatedSocietyIds);
         _currentUser = _users![userIndex]; // Update current user reference
-        
-        // Notify listeners of membership change
-        _societyMembershipNotifier.value++;
+
+        // Notify listeners of membership change with detailed information
+        _societyMembershipNotifier.value = {
+          'action': 'left',
+          'societyId': societyId,
+          'userId': currentUser.id,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
+        };
+        _societyMembershipCounter.value++;
       }
     }
   }

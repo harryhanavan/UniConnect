@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/event_relationship_service.dart';
@@ -83,7 +86,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   Widget build(BuildContext context) {
     if (!_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.getBackgroundColor(context),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
@@ -91,14 +94,13 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     }
     
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildSearchAndFilter(),
-            _buildTabBar(),
-            Expanded(
+      backgroundColor: AppTheme.getBackgroundColor(context),
+      body: Column(
+        children: [
+          _buildHeader(),
+          _buildSearchAndFilter(),
+          _buildTabBar(),
+          Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -106,27 +108,31 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   _buildDiscoverTab(),
                   _buildEventsTab(),
                 ],
-              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     final joinedSocieties = _demoData.joinedSocieties;
-    
+    final appState = Provider.of<AppState>(context, listen: true);
+
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.societyColor, AppColors.societyColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark] // Option 3: Solid dark blue
+              : [AppColors.societyColor, AppColors.societyColor.withValues(alpha: 0.8)], // Original green
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -147,7 +153,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     joinedSocieties.isEmpty 
                         ? 'Discover your community at UTS'
                         : 'Your campus community awaits',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       color: Colors.white70,
                       fontWeight: FontWeight.w400,
@@ -162,6 +168,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             ],
           ),
         ],
+          ),
+        ),
       ),
     );
   }
@@ -178,11 +186,11 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               hintText: 'Search societies...',
               prefixIcon: const Icon(Icons.search),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8), // Match calendar cards
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: Colors.grey.shade100,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
             onChanged: (value) {
               setState(() {
@@ -227,11 +235,11 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
 
   Widget _buildTabBar() {
     return Container(
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       child: TabBar(
         controller: _tabController,
         labelColor: AppColors.societyColor,
-        unselectedLabelColor: Colors.grey,
+        unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
         indicatorColor: AppColors.societyColor,
         tabs: const [
           Tab(text: 'My Societies'),
@@ -269,8 +277,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                       Expanded(
                         child: Text(
                           'Browse All Societies',
-                          style: const TextStyle(
-                            color: Colors.black,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 18,
                             fontFamily: 'Roboto',
                             fontWeight: FontWeight.w500,
@@ -330,17 +338,21 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.groups, size: 64, color: Colors.grey),
+            Icon(Icons.groups, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'No societies joined yet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Explore the Discover tab to find societies that match your interests!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -366,7 +378,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             const SizedBox(height: 16),
             Text(
               _searchQuery.isEmpty ? 'No societies in this category' : 'No societies found',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
@@ -374,55 +386,57 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   ? 'Try selecting a different category or clear the filter.'
                   : 'Try adjusting your search terms or clear the filter.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
       );
     }
     
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        children: [
-          // Section Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.only(top: 16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _searchQuery.isEmpty && _selectedCategory == 'All'
-                        ? 'Your Societies'
-                        : 'Filtered Societies (${filteredJoinedSocieties.length})',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 18,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w500,
-                      height: 1.33,
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.only(top: 16), // Match Discover tab padding
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _searchQuery.isEmpty && _selectedCategory == 'All'
+                          ? 'Your Societies'
+                          : 'Filtered Societies (${filteredJoinedSocieties.length})',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 18,
+                        fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w500,
+                        height: 1.33,
+                      ),
                     ),
                   ),
-                ),
 
-              ],
+                ],
+              ),
             ),
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Society List
-          Expanded(
-            child: ListView.builder(
-              itemCount: filteredJoinedSocieties.length,
-              itemBuilder: (context, index) {
-                return _buildFigmaYourSocietyCard(filteredJoinedSocieties[index]);
-              },
-            ),
-          ),
-        ],
+
+            const SizedBox(height: 8),
+
+            // Society List with proper spacing
+            ...filteredJoinedSocieties.map((society) => Padding(
+              padding: const EdgeInsets.only(bottom: 12), // Add spacing between cards
+              child: _buildFigmaYourSocietyCard(society),
+            )).toList(),
+
+            // Add bottom padding for last item
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -481,7 +495,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             const SizedBox(height: 16),
             Text(
               _searchQuery.isEmpty ? 'No events in this category' : 'No events found',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
@@ -489,7 +503,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   ? 'Try selecting a different category or clear the filter.'
                   : 'Try adjusting your search terms or clear the filter.',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -505,8 +519,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             padding: const EdgeInsets.all(16),
             child: Text(
               'Filtered Events (${filteredEvents.length})',
-              style: const TextStyle(
-                color: Colors.black,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 18,
                 fontFamily: 'Roboto',
                 fontWeight: FontWeight.w500,
@@ -550,13 +564,18 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: ShapeDecoration(
+          color: AppTheme.getCardColor(context),
           shape: RoundedRectangleBorder(
-            side: BorderSide(
-              width: 1,
-              color: Colors.black.withValues(alpha: 0.10),
-            ),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(8), // Match calendar cards
           ),
+          shadows: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            )
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -572,7 +591,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     width: double.infinity,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
                     child: society.logoUrl != null
                         ? CachedNetworkImage(
@@ -596,7 +615,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: ShapeDecoration(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(6),
@@ -606,8 +625,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                       ),
                       child: Text(
                         society.category,
-                        style: const TextStyle(
-                          color: Colors.black,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
                           fontSize: 12,
                           fontFamily: 'Roboto',
                           fontWeight: FontWeight.w500,
@@ -629,8 +648,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                 children: [
                   Text(
                     society.name,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -649,8 +668,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   
                   Text(
                     'Join now!',
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
@@ -674,7 +693,16 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
         decoration: BoxDecoration(
+          color: AppTheme.getCardColor(context),
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            )
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,7 +712,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               child: society.logoUrl != null
                   ? CachedNetworkImage(
@@ -710,8 +738,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                 children: [
                   Text(
                     society.name,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
@@ -736,19 +764,19 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                       children: society.tags.take(2).map((tag) => Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         decoration: ShapeDecoration(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           shape: RoundedRectangleBorder(
                             side: BorderSide(
                               width: 0.50,
-                              color: Colors.black.withValues(alpha: 0.10),
+                              color: Theme.of(context).colorScheme.outline,
                             ),
                             borderRadius: BorderRadius.circular(2),
                           ),
                         ),
                         child: Text(
                           tag,
-                          style: const TextStyle(
-                            color: Colors.black,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontSize: 12,
                             fontFamily: 'Roboto',
                             fontWeight: FontWeight.w400,
@@ -764,8 +792,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     society.description.length > 50 
                         ? '${society.description.substring(0, 50)}...'
                         : society.description,
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 12,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -791,7 +819,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Text(
             '${date.day}/${date.month}/${date.year}',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: AppColors.societyColor,
@@ -810,17 +838,22 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: ShapeDecoration(
+        color: AppTheme.getCardColor(context),
         shape: RoundedRectangleBorder(
-          side: BorderSide(
-            width: 1,
-            color: Colors.black.withValues(alpha: 0.1),
-          ),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8), // Match calendar cards
         ),
+        shadows: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
+          )
+        ],
       ),
       child: InkWell(
         onTap: () => _showEventDetails(event),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8), // Match updated border radius
         child: Row(
           children: [
             // Society Logo with Gradient Overlay and Date
@@ -830,7 +863,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               clipBehavior: Clip.antiAlias,
               decoration: ShapeDecoration(
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8), // Match calendar cards
                 ),
               ),
               child: Stack(
@@ -840,7 +873,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     width: double.infinity,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     ),
                     child: society?.logoUrl != null
                         ? CachedNetworkImage(
@@ -874,8 +907,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.3),
-                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withOpacity(0.3),
+                          Colors.black.withOpacity(0.7),
                         ],
                       ),
                     ),
@@ -892,7 +925,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                         // Day Number
                         Text(
                           '${event.startTime.day}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 24,
                             fontFamily: 'Roboto',
@@ -904,7 +937,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                         // Month
                         Text(
                           _getShortMonthName(event.startTime.month),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 12,
                             fontFamily: 'Roboto',
@@ -915,7 +948,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                         // Time
                         Text(
                           '${event.startTime.hour}:${event.startTime.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 10,
                             fontFamily: 'Roboto',
@@ -938,8 +971,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   children: [
                     Text(
                       event.title,
-                      style: const TextStyle(
-                        color: Colors.black,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 16,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w500,
@@ -954,7 +987,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     Text(
                       society?.name ?? 'Society Event',
                       style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 12,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w400,
@@ -966,7 +999,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     Text(
                       event.location,
                       style: TextStyle(
-                        color: Colors.black.withValues(alpha: 0.6),
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 10,
                         fontFamily: 'Roboto',
                         fontWeight: FontWeight.w400,
@@ -987,8 +1020,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                 children: [
                   Text(
                     '${event.attendeeIds.length}',
-                    style: const TextStyle(
-                      color: Colors.black,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontSize: 16,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w700,
@@ -997,7 +1030,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   Text(
                     'attending',
                     style: TextStyle(
-                      color: Colors.black.withValues(alpha: 0.6),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 10,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w400,
@@ -1161,7 +1194,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             children: [
               Text(
                 event.title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -1169,7 +1202,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               const SizedBox(height: 16),
               Text(
                 event.description,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 16),
               Row(
@@ -1178,7 +1211,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   const SizedBox(width: 8),
                   Text(
                     '${event.startTime.day}/${event.startTime.month}/${event.startTime.year} at ${event.startTime.hour}:${event.startTime.minute.toString().padLeft(2, '0')}',
-                    style: const TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16),
                   ),
                 ],
               ),
@@ -1190,7 +1223,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   Expanded(
                     child: Text(
                       event.location,
-                      style: const TextStyle(fontSize: 16),
+                      style: TextStyle(fontSize: 16),
                     ),
                   ),
                 ],
@@ -1204,7 +1237,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                     Expanded(
                       child: Text(
                         _demoData.getSocietyById(event.societyId!)?.name ?? 'Unknown Society',
-                        style: const TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
                   ],
@@ -1243,7 +1276,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
         Text(
           '${society.memberIds.length} members',
           style: TextStyle(
-            color: Colors.black.withValues(alpha: 0.50),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
             fontSize: 12,
             fontFamily: 'Roboto',
             fontWeight: FontWeight.w400,
@@ -1378,7 +1411,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             children: [
               Text(
                 '${society.name} Events',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
               Expanded(

@@ -12,12 +12,12 @@ class ProfileScreen extends StatelessWidget {
     final user = demoData.currentUser;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Profile'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -42,15 +42,20 @@ class ProfileScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 50,
+                        backgroundImage: user.profileImageUrl != null
+                            ? NetworkImage(user.profileImageUrl!)
+                            : null,
                         backgroundColor: AppColors.primary,
-                        child: Text(
-                          user.name[0],
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: user.profileImageUrl == null
+                            ? Text(
+                                user.name[0],
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : null,
                       ),
                       Positioned(
                         bottom: 0,
@@ -61,7 +66,7 @@ class ProfileScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppColors.online,
                             shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
+                            border: Border.all(color: Theme.of(context).colorScheme.surface, width: 3),
                           ),
                         ),
                       ),
@@ -70,17 +75,18 @@ class ProfileScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Text(
                     user.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${user.course} • ${user.year}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -108,15 +114,15 @@ class ProfileScreen extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatColumn('${demoData.friends.length}', 'Friends'),
-                  _buildStatColumn('${demoData.joinedSocieties.length}', 'Societies'),
-                  _buildStatColumn('12', 'Events'),
+                  _buildStatColumn(context, '${demoData.friends.length}', 'Friends'),
+                  _buildStatColumn(context, '${demoData.joinedSocieties.length}', 'Societies'),
+                  _buildStatColumn(context, '12', 'Events'),
                 ],
               ),
             ),
@@ -129,11 +135,12 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Quick Actions',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -192,27 +199,31 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Recent Activity',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   const SizedBox(height: 16),
                   _buildActivityItem(
+                    context,
                     'Joined Tech Society',
                     '2 days ago',
                     Icons.groups,
                     AppColors.societyColor,
                   ),
                   _buildActivityItem(
+                    context,
                     'RSVP\'d to Workshop',
                     '3 days ago',
                     Icons.event,
                     AppColors.personalColor,
                   ),
                   _buildActivityItem(
+                    context,
                     'Connected with Emma',
                     '1 week ago',
                     Icons.person_add,
@@ -229,7 +240,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatColumn(String value, String label) {
+  Widget _buildStatColumn(BuildContext context, String value, String label) {
     return Column(
       children: [
         Text(
@@ -242,9 +253,9 @@ class ProfileScreen extends StatelessWidget {
         ),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
       ],
@@ -281,7 +292,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActivityItem(String title, String time, IconData icon, Color color) {
+  Widget _buildActivityItem(BuildContext context, String title, String time, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -302,15 +313,16 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   time,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
