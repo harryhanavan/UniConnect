@@ -15,6 +15,7 @@ import '../timetable/smart_timetable_overlay.dart';
 import '../timetable/timetable_management_screen.dart';
 import '../notifications/notification_center_screen.dart';
 import '../privacy/privacy_settings_screen.dart';
+import 'profile_edit_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,10 +32,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = DemoDataManager.instance.currentUser;
-
     return Consumer<AppState>(
       builder: (context, appState, child) {
+        final user = appState.currentUser;
         return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
@@ -106,7 +106,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ProfileEditScreen()),
+                      );
+                    },
                   ),
                 ],
               ),

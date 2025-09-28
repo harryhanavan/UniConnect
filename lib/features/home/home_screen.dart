@@ -4,6 +4,7 @@ import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../shared/models/event.dart';
+import '../../shared/models/user.dart';
 import '../../shared/models/chat_message.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
@@ -11,6 +12,7 @@ import '../profile/profile_screen.dart';
 import '../chat/chat_list_screen.dart';
 import '../chat/chat_screen.dart';
 import '../study_groups/study_groups_screen.dart';
+import '../study_groups/study_groups_with_nav_screen.dart';
 import '../achievements/achievements_screen.dart';
 import '../search/advanced_search_screen.dart';
 import '../privacy/privacy_settings_screen.dart';
@@ -20,6 +22,7 @@ import '../societies/enhanced_societies_screen.dart';
 import '../../shared/models/event_enums.dart';
 import '../calendar/enhanced_calendar_screen.dart';
 import '../design_system/design_system_showcase_screen.dart';
+import '../../core/utils/navigation_helper.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,13 +36,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Data is already initialized by AppState
-    final currentUser = demoData.currentUser;
-    final firstName = currentUser.name.split(' ').first;
-    final upcomingEvents = demoData.getEventsByDateRange(
-      DateTime.now(),
-      DateTime.now().add(const Duration(days: 7)),
-    );
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        // Use AppState.currentUser to get the correct user (new user or demo user)
+        final currentUser = appState.currentUser;
+        final firstName = currentUser.name.split(' ').first;
+    final upcomingEvents = appState.getEventsByDate(DateTime.now());
     
     // Get next class and next event
     final nextClass = upcomingEvents.where((e) => e.type == EventType.class_).firstOrNull;
@@ -50,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Column(
         children: [
           // Header Section
-          _buildHeader(context, firstName),
+          _buildHeader(context, firstName, currentUser),
 
           // Content
           Expanded(
@@ -71,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 20),
                     
                     // Friend Activity
-                    _buildFriendActivityCard(),
+                    _buildFriendActivityCard(appState.friends),
                     
                     const SizedBox(height: 20),
                     
@@ -86,9 +88,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+      },
+    );
   }
 
-  Widget _buildHeader(BuildContext context, String firstName) {
+  Widget _buildHeader(BuildContext context, String firstName, User currentUser) {
     final demoData = DemoDataManager.instance;
     final appState = Provider.of<AppState>(context, listen: true);
 
@@ -147,22 +151,23 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  Navigator.push(
+                  NavigationHelper.navigateToScreen(
                     context,
-                    MaterialPageRoute(builder: (context) => const ProfileScreen()),
+                    const ProfileScreen(),
+                    keepBottomNav: true, // Keep bottom nav for frequently accessed screen
                   );
                 },
                 child: Stack(
                   children: [
                     CircleAvatar(
                       radius: 28,
-                      backgroundImage: demoData.currentUser.profileImageUrl != null
-                          ? NetworkImage(demoData.currentUser.profileImageUrl!)
+                      backgroundImage: currentUser.profileImageUrl != null
+                          ? NetworkImage(currentUser.profileImageUrl!)
                           : null,
                       backgroundColor: const Color(0xFFF5F5F0),
-                      child: demoData.currentUser.profileImageUrl == null
+                      child: currentUser.profileImageUrl == null
                           ? Text(
-                              demoData.currentUser.name[0],
+                              currentUser.name[0],
                               style: TextStyle(
                                 color: const Color(0xFF2C2C2C),
                                 fontSize: 20,
@@ -378,16 +383,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Timetable',
                 Icons.schedule,
                 AppColors.personalColor,  // Timetable is personal schedule
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EnhancedCalendarScreen(
-                      initialFilter: CalendarFilter.academic,
-                      initialView: CalendarView.week,
-                      initialUseTimetableView: true,
-                    ),
-                  ),
-                ),
+                () {
+                  print('🏠 Timetable Quick Action clicked - setting calendar params');
+                  // Navigate to Calendar tab with timetable view and academic filter
+                  NavigationHelper.navigateToCalendarWithParams(
+                    context,
+                    initialFilter: CalendarFilter.academic,
+                    initialView: CalendarView.week,
+                    initialUseTimetableView: true,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -396,14 +401,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Find Friends',
                 Icons.person_add,
                 AppColors.socialColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EnhancedFriendsScreen(
-                      initialTabIndex: 2, // Requests tab
-                    ),
-                  ),
-                ),
+                () {
+                  print('🏠 Find Friends Quick Action clicked - setting friends params');
+                  // Navigate to Friends tab with Requests tab (index 2) for finding friends
+                  NavigationHelper.navigateToFriendsWithParams(
+                    context,
+                    initialTabIndex: 2, // Requests tab
+                  );
+                },
               ),
             ),
           ],
@@ -416,14 +421,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Society Events',
                 Icons.event,
                 AppColors.societyColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EnhancedSocietiesScreen(
-                      initialTabIndex: 2, // Events tab
-                    ),
-                  ),
-                ),
+                () {
+                  print('🏠 Society Events Quick Action clicked - setting societies params');
+                  // Navigate to Societies tab with Events tab (index 2)
+                  NavigationHelper.navigateToSocietiesWithParams(
+                    context,
+                    initialTabIndex: 2, // Events tab
+                  );
+                },
               ),
             ),
             const SizedBox(width: 12),
@@ -432,10 +437,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Study Groups',
                 Icons.menu_book,
                 AppColors.studyGroupColor,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const StudyGroupsScreen()),
-                ),
+                () {
+                  print('🏠 Study Groups Quick Action clicked - navigating with bottom nav preserved');
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudyGroupsWithNavScreen(),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -444,9 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildFriendActivityCard() {
-    final demoData = DemoDataManager.instance;
-
+  Widget _buildFriendActivityCard(List<User> friends) {
     return Container(
       width: double.infinity,
       decoration: AppTheme.getCardDecoration(context),
@@ -467,93 +475,149 @@ class _HomeScreenState extends State<HomeScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                Text(
-                  'View All',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: AppTheme.getTextColor(context, opacity: 0.6),
-                    fontSize: 10,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w500,
-                    decoration: TextDecoration.underline,
+                GestureDetector(
+                  onTap: () {
+                    // Navigate to Friends tab
+                    NavigationHelper.navigateToTab(context, NavigationHelper.friendsTab);
+                  },
+                  child: Text(
+                    'View All',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      color: AppTheme.getTextColor(context, opacity: 0.6),
+                      fontSize: 10,
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
                   ),
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 12),
-            
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: demoData.friends.first.profileImageUrl != null
-                      ? NetworkImage(demoData.friends.first.profileImageUrl!)
-                      : null,
-                  backgroundColor: const Color(0xFFF5F5F0),
-                  child: demoData.friends.first.profileImageUrl == null
-                      ? Text(
-                          demoData.friends.first.name[0],
-                          style: TextStyle(
-                            color: const Color(0xFF2C2C2C),
-                            fontSize: 16,
-                            fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      : null,
-                ),
-                
-                const SizedBox(width: 12),
-                
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        demoData.friends.first.name,
-                        style: TextStyle(
-                          color: AppTheme.getTextColor(context),
-                          fontSize: 14,
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 2),
-                      
-                      Text(
-                        'Currently in class',
-                        style: TextStyle(
-                          color: AppTheme.getTextColor(context, opacity: 0.6),
-                          fontSize: 12,
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 2),
-                      
-                      Row(
-                        children: [
-                          Icon(Icons.location_on, size: 12, color: AppTheme.getIconColor(context, opacity: 0.6)),
-                          const SizedBox(width: 2),
-                          Text(
-                            'Building 11, Level 5',
-                            style: TextStyle(
-                              color: AppTheme.getTextColor(context, opacity: 0.6),
-                              fontSize: 10,
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+
+            // Show content based on whether user has friends or not
+            if (friends.isEmpty)
+              // No friends state - encourage user to connect
+              Column(
+                children: [
+                  Icon(
+                    Icons.people_outline,
+                    size: 48,
+                    color: AppTheme.getIconColor(context, opacity: 0.4),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No friends yet',
+                    style: TextStyle(
+                      color: AppTheme.getTextColor(context),
+                      fontSize: 14,
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Find classmates and connect with your university community',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppTheme.getTextColor(context, opacity: 0.6),
+                      fontSize: 12,
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        // Navigate to Friends tab
+                        NavigationHelper.navigateToTab(context, NavigationHelper.friendsTab);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppColors.socialColor),
+                        foregroundColor: AppColors.socialColor,
+                      ),
+                      child: Text('Find Friends'),
+                    ),
+                  ),
+                ],
+              )
+            else
+              // Show first friend's activity
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundImage: friends.first.profileImageUrl != null
+                        ? NetworkImage(friends.first.profileImageUrl!)
+                        : null,
+                    backgroundColor: const Color(0xFFF5F5F0),
+                    child: friends.first.profileImageUrl == null
+                        ? Text(
+                            friends.first.name[0],
+                            style: TextStyle(
+                              color: const Color(0xFF2C2C2C),
+                              fontSize: 16,
+                              fontFamily: 'Roboto',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          )
+                        : null,
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          friends.first.name,
+                          style: TextStyle(
+                            color: AppTheme.getTextColor(context),
+                            fontSize: 14,
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          'Currently in class',
+                          style: TextStyle(
+                            color: AppTheme.getTextColor(context, opacity: 0.6),
+                            fontSize: 12,
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Row(
+                          children: [
+                            Icon(Icons.location_on, size: 12, color: AppTheme.getIconColor(context, opacity: 0.6)),
+                            const SizedBox(width: 2),
+                            Text(
+                              'Building 11, Level 5',
+                              style: TextStyle(
+                                color: AppTheme.getTextColor(context, opacity: 0.6),
+                                fontSize: 10,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
       ),
@@ -562,8 +626,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecentMessagesCard(BuildContext context) {
     final chatService = ChatService();
-    final demoData = DemoDataManager.instance;
-    final currentUserId = demoData.usersSync.first.id;
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final currentUserId = appState.currentUser.id;
 
     return Container(
       width: double.infinity,
@@ -587,10 +652,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ChatListScreen()),
-                    );
+                    // Navigate to Chat tab
+                    NavigationHelper.navigateToTab(context, NavigationHelper.chatTab);
                   },
                   child: Text(
                     'View All',
@@ -648,6 +711,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 

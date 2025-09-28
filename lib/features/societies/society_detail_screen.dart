@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../shared/models/society.dart';
 import '../../shared/models/event_v2.dart';
 import '../../shared/models/event_enums.dart';
 import '../../shared/models/user.dart';
 import '../../core/demo_data/demo_data_manager.dart';
+import '../../core/services/app_state.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/event_relationship_service.dart';
 import '../../core/constants/app_theme.dart';
@@ -52,7 +54,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     try {
       final demoData = DemoDataManager.instance;
       final society = currentSociety;
-      return society != null && demoData.currentUser.societyIds.contains(society.id);
+      return society != null && _currentUser.societyIds.contains(society.id);
     } catch (e) {
       print('Error checking join status: $e');
       return null;
@@ -128,7 +130,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
       // Get the current user ID safely
       String currentUserId;
       try {
-        currentUserId = demoData.currentUser.id;
+        currentUserId = _currentUser.id;
       } catch (e) {
         // If currentUser fails, try async version
         final user = await demoData.currentUserAsync;
@@ -175,7 +177,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
         throw Exception('Society not found');
       }
 
-      final isCurrentlyJoined = demoData.currentUser.societyIds.contains(society.id);
+      final isCurrentlyJoined = _currentUser.societyIds.contains(society.id);
       final action = isCurrentlyJoined ? 'leave' : 'join';
 
       // Perform the operation
@@ -294,7 +296,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
               const SizedBox(height: 24),
               EnhancedEventCard(
                 event: event,
-                userId: DemoDataManager.instance.currentUser.id,
+                userId: _currentUser.id,
                 onRelationshipChanged: _onEventRelationshipChanged,
                 showFullDetails: false,
               ),
@@ -305,18 +307,31 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     );
   }
 
+  // Helper method to get current user from AppState
+  User get _currentUser {
+    try {
+      final appState = Provider.of<AppState>(context, listen: false);
+      return appState.currentUser;
+    } catch (e) {
+      // Fallback to demo data manager if AppState is not available
+      return DemoDataManager.instance.currentUser;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      return Scaffold(
-        backgroundColor: AppTheme.getBackgroundColor(context),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    
-    return Scaffold(
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        if (!_isInitialized) {
+          return Scaffold(
+            backgroundColor: AppTheme.getBackgroundColor(context),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
+
+        return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
         backgroundColor: AppTheme.getBackgroundColor(context),
@@ -672,7 +687,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                       margin: const EdgeInsets.fromLTRB(12, 0, 12, 0),
                       child: EnhancedEventCard(
                         event: event,
-                        userId: DemoDataManager.instance.currentUser.id,
+                        userId: _currentUser.id,
                         onEventTap: _onEventTap,
                         onRelationshipChanged: _onEventRelationshipChanged,
                       ),
@@ -729,6 +744,8 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
@@ -856,7 +873,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   Widget _buildMembersSection() {
     final demoData = DemoDataManager.instance;
     final members = demoData.usersSync.where((user) => currentSociety?.memberIds.contains(user.id) == true).toList();
-    final currentUserFriends = demoData.getFriendsForUser(demoData.currentUser.id);
+    final currentUserFriends = demoData.getFriendsForUser(_currentUser.id);
     final friendsInSociety = members.where((member) => currentUserFriends.any((friend) => friend.id == member.id)).toList();
     
     return Container(

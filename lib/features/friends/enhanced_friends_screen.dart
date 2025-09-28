@@ -7,12 +7,16 @@ import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/calendar_service.dart';
+import '../../core/utils/ui_helpers.dart';
 import '../../shared/models/user.dart';
 import '../../shared/models/friend_request.dart';
 import '../../shared/models/location.dart';
 import '../../shared/models/event.dart';
+import '../../shared/widgets/friend_profile_modal.dart';
 import 'interactive_map_screen.dart';
 import '../search/advanced_search_screen.dart';
+import '../chat/chat_screen.dart';
+import '../profile/profile_screen.dart';
 
 class EnhancedFriendsScreen extends StatefulWidget {
   final int? initialTabIndex;
@@ -42,10 +46,24 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   @override
   void initState() {
     super.initState();
+
+    // Check for pending AppState parameters FIRST
+    final appState = Provider.of<AppState>(context, listen: false);
+    final pendingParams = appState.consumeFriendsParams();
+
+    int initialTabIndex;
+    if (pendingParams?.initialTabIndex != null) {
+      print('👥 Friends: Found pending params - tab: ${pendingParams!.initialTabIndex}');
+      initialTabIndex = pendingParams.initialTabIndex!;
+    } else {
+      print('👥 Friends: No pending params, using widget param - tab: ${widget.initialTabIndex}');
+      initialTabIndex = widget.initialTabIndex ?? 0;
+    }
+
     _tabController = TabController(
       length: 4,
       vsync: this,
-      initialIndex: widget.initialTabIndex ?? 0,
+      initialIndex: initialTabIndex,
     );
     _initializeData();
   }
@@ -53,9 +71,12 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   Future<void> _initializeData() async {
     if (!_isInitialized) {
       await _demoData.users; // Trigger initialization
+      // Get current user from AppState
+      final appState = Provider.of<AppState>(context, listen: false);
+      final currentUserId = appState.currentUser.id;
       // Initialize services by calling async methods
-      await _friendshipService.getFriendSuggestions(_demoData.currentUser.id);
-      await _calendarService.getUnifiedCalendar(_demoData.currentUser.id);
+      await _friendshipService.getFriendSuggestions(currentUserId);
+      await _calendarService.getUnifiedCalendar(currentUserId);
       _isInitialized = true;
       if (mounted) setState(() {});
     }
@@ -64,7 +85,22 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
-    
+
+    // Check for pending AppState parameters every time the widget builds
+    final appState = Provider.of<AppState>(context, listen: false);
+    final pendingParams = appState.consumeFriendsParams();
+
+    if (pendingParams?.initialTabIndex != null) {
+      print('👥 Friends: Found pending params in build() - tab: ${pendingParams!.initialTabIndex}');
+
+      // Update tab controller with the new tab index
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _tabController.index != pendingParams.initialTabIndex) {
+          _tabController.animateTo(pendingParams.initialTabIndex!);
+        }
+      });
+    }
+
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: AppTheme.getBackgroundColor(context),
@@ -74,32 +110,54 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
       );
     }
     
-    final currentUser = _demoData.currentUser;
-    
-    return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
-      body: Column(
-        children: [
-          // Header with real-time status
-          _buildHeader(currentUser),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final currentUser = appState.currentUser;
 
-          // Tab Navigation
-          _buildTabBar(),
+        return Scaffold(
+          backgroundColor: AppTheme.getBackgroundColor(context),
+          body: Column(
+            children: [
+              // Header with real-time status
+              _buildHeader(currentUser),
 
-          // Tab Content
-          Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildFriendsTab(currentUser),
-                  _buildOnCampusTab(currentUser),
-                  _buildRequestsTab(currentUser),
-                  _buildSuggestionsTab(currentUser),
-                ],
+              // Tab Navigation
+              _buildTabBar(),
+
+              // Tab Content
+              Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildFriendsTab(currentUser),
+                      _buildOnCampusTab(currentUser),
+                      _buildRequestsTab(currentUser),
+                      _buildSuggestionsTab(currentUser),
+                    ],
+                ),
+              ),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            heroTag: "friends_add_friend_fab",
+            onPressed: () {
+              // Navigate directly to People tab in search screen
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AdvancedSearchScreen.people(),
+                ),
+              );
+            },
+            backgroundColor: AppColors.socialColor,
+            icon: const Icon(Icons.person_add, color: Colors.white),
+            label: const Text(
+              'Add Friend',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -243,7 +301,8 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
 
   // Friends Tab with Timetable Integration
   Widget _buildFriendsTab(User currentUser) {
-    final friends = _demoData.getFriendsForUser(currentUser.id);
+    final appState = Provider.of<AppState>(context, listen: false);
+    final friends = appState.friends;
     
     if (friends.isEmpty) {
       return _buildEmptyState(
@@ -270,7 +329,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   // On Campus Tab with Real-time Locations
   Widget _buildOnCampusTab(User currentUser) {
     final campusData = _locationService.getFriendsOnCampusMap(currentUser.id);
-    final friendsOnCampus = campusData['friends'] as List<User>;
+    final friendsOnCampus = (campusData['friends'] as List<dynamic>?)?.cast<User>() ?? <User>[];
     
     if (friendsOnCampus.isEmpty) {
       return _buildEmptyState(
@@ -758,32 +817,64 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   ),
                 ),
                 
-                // Meet button
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.personalColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).shadowColor.withOpacity(0.1),
-                        blurRadius: 2,
-                        offset: const Offset(0, 1),
-                        spreadRadius: 0,
-                      )
-                    ],
-                  ),
-                  child: TextButton(
-                    onPressed: () => _suggestMeetup(friend),
-                    child: Text(
-                      'Meet',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontFamily: 'Roboto',
-                        fontWeight: FontWeight.w500,
+                // Action buttons
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Message button
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.socialColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).shadowColor.withOpacity(0.1),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                            spreadRadius: 0,
+                          )
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => _navigateToChat(friend),
+                        icon: const Icon(
+                          Icons.message_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                        padding: EdgeInsets.zero,
                       ),
                     ),
-                  ),
+                    // Meet button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.personalColor,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).shadowColor.withOpacity(0.1),
+                            blurRadius: 2,
+                            offset: const Offset(0, 1),
+                            spreadRadius: 0,
+                          )
+                        ],
+                      ),
+                      child: TextButton(
+                        onPressed: () => _suggestMeetup(friend),
+                        child: Text(
+                          'Meet',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontFamily: 'Roboto',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1193,13 +1284,92 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           ...suggestions.take(2).map((suggestion) {
             final friend = suggestion['friend'] as User;
             final suggestionText = suggestion['suggestion'] as String;
+            final location = suggestion['location'] as Location?;
+
             return Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Text(suggestionText, style: TextStyle(fontSize: 14)),
+              padding: const EdgeInsets.only(bottom: 8),
+              child: InkWell(
+                onTap: () => _handleMeetupSuggestion(friend, location, suggestionText),
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.orange.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          suggestionText,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Text(
+                          'Meet Up',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             );
           }),
         ],
       ),
+    );
+  }
+
+  void _handleMeetupSuggestion(User friend, Location? location, String suggestionText) async {
+    // Show confirmation dialog
+    UIHelpers.showConfirmationDialog(
+      context,
+      title: 'Meet Up Suggestion',
+      message: 'Would you like to suggest meeting up with ${friend.name}?\n\n$suggestionText',
+      confirmText: 'Send Suggestion',
+      onConfirm: () async {
+        // Show loading
+        UIHelpers.showLoadingDialog(context, message: 'Sending meetup suggestion...');
+
+        try {
+          // Simulate sending meetup suggestion
+          await Future.delayed(const Duration(seconds: 1));
+
+          if (mounted) {
+            UIHelpers.hideLoadingDialog(context);
+            UIHelpers.showSnackBar(
+              context,
+              'Meetup suggestion sent to ${friend.name}! 📍',
+              type: SnackBarType.success,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            UIHelpers.hideLoadingDialog(context);
+            UIHelpers.showSnackBar(
+              context,
+              'Failed to send meetup suggestion: ${e.toString()}',
+              type: SnackBarType.error,
+            );
+          }
+        }
+      },
     );
   }
 
@@ -1642,62 +1812,32 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   }
 
   void _handleFriendRequest(FriendRequest request, bool accept) async {
-    // Show loading immediately
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 16),
-            Text(accept ? 'Accepting friend request...' : 'Declining friend request...'),
-          ],
-        ),
-        duration: const Duration(seconds: 2),
-      ),
+    // Show loading dialog
+    UIHelpers.showLoadingDialog(
+      context,
+      message: accept ? 'Accepting friend request...' : 'Declining friend request...',
     );
 
     try {
       if (accept) {
         await _friendshipService.acceptFriendRequest(request.id);
         if (mounted) {
-          // Clear any existing snackbars
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text('You and ${_demoData.getUserById(request.senderId)?.name ?? 'this user'} are now friends! 🎉'),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
-            ),
+          UIHelpers.hideLoadingDialog(context);
+          final senderName = _demoData.getUserById(request.senderId)?.name ?? 'this user';
+          UIHelpers.showSnackBar(
+            context,
+            'You and $senderName are now friends! 🎉',
+            type: SnackBarType.success,
           );
         }
       } else {
         await _friendshipService.declineFriendRequest(request.id);
         if (mounted) {
-          // Clear any existing snackbars
-          ScaffoldMessenger.of(context).clearSnackBars();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.white),
-                  const SizedBox(width: 8),
-                  const Text('Friend request declined'),
-                ],
-              ),
-              backgroundColor: Colors.orange,
-            ),
+          UIHelpers.hideLoadingDialog(context);
+          UIHelpers.showSnackBar(
+            context,
+            'Friend request declined',
+            type: SnackBarType.info,
           );
         }
       }
@@ -1713,21 +1853,14 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
         });
       }
     } catch (e) {
-      // Clear loading snackbar
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              Text('Failed to handle friend request: ${e.toString()}'),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      if (mounted) {
+        UIHelpers.hideLoadingDialog(context);
+        UIHelpers.showSnackBar(
+          context,
+          'Failed to handle friend request: ${e.toString()}',
+          type: SnackBarType.error,
+        );
+      }
     }
   }
 
@@ -1848,9 +1981,67 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   }
 
   void _showFriendProfile(User friend) {
-    // Navigate to friend profile screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${friend.name}\'s profile would open here')),
+    // Show friend profile modal
+    try {
+      showFriendProfileModal(context, friend, currentUser: _demoData.currentUser);
+    } catch (e) {
+      UIHelpers.showSnackBar(
+        context,
+        'Error loading profile: $e',
+        type: SnackBarType.error,
+      );
+    }
+  }
+
+  void _navigateToChat(User friend) {
+    try {
+      // ChatScreen needs a Chat object, not individual parameters
+      UIHelpers.showSnackBar(
+        context,
+        'Starting chat with ${friend.name} - feature coming soon!',
+        type: SnackBarType.info,
+      );
+    } catch (e) {
+      UIHelpers.showSnackBar(
+        context,
+        'Chat feature not available yet',
+        type: SnackBarType.info,
+      );
+    }
+  }
+
+  void _suggestMeetup(User friend) {
+    UIHelpers.showConfirmationDialog(
+      context,
+      title: 'Suggest Meetup',
+      message: 'Would you like to suggest meeting up with ${friend.name}?',
+      confirmText: 'Send Suggestion',
+      onConfirm: () async {
+        UIHelpers.showLoadingDialog(context, message: 'Sending meetup suggestion...');
+
+        try {
+          // Simulate sending meetup suggestion
+          await Future.delayed(const Duration(seconds: 1));
+
+          if (mounted) {
+            UIHelpers.hideLoadingDialog(context);
+            UIHelpers.showSnackBar(
+              context,
+              'Meetup suggestion sent to ${friend.name}! 📍',
+              type: SnackBarType.success,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            UIHelpers.hideLoadingDialog(context);
+            UIHelpers.showSnackBar(
+              context,
+              'Failed to send meetup suggestion: ${e.toString()}',
+              type: SnackBarType.error,
+            );
+          }
+        }
+      },
     );
   }
 
@@ -1879,11 +2070,6 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  void _suggestMeetup(User friend) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Meetup suggestion sent to ${friend.name}')),
-    );
-  }
 
   // Discovery Helper Methods
   

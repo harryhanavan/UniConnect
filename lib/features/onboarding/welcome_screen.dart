@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import 'signup_screen.dart';
+import '../../shared/widgets/uniconnect_logo.dart';
+import 'feature_intro_screen.dart';
 import '../auth/login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -20,26 +21,7 @@ class WelcomeScreen extends StatelessWidget {
               // Logo/Brand Section
               Column(
                 children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.school,
-                      size: 60,
-                      color: Colors.white,
-                    ),
-                  ),
+                  const UniConnectLogoLarge(),
                   const SizedBox(height: 32),
                   const Text(
                     'UniConnect',
@@ -99,7 +81,7 @@ class WelcomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const OnboardingSignupScreen(),
+                            builder: (context) => const FeatureIntroScreen(),
                           ),
                         );
                       },

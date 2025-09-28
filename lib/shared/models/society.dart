@@ -10,6 +10,7 @@ class Society {
   final List<String> tags;
   final bool isJoined;
   final List<String> adminIds;
+  final double? membershipFee; // null means free membership
 
   const Society({
     required this.id,
@@ -23,6 +24,7 @@ class Society {
     this.tags = const [],
     this.isJoined = false,
     this.adminIds = const [],
+    this.membershipFee,
   });
 
   factory Society.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class Society {
       tags: List<String>.from(json['tags'] ?? []),
       isJoined: json['isJoined'] as bool? ?? false,
       adminIds: List<String>.from(json['adminIds'] ?? []),
+      membershipFee: json['membershipFee'] as double?,
     );
   }
 
@@ -54,6 +57,7 @@ class Society {
       'tags': tags,
       'isJoined': isJoined,
       'adminIds': adminIds,
+      'membershipFee': membershipFee,
     };
   }
 
@@ -69,6 +73,7 @@ class Society {
     List<String>? tags,
     bool? isJoined,
     List<String>? adminIds,
+    double? membershipFee,
   }) {
     return Society(
       id: id ?? this.id,
@@ -82,6 +87,7 @@ class Society {
       tags: tags ?? this.tags,
       isJoined: isJoined ?? this.isJoined,
       adminIds: adminIds ?? this.adminIds,
+      membershipFee: membershipFee ?? this.membershipFee,
     );
   }
 }

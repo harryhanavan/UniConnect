@@ -24,15 +24,17 @@ class UniConnectApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: appState.isDarkMode ? ThemeMode.dark : ThemeMode.light,
-            home: appState.isAuthenticated 
-                ? const MainNavigation()
-                : appState.isInitialized 
+            home: !appState.isInitialized
+                ? const Scaffold(
+                    body: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                : appState.shouldShowOnboarding
                     ? const WelcomeScreen()
-                    : const Scaffold(
-                        body: Center(
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
+                    : appState.isAuthenticated
+                        ? const MainNavigation()
+                        : const WelcomeScreen(), // Fallback to welcome if not authenticated
           );
         },
       ),

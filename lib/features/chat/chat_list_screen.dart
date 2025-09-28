@@ -34,10 +34,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   Future<void> _loadChats() async {
     try {
+      // Get current user from AppState instead of assuming first user
+      final appState = Provider.of<AppState>(context, listen: false);
+      final currentUserId = appState.currentUser.id;
+      final chats = await _chatService.getUserChats(currentUserId);
+
       // Data is already initialized by AppState, but use async to be safe
       final users = await _demoData.users;
-      final currentUserId = users.first.id;
-      final chats = await _chatService.getUserChats(currentUserId);
       
       // Cache users for display
       for (final user in users) {
@@ -84,7 +87,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildChatTile(Chat chat) {
-    final currentUserId = _demoData.usersSync.first.id;
+    final appState = Provider.of<AppState>(context, listen: false);
+    final currentUserId = appState.currentUser.id;
     final displayName = _getChatDisplayName(chat, currentUserId);
     final avatarUrl = _getChatAvatar(chat, currentUserId);
     final unreadCount = _chatService.getUnreadCount(chat.id, currentUserId);

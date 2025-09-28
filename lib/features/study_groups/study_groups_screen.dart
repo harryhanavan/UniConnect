@@ -6,7 +6,9 @@ import 'study_group_detail_screen.dart';
 import 'create_study_group_screen.dart';
 
 class StudyGroupsScreen extends StatefulWidget {
-  const StudyGroupsScreen({super.key});
+  final TabController? tabController;
+
+  const StudyGroupsScreen({super.key, this.tabController});
 
   @override
   State<StudyGroupsScreen> createState() => _StudyGroupsScreenState();
@@ -25,13 +27,15 @@ class _StudyGroupsScreenState extends State<StudyGroupsScreen> with TickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = widget.tabController ?? TabController(length: 3, vsync: this);
     _loadStudyGroupData();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    if (widget.tabController == null) {
+      _tabController.dispose();
+    }
     super.dispose();
   }
 
@@ -73,54 +77,27 @@ class _StudyGroupsScreenState extends State<StudyGroupsScreen> with TickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Study Groups'),
-        backgroundColor: AppColors.studyGroupColor,
-        foregroundColor: Colors.white,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: 'My Groups'),
-            Tab(text: 'Discover'),
-            Tab(text: 'Recommended'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateStudyGroupScreen(),
+    return _buildContent();
+  }
+
+  Widget _buildContent() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Column(
+            children: [
+              _buildStatsHeader(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildMyGroupsTab(),
+                    _buildDiscoverTab(),
+                    _buildRecommendedTab(),
+                  ],
                 ),
-              ).then((_) => _loadStudyGroupData());
-            },
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                _buildStatsHeader(),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildMyGroupsTab(),
-                      _buildDiscoverTab(),
-                      _buildRecommendedTab(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
+              ),
+            ],
+          );
   }
 
   Widget _buildStatsHeader() {
@@ -502,5 +479,77 @@ class _StudyGroupsScreenState extends State<StudyGroupsScreen> with TickerProvid
     } else {
       return '${date.day}/${date.month}';
     }
+  }
+}
+
+/// StudyGroups screen with full Scaffold for normal navigation
+/// This version is used when not preserving bottom navigation
+class StudyGroupsFullScreen extends StatefulWidget {
+  const StudyGroupsFullScreen({super.key});
+
+  @override
+  State<StudyGroupsFullScreen> createState() => _StudyGroupsFullScreenState();
+}
+
+class _StudyGroupsFullScreenState extends State<StudyGroupsFullScreen> with TickerProviderStateMixin {
+  late TabController _tabController;
+  int _refreshCounter = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _onCreateStudyGroup() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const CreateStudyGroupScreen(),
+      ),
+    ).then((_) {
+      // Trigger refresh by incrementing counter
+      setState(() {
+        _refreshCounter++;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Study Groups'),
+        backgroundColor: AppColors.studyGroupColor,
+        foregroundColor: Colors.white,
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          tabs: const [
+            Tab(text: 'My Groups'),
+            Tab(text: 'Discover'),
+            Tab(text: 'Recommended'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            onPressed: _onCreateStudyGroup,
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
+      body: StudyGroupsScreen(
+        key: ValueKey(_refreshCounter),
+        tabController: _tabController,
+      ),
+    );
   }
 }

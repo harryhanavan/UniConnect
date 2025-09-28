@@ -58,6 +58,9 @@ enum EventSubType {
   guestLecture,
   administrative,
   ceremony,
+
+  // General type
+  other,
 }
 
 // User's relationship to the event
@@ -151,6 +154,9 @@ class EventTypeHelper {
       case EventSubType.administrative:
       case EventSubType.ceremony:
         return EventCategory.university;
+
+      case EventSubType.other:
+        return EventCategory.personal;
     }
   }
   
@@ -184,6 +190,7 @@ class EventTypeHelper {
       case EventSubType.guestLecture: return 'Guest Lecture';
       case EventSubType.administrative: return 'Administrative';
       case EventSubType.ceremony: return 'Ceremony';
+      case EventSubType.other: return 'Other';
     }
   }
   

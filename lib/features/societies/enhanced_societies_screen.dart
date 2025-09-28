@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/services/app_state.dart';
+import '../../core/utils/ui_helpers.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/calendar_service.dart';
 import '../../core/services/event_relationship_service.dart';
@@ -48,16 +49,30 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   @override
   void initState() {
     super.initState();
+
+    // Check for pending AppState parameters FIRST
+    final appState = Provider.of<AppState>(context, listen: false);
+    final pendingParams = appState.consumeSocietiesParams();
+
+    int initialTabIndex;
+    if (pendingParams?.initialTabIndex != null) {
+      print('🏛️ Societies: Found pending params - tab: ${pendingParams!.initialTabIndex}');
+      initialTabIndex = pendingParams.initialTabIndex!;
+    } else {
+      print('🏛️ Societies: No pending params, using widget param - tab: ${widget.initialTabIndex}');
+      initialTabIndex = widget.initialTabIndex ?? 0;
+    }
+
     _tabController = TabController(
       length: 3,
       vsync: this,
-      initialIndex: widget.initialTabIndex ?? 0,
+      initialIndex: initialTabIndex,
     );
     _initializeData();
-    
+
     // Listen for society membership changes
     _demoData.societyMembershipNotifier.addListener(_onMembershipChanged);
-    
+
     // Listen for event relationship changes
     _eventRelationshipService.relationshipChangeNotifier.addListener(_onEventRelationshipGlobalChange);
   }
@@ -84,6 +99,21 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Check for pending AppState parameters every time the widget builds
+    final appState = Provider.of<AppState>(context, listen: false);
+    final pendingParams = appState.consumeSocietiesParams();
+
+    if (pendingParams?.initialTabIndex != null) {
+      print('🏛️ Societies: Found pending params in build() - tab: ${pendingParams!.initialTabIndex}');
+
+      // Update tab controller with the new tab index
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _tabController.index != pendingParams.initialTabIndex) {
+          _tabController.animateTo(pendingParams.initialTabIndex!);
+        }
+      });
+    }
+
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: AppTheme.getBackgroundColor(context),
@@ -93,31 +123,34 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
       );
     }
     
-    return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
-      body: Column(
-        children: [
-          _buildHeader(),
-          _buildSearchAndFilter(),
-          _buildTabBar(),
-          Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildMySocietiesTab(),
-                  _buildDiscoverTab(),
-                  _buildEventsTab(),
-                ],
-            ),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+          backgroundColor: AppTheme.getBackgroundColor(context),
+          body: Column(
+            children: [
+              _buildHeader(appState),
+              _buildSearchAndFilter(),
+              _buildTabBar(),
+              Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildMySocietiesTab(appState),
+                      _buildDiscoverTab(),
+                      _buildEventsTab(appState),
+                    ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHeader() {
-    final joinedSocieties = _demoData.joinedSocieties;
-    final appState = Provider.of<AppState>(context, listen: true);
+  Widget _buildHeader(AppState appState) {
+    final joinedSocieties = appState.joinedSocieties;
 
     return Container(
       decoration: BoxDecoration(
@@ -328,8 +361,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildMySocietiesTab() {
-    final allJoinedSocieties = _demoData.joinedSocieties;
+  Widget _buildMySocietiesTab(AppState appState) {
+    final allJoinedSocieties = appState.joinedSocieties;
     final filteredJoinedSocieties = _getFilteredJoinedSocieties();
     
     // Show empty state if no societies joined at all
@@ -441,26 +474,27 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildEventsTab() {
+  Widget _buildEventsTab(AppState appState) {
     if (!_isInitialized) {
       return const Center(
         child: CircularProgressIndicator(),
       );
     }
-    
+
+    final currentUser = appState.currentUser;
     final filteredEvents = _getFilteredEvents();
-    
+
     // Get all society events using the same filtering logic as _getFilteredEvents()
     // but without search/category filters to check for empty state
     final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     final allSocietyEvents = _demoData.enhancedEventsSync.where((event) =>
-      event.societyId != null && 
+      event.societyId != null &&
       event.canUserView(
-        _demoData.currentUser.id,
-        userSocietyIds: _demoData.currentUser.societyIds,
+        currentUser.id,
+        userSocietyIds: currentUser.societyIds,
       ) &&
       event.startTime.isAfter(sevenDaysAgo) &&
-      _demoData.currentUser.societyIds.contains(event.societyId)
+      currentUser.societyIds.contains(event.societyId)
     ).toList();
     
     // Show empty state if no society events at all
@@ -1294,6 +1328,36 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
               height: 1.67,
             ),
           ),
+        const SizedBox(height: 4),
+        // Membership fee badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: society.membershipFee == null
+                ? Colors.green.withOpacity(0.1)
+                : AppColors.societyColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: society.membershipFee == null
+                  ? Colors.green
+                  : AppColors.societyColor,
+              width: 1,
+            ),
+          ),
+          child: Text(
+            society.membershipFee == null
+                ? 'FREE'
+                : '\$${society.membershipFee!.toStringAsFixed(0)}',
+            style: TextStyle(
+              color: society.membershipFee == null
+                  ? Colors.green[700]
+                  : AppColors.societyColor,
+              fontSize: 10,
+              fontFamily: 'Roboto',
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -1316,27 +1380,34 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
   void _joinSociety(Society society) async {
+    // Show loading dialog
+    UIHelpers.showLoadingDialog(context, message: 'Joining ${society.name}...');
+
     try {
       final success = await _calendarService.joinSocietyWithCalendarIntegration(
         _demoData.currentUser.id,
         society.id,
       );
-      
+
+      // Hide loading dialog
+      Navigator.of(context).pop();
+
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Joined ${society.name}! Events added to your calendar.'),
-            backgroundColor: Colors.green,
-          ),
+        UIHelpers.showSnackBar(
+          context,
+          'Joined ${society.name}! Events added to your calendar.',
+          type: SnackBarType.success,
         );
         setState(() {}); // Refresh UI
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to join society'),
-          backgroundColor: Colors.red,
-        ),
+      // Hide loading dialog
+      Navigator.of(context).pop();
+
+      UIHelpers.showSnackBar(
+        context,
+        'Failed to join society: ${e.toString()}',
+        type: SnackBarType.error,
       );
     }
   }
@@ -1360,28 +1431,36 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
         ],
       ),
     );
-    
+
     if (confirmed == true) {
+      // Show loading dialog
+      UIHelpers.showLoadingDialog(context, message: 'Leaving ${society.name}...');
+
       try {
         final success = await _calendarService.leaveSocietyWithCalendarCleanup(
           _demoData.currentUser.id,
           society.id,
         );
-        
+
+        // Hide loading dialog
+        Navigator.of(context).pop();
+
         if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Left ${society.name}. Events removed from calendar.'),
-            ),
+          UIHelpers.showSnackBar(
+            context,
+            'Left ${society.name}. Events removed from calendar.',
+            type: SnackBarType.success,
           );
           setState(() {}); // Refresh UI
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to leave society'),
-            backgroundColor: Colors.red,
-          ),
+        // Hide loading dialog
+        Navigator.of(context).pop();
+
+        UIHelpers.showSnackBar(
+          context,
+          'Failed to leave society: ${e.toString()}',
+          type: SnackBarType.error,
         );
       }
     }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/degree_programs.dart';
+import '../../core/services/app_state.dart';
+import '../../shared/widgets/uniconnect_logo.dart';
 import '../auth/login_screen.dart';
-import '../../shared/widgets/main_navigation.dart';
+import 'profile_setup_screen.dart';
 
 class OnboardingSignupScreen extends StatefulWidget {
   const OnboardingSignupScreen({super.key});
@@ -16,9 +20,9 @@ class _OnboardingSignupScreenState extends State<OnboardingSignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _courseController = TextEditingController();
   String _selectedUniversity = 'University of Technology Sydney';
   String _selectedYear = '1st Year';
-  String _selectedCourse = 'Bachelor of Information Technology';
 
   @override
   void dispose() {
@@ -26,6 +30,7 @@ class _OnboardingSignupScreenState extends State<OnboardingSignupScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _courseController.dispose();
     super.dispose();
   }
 
@@ -41,6 +46,22 @@ class _OnboardingSignupScreenState extends State<OnboardingSignupScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        title: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            UniConnectLogoSmall(showShadow: false),
+            SizedBox(width: 8),
+            Text(
+              'UniConnect',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+          ],
+        ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -124,26 +145,9 @@ class _OnboardingSignupScreenState extends State<OnboardingSignupScreen> {
                 ),
                 
                 const SizedBox(height: 20),
-                
-                // Course Dropdown
-                _buildDropdownField(
-                  label: 'Course/Degree',
-                  value: _selectedCourse,
-                  icon: Icons.menu_book_outlined,
-                  items: [
-                    'Bachelor of Information Technology',
-                    'Bachelor of Design',
-                    'Bachelor of Engineering',
-                    'Bachelor of Business',
-                    'Bachelor of Science',
-                    'Master of Information Technology',
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCourse = value!;
-                    });
-                  },
-                ),
+
+                // Course Autocomplete Field
+                _buildCourseAutocompleteField(),
                 
                 const SizedBox(height: 20),
                 
@@ -383,22 +387,144 @@ class _OnboardingSignupScreenState extends State<OnboardingSignupScreen> {
 
   void _handleSignUp() {
     if (_formKey.currentState!.validate()) {
-      // In a real app, you'd send this data to a backend
+      // Collect signup data
+      final signupData = {
+        'name': _nameController.text,
+        'email': _emailController.text,
+        'university': _selectedUniversity,
+        'course': _courseController.text,
+        'year': _selectedYear,
+        'password': _passwordController.text, // In real app, this would be hashed
+        'signupTimestamp': DateTime.now().toIso8601String(),
+      };
+
+      // Store in AppState for later user creation
+      final appState = Provider.of<AppState>(context, listen: false);
+      appState.createNewUserFromOnboarding(signupData);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Account created successfully! Welcome to UniConnect!'),
+          content: Text('Account created successfully! Let\'s set up your profile.'),
           backgroundColor: AppColors.online,
         ),
       );
-      
-      // Navigate to main app
-      Navigator.pushAndRemoveUntil(
+
+      // Navigate to profile setup
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => const MainNavigation(),
+          builder: (context) => const ProfileSetupScreen(),
         ),
-        (route) => false,
       );
     }
+  }
+
+  Widget _buildCourseAutocompleteField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Course/Degree',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Autocomplete<String>(
+          initialValue: TextEditingValue(text: _courseController.text),
+          optionsBuilder: (TextEditingValue textEditingValue) {
+            if (textEditingValue.text.isEmpty) {
+              return DegreePrograms.popularPrograms;
+            }
+            return DegreePrograms.searchPrograms(textEditingValue.text);
+          },
+          onSelected: (String selection) {
+            _courseController.text = selection;
+          },
+          fieldViewBuilder: (BuildContext context, TextEditingController textEditingController, FocusNode focusNode, VoidCallback onFieldSubmitted) {
+            // Sync the internal controller with the autocomplete controller
+            if (textEditingController.text != _courseController.text) {
+              textEditingController.text = _courseController.text;
+            }
+
+            return TextFormField(
+              controller: textEditingController,
+              focusNode: focusNode,
+              onFieldSubmitted: (value) => onFieldSubmitted(),
+              onChanged: (value) {
+                _courseController.text = value;
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your course/degree';
+                }
+                return null;
+              },
+              decoration: InputDecoration(
+                hintText: 'e.g., Bachelor of Information Technology',
+                prefixIcon: const Icon(Icons.menu_book_outlined, color: AppColors.primary),
+                suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.grey[600]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+            );
+          },
+          optionsViewBuilder: (BuildContext context, AutocompleteOnSelected<String> onSelected, Iterable<String> options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4.0,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 200),
+                  width: MediaQuery.of(context).size.width - 48, // Account for padding
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    itemCount: options.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      final String option = options.elementAt(index);
+                      return InkWell(
+                        onTap: () => onSelected(option),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Text(
+                            option,
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Start typing to search from 200+ degree programs, or enter a custom degree',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
   }
 }

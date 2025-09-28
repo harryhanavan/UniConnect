@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
+import '../../shared/models/user.dart';
 import '../settings/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -8,10 +12,11 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final demoData = DemoDataManager.instance;
-    final user = demoData.currentUser;
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final user = appState.currentUser;
 
-    return Scaffold(
+        return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
         title: const Text('Profile'),
@@ -120,76 +125,17 @@ class ProfileScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildStatColumn(context, '${demoData.friends.length}', 'Friends'),
-                  _buildStatColumn(context, '${demoData.joinedSocieties.length}', 'Societies'),
-                  _buildStatColumn(context, '12', 'Events'),
+                  _buildStatColumn(context, '${appState.friends.length}', 'Friends'),
+                  _buildStatColumn(context, '${appState.joinedSocieties.length}', 'Societies'),
+                  _buildStatColumn(context, '${appState.events.length}', 'Events'),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            // Quick Actions
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Quick Actions',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionCard(
-                          'View Timetable',
-                          Icons.schedule,
-                          AppColors.personalColor,  // Timetable is personal schedule
-                          () {},
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildActionCard(
-                          'Find Friends',
-                          Icons.person_add,
-                          AppColors.societyColor,
-                          () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildActionCard(
-                          'My Societies',
-                          Icons.groups,
-                          AppColors.societyColor,
-                          () {},
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildActionCard(
-                          'Study Groups',
-                          Icons.menu_book,
-                          AppColors.personalColor,
-                          () {},
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+            // Status Section
+            _buildStatusSection(context, appState, user),
 
             const SizedBox(height: 20),
 
@@ -237,6 +183,8 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
+        );
+      },
     );
   }
 
@@ -251,6 +199,7 @@ class ProfileScreen extends StatelessWidget {
             color: AppColors.primary,
           ),
         ),
+        const SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
@@ -260,6 +209,278 @@ class ProfileScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildStatusSection(BuildContext context, AppState appState, User user) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Status',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.getSurfaceColor(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Current Status Display
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(user.status),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _getStatusDisplayName(user.status),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => _showStatusDialog(context, appState, user),
+                      child: const Text('Change'),
+                    ),
+                  ],
+                ),
+
+                if (user.statusMessage != null && user.statusMessage!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.message,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          user.statusMessage!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => _showStatusMessageDialog(context, appState, user),
+                        child: const Text('Edit'),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => _showStatusMessageDialog(context, appState, user),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Add status message'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Quick Status Actions
+                Text(
+                  'Quick Status',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _buildQuickStatusChip(context, appState, UserStatus.online, 'Online'),
+                    _buildQuickStatusChip(context, appState, UserStatus.busy, 'Busy'),
+                    _buildQuickStatusChip(context, appState, UserStatus.inClass, 'In Class'),
+                    _buildQuickStatusChip(context, appState, UserStatus.studying, 'Studying'),
+                    _buildQuickStatusChip(context, appState, UserStatus.away, 'Away'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickStatusChip(BuildContext context, AppState appState, UserStatus status, String label) {
+    final isSelected = appState.currentUser.status == status;
+    final color = _getStatusColor(status);
+
+    return FilterChip(
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          appState.updateUserStatus(status: status);
+        }
+      },
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(label),
+        ],
+      ),
+      backgroundColor: Colors.transparent,
+      selectedColor: color.withValues(alpha: 0.2),
+      checkmarkColor: color,
+      side: BorderSide(
+        color: isSelected ? color : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+      ),
+    );
+  }
+
+  void _showStatusDialog(BuildContext context, AppState appState, User user) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: UserStatus.values.map((status) {
+            return ListTile(
+              leading: Container(
+                width: 16,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: _getStatusColor(status),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              title: Text(_getStatusDisplayName(status)),
+              trailing: user.status == status ? const Icon(Icons.check) : null,
+              onTap: () {
+                appState.updateUserStatus(status: status);
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStatusMessageDialog(BuildContext context, AppState appState, User user) {
+    final controller = TextEditingController(text: user.statusMessage ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Status Message'),
+        content: TextField(
+          controller: controller,
+          maxLength: 100,
+          maxLines: 2,
+          decoration: const InputDecoration(
+            hintText: 'What\'s on your mind?',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          if (user.statusMessage != null && user.statusMessage!.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                appState.updateUserStatus(statusMessage: null);
+                Navigator.pop(context);
+              },
+              child: const Text('Remove'),
+            ),
+          TextButton(
+            onPressed: () {
+              final message = controller.text.trim();
+              appState.updateUserStatus(
+                statusMessage: message.isEmpty ? null : message,
+              );
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(UserStatus status) {
+    switch (status) {
+      case UserStatus.online:
+        return Colors.green;
+      case UserStatus.busy:
+        return Colors.red;
+      case UserStatus.away:
+        return Colors.orange;
+      case UserStatus.inClass:
+        return Colors.blue;
+      case UserStatus.studying:
+        return Colors.purple;
+      case UserStatus.offline:
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusDisplayName(UserStatus status) {
+    switch (status) {
+      case UserStatus.online:
+        return 'Online';
+      case UserStatus.busy:
+        return 'Busy';
+      case UserStatus.away:
+        return 'Away';
+      case UserStatus.inClass:
+        return 'In Class';
+      case UserStatus.studying:
+        return 'Studying';
+      case UserStatus.offline:
+        return 'Offline';
+    }
   }
 
   Widget _buildActionCard(String title, IconData icon, Color color, VoidCallback onTap) {

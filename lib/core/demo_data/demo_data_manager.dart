@@ -463,6 +463,23 @@ class DemoDataManager {
     }
   }
 
+  void updateUser(User updatedUser) {
+    if (!_isInitialized) {
+      throw StateError('Demo data not initialized. Call await demoDataManager.users first.');
+    }
+
+    // Find and update the user in the users list
+    final userIndex = _users!.indexWhere((u) => u.id == updatedUser.id);
+    if (userIndex != -1) {
+      _users![userIndex] = updatedUser;
+
+      // Update current user cache if this is the current user
+      if (_currentUser?.id == updatedUser.id) {
+        _currentUser = updatedUser;
+      }
+    }
+  }
+
   // User lookup methods
   User? getUserById(String id) {
     if (!_isInitialized) {

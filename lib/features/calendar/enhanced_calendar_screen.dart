@@ -49,8 +49,8 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   late CalendarFilter selectedFilter;
   late CalendarView currentView;
 
-  // Toggle states for UI elements - hidden by default
-  bool _showViewSelector = false;
+  // Toggle states for UI elements - visible by default for easier access
+  bool _showViewSelector = true;
   late bool _useTimetableView;
   bool _showFriendsSchedule = false; // Friends schedule collapsed by default
 
@@ -76,10 +76,16 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   // Initialize calendar data asynchronously
   Future<void> _initializeCalendarData() async {
     try {
+      // Get current user from AppState
+      final appState = context.read<AppState>();
+      final currentUser = appState.currentUser;
+
+      print('📅 Calendar: Initializing for user: ${currentUser.name} (${currentUser.id})');
+
       // Ensure demo data is loaded
       await _demoData.enhancedEvents;
-      // Ensure calendar service is initialized
-      await _calendarService.getEnhancedUnifiedCalendar(_demoData.currentUser.id);
+      // Ensure calendar service is initialized with current user
+      await _calendarService.getEnhancedUnifiedCalendar(currentUser.id);
 
       setState(() {
         _isInitialized = true;
@@ -103,10 +109,12 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   void initState() {
     super.initState();
 
-    // Initialize with widget parameters or defaults
+    // Initialize with widget parameters or defaults first
     selectedFilter = widget.initialFilter ?? CalendarFilter.mySchedule;
     currentView = widget.initialView ?? CalendarView.day;
     _useTimetableView = widget.initialUseTimetableView ?? false;
+
+    print('📅 Calendar: initState - filter: $selectedFilter, view: $currentView, timetable: $_useTimetableView');
 
     // Ensure data is loaded asynchronously
     _initializeCalendarData();
@@ -171,6 +179,26 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Check for pending AppState parameters every time the widget builds
+    // This handles navigation from quick actions when screen is already initialized
+    final appState = Provider.of<AppState>(context, listen: false);
+    final pendingParams = appState.consumeCalendarParams();
+
+    if (pendingParams != null) {
+      print('📅 Calendar: Found pending params in build() - filter: ${pendingParams.initialFilter}, view: ${pendingParams.initialView}, timetable: ${pendingParams.initialUseTimetableView}');
+
+      // Update state with the new parameters
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            selectedFilter = pendingParams.initialFilter ?? selectedFilter;
+            currentView = pendingParams.initialView ?? currentView;
+            _useTimetableView = pendingParams.initialUseTimetableView ?? _useTimetableView;
+          });
+        }
+      });
+    }
+
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: AppTheme.getBackgroundColor(context),
@@ -180,22 +208,28 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       );
     }
     
-    return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
-      body: Column(
-        children: [
-          _buildHeader(),
-          if (_showViewSelector) _buildViewSelector(),
-          Expanded(child: _buildCalendarView()),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateEventDialog(),
-        backgroundColor: AppColors.personalColor,
-        foregroundColor: AppTheme.getButtonTextColor(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Create Event'),
-      ),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final currentUser = appState.currentUser;
+
+        return Scaffold(
+          backgroundColor: AppTheme.getBackgroundColor(context),
+          body: Column(
+            children: [
+              _buildHeader(),
+              if (_showViewSelector) _buildViewSelector(),
+              Expanded(child: _buildCalendarView(currentUser)),
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => _showCreateEventDialog(currentUser),
+            backgroundColor: AppColors.personalColor,
+            foregroundColor: AppTheme.getButtonTextColor(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Create Event'),
+          ),
+        );
+      },
     );
   }
 
@@ -304,50 +338,31 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
   Widget _buildViewSelector() {
-    return Container(
-      constraints: BoxConstraints(
-        maxHeight: showAdvancedFilters
-            ? MediaQuery.of(context).size.height * 0.6  // Limit to 60% of screen height when expanded
-            : 250,  // Normal height when collapsed
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // View selector
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppTheme.getSurfaceColor(context),
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Row(
-                children: [
-                  _buildViewButton('Day', CalendarView.day),
-                  _buildViewButton('3 Days', CalendarView.threeDays),
-                  _buildViewButton('Week', CalendarView.week),
-                  _buildViewButton('Month', CalendarView.month),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Simplified View selector - only Day, Week, Month
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppTheme.getSurfaceColor(context),
+              borderRadius: BorderRadius.circular(25),
             ),
+            child: Row(
+              children: [
+                _buildViewButton('Day', CalendarView.day),
+                _buildViewButton('Week', CalendarView.week),
+                _buildViewButton('Month', CalendarView.month),
+              ],
+            ),
+          ),
 
-            const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-            // Primary Filters
-            _buildPrimaryFilters(),
-
-            const SizedBox(height: 12),
-
-            // Advanced Filter Toggle
-            _buildAdvancedFilterToggle(),
-
-            // Advanced Filter Menu
-            if (showAdvancedFilters) ...[
-              const SizedBox(height: 8),
-              _buildAdvancedFilterMenu(),
-            ],
-          ],
-        ),
+          // Simplified primary filters only
+          _buildSimplifiedFilters(),
+        ],
       ),
     );
   }
@@ -498,6 +513,30 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSimplifiedFilters() {
+    final primaryFilters = [
+      {'name': 'My Schedule', 'icon': '📅', 'filter': CalendarFilter.mySchedule},
+      {'name': 'Academic', 'icon': '📚', 'filter': CalendarFilter.academic},
+      {'name': 'Social', 'icon': '🎉', 'filter': CalendarFilter.social},
+      {'name': 'Societies', 'icon': '🏛️', 'filter': CalendarFilter.societies},
+      {'name': 'All', 'icon': '🌐', 'filter': CalendarFilter.allEvents},
+    ];
+
+    return SizedBox(
+      height: 80,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: primaryFilters.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = primaryFilters[index];
+          final isSelected = selectedFilter == filter['filter'];
+          return _buildPrimaryFilterChip(filter, isSelected);
+        },
       ),
     );
   }
@@ -966,51 +1005,51 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }
 
 
-  Widget _buildCalendarView() {
+  Widget _buildCalendarView(User currentUser) {
     switch (currentView) {
       case CalendarView.day:
-        return _buildDayView();
+        return _buildDayView(currentUser);
       case CalendarView.threeDays:
-        return _buildThreeDaysView();
+        return _buildThreeDaysView(currentUser);
       case CalendarView.week:
-        return _buildWeekView();
+        return _buildWeekView(currentUser);
       case CalendarView.month:
-        return _buildMonthView();
+        return _buildMonthView(currentUser);
     }
   }
 
-  Widget _buildDayView() {
+  Widget _buildDayView(User currentUser) {
     return Column(
       children: [
         _buildDateNavigation(),
-        Expanded(child: _useTimetableView ? _buildDayTimetable() : _buildDayContent()),
+        Expanded(child: _useTimetableView ? _buildDayTimetable(currentUser) : _buildDayContent(currentUser)),
       ],
     );
   }
 
-  Widget _buildThreeDaysView() {
+  Widget _buildThreeDaysView(User currentUser) {
     return Column(
       children: [
         _buildDateNavigation(),
-        Expanded(child: _buildMultiDayContent(3)),
+        Expanded(child: _buildMultiDayContent(3, currentUser)),
       ],
     );
   }
 
-  Widget _buildWeekView() {
+  Widget _buildWeekView(User currentUser) {
     return Column(
       children: [
         _buildDateNavigation(),
-        Expanded(child: _buildMultiDayContent(7)),
+        Expanded(child: _buildMultiDayContent(7, currentUser)),
       ],
     );
   }
 
-  Widget _buildMonthView() {
+  Widget _buildMonthView(User currentUser) {
     return Column(
       children: [
         _buildMonthNavigation(),
-        Expanded(child: _buildMonthContent()),
+        Expanded(child: _buildMonthContent(currentUser)),
       ],
     );
   }
@@ -1073,13 +1112,13 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  Widget _buildDayContent() {
+  Widget _buildDayContent(User currentUser) {
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
-    
+
     // Get events based on selected filter using EventV2 with advanced filters
     List<EventV2> events = _calendarService.getEventsByCalendarFilterSync(
-      _demoData.currentUser.id,
+      currentUser.id,
       selectedFilter,
       startDate: startOfDay,
       endDate: endOfDay,
@@ -1091,7 +1130,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
       return _buildEmptyDay();
     }
 
-    final overlayData = _calendarService.getEventsWithFriendOverlaySync(_demoData.currentUser.id, selectedDate);
+    final overlayData = _calendarService.getEventsWithFriendOverlaySync(currentUser.id, selectedDate);
     
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -1104,7 +1143,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  Widget _buildMultiDayContent(int days) {
+  Widget _buildMultiDayContent(int days, User currentUser) {
     final startDate = days == 3 
         ? selectedDate.subtract(Duration(days: 1))  // Show day before, selected day, and day after
         : _getWeekStart(selectedDate);               // Show full week
@@ -1126,7 +1165,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               
               // Get event count for this date
               final dayEvents = _calendarService.getUnifiedCalendarSync(
-                _demoData.currentUser.id,
+                currentUser.id,
                 startDate: DateTime(date.year, date.month, date.day),
                 endDate: DateTime(date.year, date.month, date.day + 1),
               );
@@ -1187,21 +1226,21 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
         
         // Multi-day events content
         Expanded(
-          child: _useTimetableView 
-              ? _buildMultiDayTimetable(startDate, displayDays)
-              : _buildMultiDayEventsContent(startDate, displayDays),
+          child: _useTimetableView
+              ? _buildMultiDayTimetable(startDate, displayDays, currentUser)
+              : _buildMultiDayEventsContent(startDate, displayDays, currentUser),
         ),
       ],
     );
   }
 
-  Widget _buildDayTimetable() {
+  Widget _buildDayTimetable(User currentUser) {
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     
     // Get events for the day using EventV2 with advanced filters
     List<EventV2> events = _calendarService.getEventsByCalendarFilterSync(
-      _demoData.currentUser.id,
+      currentUser.id,
       selectedFilter,
       startDate: startOfDay,
       endDate: endOfDay,
@@ -1212,7 +1251,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     return _buildTimetableGrid([selectedDate], events, 1, false);
   }
 
-  Widget _buildMultiDayTimetable(DateTime startDate, int displayDays) {
+  Widget _buildMultiDayTimetable(DateTime startDate, int displayDays, User currentUser) {
     // Show loading indicator if data isn't ready
     if (!_isInitialized) {
       return const Center(
@@ -1231,7 +1270,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     final endDate = startDate.add(Duration(days: displayDays));
 
     List<EventV2> allEvents = _calendarService.getEventsByCalendarFilterSync(
-      _demoData.currentUser.id,
+      currentUser.id,
       selectedFilter,
       startDate: startDate,
       endDate: endDate,
@@ -1639,12 +1678,12 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
   }
 
-  Widget _buildMultiDayEventsContent(DateTime startDate, int displayDays) {
+  Widget _buildMultiDayEventsContent(DateTime startDate, int displayDays, User currentUser) {
     // Get events for the entire date range using EventV2 with filtering
     final endDate = startDate.add(Duration(days: displayDays));
     
     List<EventV2> allEvents = _calendarService.getEventsByCalendarFilterSync(
-      _demoData.currentUser.id,
+      currentUser.id,
       selectedFilter,
       startDate: startDate,
       endDate: endDate,
@@ -1800,7 +1839,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     }
   }
 
-  Widget _buildMonthContent() {
+  Widget _buildMonthContent(User currentUser) {
     final firstDayOfMonth = DateTime(currentMonth.year, currentMonth.month, 1);
     final lastDayOfMonth = DateTime(currentMonth.year, currentMonth.month + 1, 0);
     final firstDayOfWeek = firstDayOfMonth.weekday % 7;
@@ -1848,7 +1887,7 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
                 
                 // Get events for this date
                 final dayEvents = _calendarService.getUnifiedCalendarSync(
-                  _demoData.currentUser.id,
+                  currentUser.id,
                   startDate: DateTime(date.year, date.month, date.day),
                   endDate: DateTime(date.year, date.month, date.day + 1),
                 );
@@ -2433,11 +2472,11 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  void _showCreateEventDialog() {
+  void _showCreateEventDialog(User currentUser) {
     showDialog(
       context: context,
       builder: (context) => _EventCreationDialog(
-        currentUser: _demoData.currentUser,
+        currentUser: currentUser,
         onEventCreated: (newEvent) {
           print('🎯 DEBUG (Calendar): Event created callback received for "${newEvent.title}"');
           
@@ -4389,6 +4428,8 @@ class _EventEditingDialogState extends State<_EventEditingDialog> {
         return 'Workshop';
       case EventSubType.presentation:
         return 'Presentation';
+      case EventSubType.other:
+        return 'Other';
     }
   }
 
