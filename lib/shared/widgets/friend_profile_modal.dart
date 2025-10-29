@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/demo_data/demo_data_manager.dart';
+import '../../core/services/app_state.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/services/chat_service.dart';
 import '../../shared/models/user.dart';
 import '../../features/chat/chat_screen.dart';
+import '../../features/privacy/friend_privacy_overrides_screen.dart';
 
 /// Reusable modal for displaying friend profiles throughout the app
 /// Can be called from friends list, chat screens, event attendees, etc.
@@ -157,63 +160,69 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: BoxDecoration(
-        color: AppTheme.getBackgroundColor(context),
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          // Handle bar for swipe gesture
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        final accentColor = AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled);
 
-          // Close button row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.75,
+          decoration: BoxDecoration(
+            color: AppTheme.getBackgroundColor(context),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar for swipe gesture
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // Main content
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: [
-                        _buildProfileHeader(),
-                        const SizedBox(height: 24),
-                        _buildActionButtons(),
-                        const SizedBox(height: 24),
-                        _buildProfileSections(),
-                        const SizedBox(height: 20),
-                      ],
+              // Close button row
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+
+              // Main content
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            _buildProfileHeader(accentColor),
+                            const SizedBox(height: 24),
+                            _buildActionButtons(accentColor),
+                            const SizedBox(height: 24),
+                            _buildProfileSections(accentColor),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(Color accentColor) {
     return Column(
       children: [
         // Profile Picture
@@ -224,7 +233,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
               backgroundImage: widget.friend.profileImageUrl != null
                   ? NetworkImage(widget.friend.profileImageUrl!)
                   : null,
-              backgroundColor: AppColors.socialColor,
+              backgroundColor: accentColor,
               child: widget.friend.profileImageUrl == null
                   ? Text(
                       widget.friend.name[0],
@@ -331,7 +340,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(Color accentColor) {
     return Row(
       children: [
         // Message Button
@@ -341,7 +350,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
             icon: const Icon(Icons.message, size: 18),
             label: const Text('Message'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.socialColor,
+              backgroundColor: accentColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
@@ -379,7 +388,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
     );
   }
 
-  Widget _buildProfileSections() {
+  Widget _buildProfileSections(Color accentColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -406,7 +415,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
         if (_privacyPermissions['canViewFriends'] == true && _mutualFriends.isNotEmpty) ...[
           _buildSectionHeader('Mutual Friends (${_mutualFriends.length})'),
           const SizedBox(height: 8),
-          _buildMutualFriendsRow(),
+          _buildMutualFriendsRow(accentColor),
           const SizedBox(height: 20),
         ],
 
@@ -414,7 +423,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
         if (_sharedClasses.isNotEmpty) ...[
           _buildSectionHeader('Shared Classes (${_sharedClasses.length})'),
           const SizedBox(height: 8),
-          ..._sharedClasses.map((className) => _buildListItem(className, Icons.school)),
+          ..._sharedClasses.map((className) => _buildListItem(className, Icons.school, accentColor)),
           const SizedBox(height: 20),
         ],
 
@@ -422,7 +431,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
         if (_sharedSocieties.isNotEmpty) ...[
           _buildSectionHeader('Shared Societies (${_sharedSocieties.length})'),
           const SizedBox(height: 8),
-          ..._sharedSocieties.map((society) => _buildListItem(society, Icons.groups)),
+          ..._sharedSocieties.map((society) => _buildListItem(society, Icons.groups, accentColor)),
           const SizedBox(height: 20),
         ],
 
@@ -431,14 +440,14 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
           _buildSectionHeader('Mutual Study Groups (${_mutualStudyGroups.length})'),
           const SizedBox(height: 8),
           ..._mutualStudyGroups.map((group) =>
-            _buildListItem('${group['name']} (${group['members']} members)', Icons.school)
+            _buildListItem('${group['name']} (${group['members']} members)', Icons.school, accentColor)
           ),
           const SizedBox(height: 20),
         ],
 
         // Bottom Action Buttons
         const SizedBox(height: 20),
-        _buildBottomActions(),
+        _buildBottomActions(accentColor),
       ],
     );
   }
@@ -453,7 +462,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
     );
   }
 
-  Widget _buildMutualFriendsRow() {
+  Widget _buildMutualFriendsRow(Color accentColor) {
     return Row(
       children: [
         ...(_mutualFriends.take(4).map((friend) => Padding(
@@ -463,7 +472,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
             backgroundImage: friend.profileImageUrl != null
                 ? NetworkImage(friend.profileImageUrl!)
                 : null,
-            backgroundColor: AppColors.socialColor,
+            backgroundColor: accentColor,
             child: friend.profileImageUrl == null
                 ? Text(friend.name[0], style: const TextStyle(color: Colors.white))
                 : null,
@@ -482,12 +491,12 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
     );
   }
 
-  Widget _buildListItem(String text, IconData icon) {
+  Widget _buildListItem(String text, IconData icon, Color accentColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.socialColor),
+          Icon(icon, size: 16, color: accentColor),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -513,7 +522,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
     }
   }
 
-  Widget _buildBottomActions() {
+  Widget _buildBottomActions(Color accentColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
@@ -532,7 +541,7 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
             ),
             label: Text(_isFriend ? 'Unfriend' : 'Add Friend'),
             style: TextButton.styleFrom(
-              foregroundColor: _isFriend ? Colors.red : AppColors.socialColor,
+              foregroundColor: _isFriend ? Colors.red : accentColor,
             ),
           ),
           TextButton.icon(
@@ -604,10 +613,13 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
       _showUnfriendConfirmation();
     } else {
       // Send friend request
+      final appState = Provider.of<AppState>(context, listen: false);
+      final accentColor = AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Friend request sent to ${widget.friend.name}'),
-          backgroundColor: AppColors.socialColor,
+          backgroundColor: accentColor,
         ),
       );
       // TODO: Implement friend request functionality
@@ -616,13 +628,14 @@ class _FriendProfileModalState extends State<FriendProfileModal> {
 
   void _adjustPrivacySettings() {
     Navigator.of(context).pop(); // Close modal
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Opening privacy settings...'),
-        backgroundColor: AppColors.primaryDark,
+
+    // Navigate to the individual friend controls page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FriendPrivacyOverridesScreen(),
       ),
     );
-    // TODO: Navigate to privacy settings for this friend
   }
 
   void _showUnfriendConfirmation() {

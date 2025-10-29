@@ -31,7 +31,8 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
   bool _isInitialized = false;
   bool _isProcessingJoin = false;
   String? _lastError;
-  
+  EventTimeFilter _selectedTimeFilter = EventTimeFilter.upcoming;
+
   final CalendarService _calendarService = CalendarService();
   final EventRelationshipService _eventRelationshipService = EventRelationshipService();
 
@@ -58,6 +59,18 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     } catch (e) {
       print('Error checking join status: $e');
       return null;
+    }
+  }
+
+  // Helper method to check if current user is an admin
+  bool get isUserAdmin {
+    if (!_isInitialized) return false;
+    try {
+      final society = currentSociety;
+      return society?.adminIds.contains(_currentUser.id) ?? false;
+    } catch (e) {
+      print('Error checking admin status: $e');
+      return false;
     }
   }
 
@@ -141,6 +154,7 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
       eventsWithStatus = await _calendarService.getSocietyEventsWithStatus(
         currentUserId,
         widget.society.id,
+        timeFilter: _selectedTimeFilter,
       );
 
       // Extract events for backward compatibility
@@ -242,6 +256,14 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
     }
   }
 
+  void _onTimeFilterChanged(EventTimeFilter newFilter) async {
+    setState(() {
+      _selectedTimeFilter = newFilter;
+    });
+    await _loadUpcomingEvents();
+    if (mounted) setState(() {});
+  }
+
   void _onEventTap(EventV2 event) {
     // Show event details modal or navigate to event detail screen
     showModalBottomSheet(
@@ -316,6 +338,246 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
       // Fallback to demo data manager if AppState is not available
       return DemoDataManager.instance.currentUser;
     }
+  }
+
+  String _getEventsHeaderText() {
+    final count = upcomingEvents.length;
+    switch (_selectedTimeFilter) {
+      case EventTimeFilter.upcoming:
+        return count == 1 ? '1 upcoming event' : '$count upcoming events';
+      case EventTimeFilter.past:
+        return count == 1 ? '1 past event' : '$count past events';
+      case EventTimeFilter.all:
+        return count == 1 ? '1 event' : '$count events';
+    }
+  }
+
+  String _getEmptyStateText() {
+    switch (_selectedTimeFilter) {
+      case EventTimeFilter.upcoming:
+        return 'No upcoming events scheduled';
+      case EventTimeFilter.past:
+        return 'No past events found';
+      case EventTimeFilter.all:
+        return 'No events found for this society';
+    }
+  }
+
+  void _createNewEvent() {
+    // Show a modal for creating a new event
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.9,
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Create New Event',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Event creation functionality is under development.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'As an admin, you will be able to:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildAdminFeatureItem('Create new events for ${currentSociety?.name}'),
+                _buildAdminFeatureItem('Set event details, time, and location'),
+                _buildAdminFeatureItem('Manage event attendees and invitations'),
+                _buildAdminFeatureItem('Edit or cancel existing events'),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Got it'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _editEvent(EventV2 event) {
+    // Navigate to calendar screen where the full event editing dialog is available
+    // The calendar screen has a complete event editing system
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Opening Calendar to edit event...'),
+        action: SnackBarAction(
+          label: 'Go',
+          onPressed: () {
+            // Navigate to the calendar tab
+            // This requires access to the main navigation which we'll handle via callback
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+
+    // Alternative: Show a simplified action menu
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Edit Event',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              event.title,
+              style: TextStyle(
+                fontSize: 16,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.calendar_today),
+              title: const Text('View in Calendar'),
+              subtitle: const Text('Use the calendar for full editing features'),
+              trailing: const Icon(Icons.arrow_forward),
+              onTap: () {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+                // Note: This will return to home. Full integration would require
+                // passing a callback to switch to calendar tab
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.delete_outline, color: Colors.red),
+              title: const Text(
+                'Delete Event',
+                style: TextStyle(color: Colors.red),
+              ),
+              subtitle: const Text('Permanently remove this event'),
+              onTap: () {
+                Navigator.pop(context);
+                _showDeleteEventDialog(event);
+              },
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteEventDialog(EventV2 event) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Event'),
+        content: Text(
+          'Are you sure you want to delete "${event.title}"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Event deletion is under development'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminFeatureItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle_outline, size: 18, color: Color(0xFF4CAF50)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -448,7 +710,39 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              
+
+                              const SizedBox(height: 8),
+
+                              // Admin Badge (if user is admin)
+                              if (isUserAdmin)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF8B5CF6),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.admin_panel_settings,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Admin',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontFamily: 'Roboto',
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
                               const SizedBox(height: 8),
                               
                               // Member Count
@@ -653,45 +947,167 @@ class _SocietyDetailScreenState extends State<SocietyDetailScreen> {
                   // Members Section
                   _buildMembersSection(),
 
-                  // Upcoming Events Section
+                  // Events Section with Filter
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    decoration: ShapeDecoration(
+                      color: AppTheme.getCardColor(context),
+                      shape: RoundedRectangleBorder(
+                        side: BorderSide(
+                          width: 1,
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                        ),
+                        borderRadius: BorderRadius.circular(8), // Match calendar cards
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Header with event count and Create Event button
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _getEventsHeaderText(),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                  fontSize: 18,
+                                  fontFamily: 'Roboto',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (isUserAdmin)
+                                ElevatedButton.icon(
+                                  onPressed: _createNewEvent,
+                                  icon: const Icon(Icons.add, size: 18),
+                                  label: const Text('Create Event'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4CAF50),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    textStyle: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Filter Chips
+                          Row(
+                            children: EventTimeFilter.values.map((filter) {
+                              final isSelected = _selectedTimeFilter == filter;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: FilterChip(
+                                  label: Text(
+                                    EventTypeHelper.getEventTimeFilterDisplayName(filter),
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Theme.of(context).colorScheme.onSurface,
+                                      fontSize: 13,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: (_) => _onTimeFilterChanged(filter),
+                                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                  selectedColor: const Color(0xFF4CAF50),
+                                  checkmarkColor: Colors.white,
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? const Color(0xFF4CAF50)
+                                        : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Event Cards or Empty State
                   if (upcomingEvents.isNotEmpty) ...[
+                    ...upcomingEvents.map((event) => Container(
+                      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Stack(
+                        children: [
+                          EnhancedEventCard(
+                            event: event,
+                            userId: _currentUser.id,
+                            onEventTap: _onEventTap,
+                            onRelationshipChanged: _onEventRelationshipChanged,
+                          ),
+                          // Admin Edit Button
+                          if (isUserAdmin)
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () => _editEvent(event),
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF8B5CF6),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.2),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    )),
+                  ] else ...[
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      padding: const EdgeInsets.all(24),
                       decoration: ShapeDecoration(
                         color: AppTheme.getCardColor(context),
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(
-                            width: 1,
-                            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                          ),
-                          borderRadius: BorderRadius.circular(8), // Match calendar cards
+                          borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
+                      child: Center(
                         child: Text(
-                          '${upcomingEvents.length} upcoming events',
+                          _getEmptyStateText(),
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontSize: 18,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 14,
                             fontFamily: 'Roboto',
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w400,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
-                    
-                    // Event Cards
-                    ...upcomingEvents.map((event) => Container(
-                      margin: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-                      child: EnhancedEventCard(
-                        event: event,
-                        userId: _currentUser.id,
-                        onEventTap: _onEventTap,
-                        onRelationshipChanged: _onEventRelationshipChanged,
-                      ),
-                    )),
                   ],
 
                   // Sample Announcement

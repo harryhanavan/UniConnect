@@ -3,26 +3,20 @@ import 'package:provider/provider.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
+import '../../core/services/tour_manager.dart';
+import '../../core/constants/tour_flows.dart';
 import '../../shared/models/event.dart';
 import '../../shared/models/user.dart';
 import '../../shared/models/chat_message.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
 import '../profile/profile_screen.dart';
-import '../chat/chat_list_screen.dart';
 import '../chat/chat_screen.dart';
-import '../study_groups/study_groups_screen.dart';
 import '../study_groups/study_groups_with_nav_screen.dart';
-import '../achievements/achievements_screen.dart';
-import '../search/advanced_search_screen.dart';
-import '../privacy/privacy_settings_screen.dart';
-import '../friends/interactive_map_screen.dart';
-import '../friends/enhanced_friends_screen.dart';
-import '../societies/enhanced_societies_screen.dart';
-import '../../shared/models/event_enums.dart';
-import '../calendar/enhanced_calendar_screen.dart';
-import '../design_system/design_system_showcase_screen.dart';
 import '../../core/utils/navigation_helper.dart';
+import '../../shared/widgets/reminder_widgets.dart';
+import '../../core/services/notification_service.dart';
+import '../notifications/notification_center_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,19 +27,107 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final demoData = DemoDataManager.instance;
+  bool _shouldStartPendingTour = false;
+
+  // Add a rebuild trigger for when tour keys become active
+  bool _tourKeysActive = false;
+
+  // Notification tracking
+  final NotificationService _notificationService = NotificationService();
+  int _unreadNotificationCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if there's a pending tour that should start when widgets are ready
+    _shouldStartPendingTour = TourManager.instance.hasPendingTour();
+
+    // Setup notification listeners
+    _setupNotificationListeners();
+
+    // Check if user should see the welcome tour prompt
+    // Increased delay to ensure all widgets are fully rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted) {
+          _checkForWelcomeTour();
+          // Also check for any tours that might have been queued during initialization
+          _checkForNewlyQueuedTours();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  void _setupNotificationListeners() {
+    // Listen to badge count changes
+    _notificationService.badgeCountStream.listen((count) {
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = count;
+        });
+      }
+    });
+
+    // Set initial count
+    _unreadNotificationCount = _notificationService.unreadCount;
+  }
+
+  // Check if a tour was queued after the initial build
+  void _checkForNewlyQueuedTours() {
+    if (!mounted) return;
+
+    final hasPendingTour = TourManager.instance.hasPendingTour();
+    if (hasPendingTour && !_shouldStartPendingTour) {
+      print('🔄 Tour: Detected newly queued tour, starting widget readiness check...');
+      _shouldStartPendingTour = true;
+      // Start the tour with simple timing
+      _startPendingTour();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Check for pending tours AFTER this build completes
+    _checkForPendingToursAfterBuild();
+
+    // Check if tour keys just became active and trigger rebuild if needed
+    final keysActive = TourKeys.homeWelcomeKey != null;
+    if (keysActive != _tourKeysActive) {
+      _tourKeysActive = keysActive;
+      if (keysActive) {
+        print('🔄 Tour: Tour keys became active, scheduling rebuild...');
+        // Schedule a rebuild to apply the keys
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+      }
+    }
+
     return Consumer<AppState>(
       builder: (context, appState, child) {
         // Use AppState.currentUser to get the correct user (new user or demo user)
         final currentUser = appState.currentUser;
         final firstName = currentUser.name.split(' ').first;
     final upcomingEvents = appState.getEventsByDate(DateTime.now());
-    
-    // Get next class and next event
+
+    // Sort events by start time to get the chronologically next events
+    upcomingEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+    // Get the next few events today, filtering by type for display variety
     final nextClass = upcomingEvents.where((e) => e.type == EventType.class_).firstOrNull;
-    final nextEvent = upcomingEvents.where((e) => e.type == EventType.society).firstOrNull;
+    final nextSocietyEvent = upcomingEvents.where((e) => e.type == EventType.society).firstOrNull;
+    final nextAssignment = upcomingEvents.where((e) => e.type == EventType.assignment).firstOrNull;
+    final nextPersonalEvent = upcomingEvents.where((e) => e.type == EventType.personal).firstOrNull;
+
+    // Choose the most relevant events to display (prioritize time-sensitive ones)
+    final nextEvent = nextAssignment ?? nextSocietyEvent ?? nextPersonalEvent;
 
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
@@ -62,24 +144,43 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Today's Schedule Section
-                    if (nextClass != null || nextEvent != null)
-                      _buildTodaysScheduleSection(nextClass, nextEvent),
-                      
+                    Container(
+                      key: TourKeys.homeTodayScheduleKey,
+                      child: _buildTodaysScheduleSection(nextClass, nextEvent),
+                    ),
+
                     const SizedBox(height: 20),
-                    
+
                     // Quick Actions
-                    _buildModernQuickActions(context),
-                    
+                    Container(
+                      key: TourKeys.homeQuickActionsKey,
+                      child: _buildModernQuickActions(context),
+                    ),
+
                     const SizedBox(height: 20),
-                    
+
+                    // Reminders & Notifications Section
+                    Container(
+                      key: TourKeys.homeRemindersKey,
+                      child: const HomeReminderSection(),
+                    ),
+
+                    const SizedBox(height: 20),
+
                     // Friend Activity
-                    _buildFriendActivityCard(appState.friends),
-                    
+                    Container(
+                      key: TourKeys.homeFriendActivityKey,
+                      child: _buildFriendActivityCard(appState.friends),
+                    ),
+
                     const SizedBox(height: 20),
-                    
+
                     // Recent Messages
-                    _buildRecentMessagesCard(context),
-                    
+                    Container(
+                      key: TourKeys.homeRecentMessagesKey,
+                      child: _buildRecentMessagesCard(context),
+                    ),
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -90,6 +191,84 @@ class _HomeScreenState extends State<HomeScreen> {
     );
       },
     );
+  }
+
+  Future<void> _checkForWelcomeTour() async {
+    if (!mounted) return;
+
+    try {
+      final shouldShow = await TourManager.instance.shouldShowTourPrompt();
+      if (shouldShow && mounted) {
+        // Additional delay before showing the welcome dialog
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          await TourManager.instance.showWelcomeTourPrompt(context);
+        }
+      }
+    } catch (e) {
+      print('❌ Tour Error: Failed to check for welcome tour: $e');
+    }
+  }
+
+  // Check for pending tours AFTER the build method completes
+  void _checkForPendingToursAfterBuild() {
+    if (!mounted) return;
+
+    // Update pending tour status if it changed
+    final hasPendingTour = TourManager.instance.hasPendingTour();
+    if (hasPendingTour && !_shouldStartPendingTour) {
+      _shouldStartPendingTour = true;
+      print('🔄 Tour: Detected new pending tour, will start after widgets ready');
+    }
+
+    // Only proceed if we should start a tour
+    if (!_shouldStartPendingTour) return;
+
+    // Schedule simple tour start
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted && _shouldStartPendingTour) {
+          _startPendingTour();
+        }
+      });
+    });
+  }
+
+  // Simple tour start - just pass to TourManager with timing
+  void _startPendingTour() {
+    if (!mounted || !_shouldStartPendingTour) return;
+
+    print('✅ Tour: Starting pending tour with simple timing...');
+    _shouldStartPendingTour = false;
+
+    // Use PostFrameCallback + delay to ensure widgets are rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) {
+          // Get the pending tour type and start it
+          final pendingTourType = TourManager.instance.getPendingTourType();
+          if (pendingTourType != null) {
+            print('🎯 Tour: Starting ${pendingTourType} tour...');
+            TourManager.instance.startSectionTour(context, pendingTourType);
+          }
+        }
+      });
+    });
+  }
+
+
+  // DEPRECATED: Use _checkForPendingToursAfterBuild instead
+  @deprecated
+  void _checkForPendingTours() {
+    if (!mounted) return;
+
+    try {
+      // Check if there are any pending tour requests and process them
+      // Pass the current context which has access to the Scaffold
+      TourManager.instance.checkForPendingTours(context);
+    } catch (e) {
+      print('❌ Tour Error: Failed to check for pending tours: $e');
+    }
   }
 
   Widget _buildHeader(BuildContext context, String firstName, User currentUser) {
@@ -115,39 +294,113 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Logo + App Name row (no SizedBox wrapper)
-                  Row(
-                    children: [
-                      Image.asset(
-                        'assets/Logos/UniConnect Logo.png',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'UniConnect',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              Expanded(
+                key: TourKeys.homeWelcomeKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Logo + App Name row (no SizedBox wrapper)
+                    Row(
+                      children: [
+                        Image.asset(
+                          'assets/Logos/UniConnect Logo.png',
+                          width: 36,
+                          height: 36,
+                          fit: BoxFit.contain,
                         ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'UniConnect',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      'Welcome Back, $firstName!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w400,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // Help Icon
+              GestureDetector(
+                key: TourKeys.homeHelpIconKey,
+                onTap: () {
+                  TourManager.instance.showTourMenu(context);
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.help_outline,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+              // Notification Bell
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NotificationCenterScreen()),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Stack(
+                    children: [
+                      Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                      if (_unreadNotificationCount > 0)
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: AppColors.danger,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              _unreadNotificationCount > 99 ? '99+' : _unreadNotificationCount.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
-                  Text(
-                    'Welcome Back, $firstName!',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w400,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                ),
               ),
               GestureDetector(
                 onTap: () {
@@ -215,32 +468,110 @@ class _HomeScreenState extends State<HomeScreen> {
             height: 1.33,
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
-        if (nextClass != null)
-          _buildModernEventCard(
-            title: nextClass.title,
-            subtitle: nextClass.courseCode ?? '',
-            time: '${nextClass.startTime.hour}:${nextClass.startTime.minute.toString().padLeft(2, '0')}',
-            location: nextClass.location,
-            color: AppColors.personalColor,  // Classes are personal schedule
-            type: 'Class',
-          ),
-          
-        if (nextClass != null && nextEvent != null)
-          const SizedBox(height: 12),
-          
-        if (nextEvent != null)
-          _buildModernEventCard(
-            title: nextEvent.title,
-            subtitle: 'Society Event',
-            time: '${nextEvent.startTime.hour}:${nextEvent.startTime.minute.toString().padLeft(2, '0')}',
-            location: nextEvent.location,
-            color: AppColors.societyColor,
-            type: 'Event',
-          ),
+
+        // Show events if available, otherwise show fallback content
+        if (nextClass != null || nextEvent != null) ...[
+          if (nextClass != null)
+            _buildModernEventCard(
+              title: nextClass.title,
+              subtitle: nextClass.courseCode ?? '',
+              time: '${nextClass.startTime.hour}:${nextClass.startTime.minute.toString().padLeft(2, '0')}',
+              location: nextClass.location,
+              color: AppColors.personalColor,  // Classes are personal schedule
+              type: 'Class',
+            ),
+
+          if (nextClass != null && nextEvent != null)
+            const SizedBox(height: 12),
+
+          if (nextEvent != null)
+            _buildModernEventCard(
+              title: nextEvent.title,
+              subtitle: _getEventSubtitle(nextEvent),
+              time: '${nextEvent.startTime.hour}:${nextEvent.startTime.minute.toString().padLeft(2, '0')}',
+              location: nextEvent.location,
+              color: _getEventColor(nextEvent.type),
+              type: _getEventTypeLabel(nextEvent.type),
+            ),
+        ] else
+          // Fallback content when no events are scheduled
+          _buildNoEventsCard(),
       ],
+    );
+  }
+
+  Widget _buildNoEventsCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: AppTheme.getCardDecoration(context),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              Icons.calendar_today_outlined,
+              size: 48,
+              color: AppTheme.getIconColor(context, opacity: 0.4),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'No events today',
+              style: TextStyle(
+                color: AppTheme.getTextColor(context),
+                fontSize: 16,
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Enjoy your free time or add some events to your calendar',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppTheme.getTextColor(context, opacity: 0.6),
+                fontSize: 12,
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    NavigationHelper.navigateToCalendarWithParams(
+                      context,
+                    );
+                  },
+                  icon: Icon(Icons.schedule, size: 16, color: AppColors.personalColor),
+                  label: Text('View Calendar', style: TextStyle(color: AppColors.personalColor)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.personalColor),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    NavigationHelper.navigateToSocietiesWithParams(
+                      context,
+                      initialTabIndex: 2, // Events tab
+                    );
+                  },
+                  icon: Icon(Icons.event, size: 16, color: AppColors.societyColor),
+                  label: Text('Find Events', style: TextStyle(color: AppColors.societyColor)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: AppColors.societyColor),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -388,8 +719,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Navigate to Calendar tab with timetable view and academic filter
                   NavigationHelper.navigateToCalendarWithParams(
                     context,
-                    initialFilter: CalendarFilter.academic,
-                    initialView: CalendarView.week,
                     initialUseTimetableView: true,
                   );
                 },
@@ -956,5 +1285,45 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  // Helper methods for event display
+  String _getEventSubtitle(Event event) {
+    switch (event.type) {
+      case EventType.assignment:
+        return 'Assignment Due';
+      case EventType.society:
+        return 'Society Event';
+      case EventType.personal:
+        return 'Personal Event';
+      case EventType.class_:
+        return event.courseCode ?? 'Class';
+    }
+  }
+
+  Color _getEventColor(EventType type) {
+    switch (type) {
+      case EventType.assignment:
+        return AppColors.studyGroupColor;
+      case EventType.society:
+        return AppColors.societyColor;
+      case EventType.personal:
+        return AppColors.socialColor;
+      case EventType.class_:
+        return AppColors.personalColor;
+    }
+  }
+
+  String _getEventTypeLabel(EventType type) {
+    switch (type) {
+      case EventType.assignment:
+        return 'Assignment';
+      case EventType.society:
+        return 'Society';
+      case EventType.personal:
+        return 'Personal';
+      case EventType.class_:
+        return 'Class';
+    }
   }
 }

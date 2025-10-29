@@ -1,8 +1,8 @@
-enum EventType { 
+enum EventType {
   class_,
-  society, 
-  personal, 
-  assignment 
+  society,
+  personal,
+  assignment
 }
 
 enum EventSource {
@@ -43,18 +43,43 @@ class Event {
     required this.creatorId,
   });
 
+  static EventType _parseEventType(String typeString) {
+    switch (typeString.toLowerCase()) {
+      case 'class':
+        return EventType.class_;
+      case 'society':
+        return EventType.society;
+      case 'personal':
+        return EventType.personal;
+      case 'assignment':
+        return EventType.assignment;
+      default:
+        return EventType.personal;
+    }
+  }
+
+  static String _eventTypeToString(EventType type) {
+    switch (type) {
+      case EventType.class_:
+        return 'class';
+      case EventType.society:
+        return 'society';
+      case EventType.personal:
+        return 'personal';
+      case EventType.assignment:
+        return 'assignment';
+    }
+  }
+
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
       id: json['id'] as String,
       title: json['title'] as String,
       description: json['description'] as String,
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      startTime: DateTime.parse(json['scheduledDate'] as String),
+      endTime: DateTime.parse(json['endDate'] as String),
       location: json['location'] as String,
-      type: EventType.values.firstWhere(
-        (e) => e.toString().split('.').last == json['type'],
-        orElse: () => EventType.personal,
-      ),
+      type: _parseEventType(json['type'] as String),
       source: EventSource.values.firstWhere(
         (e) => e.toString().split('.').last == json['source'],
         orElse: () => EventSource.personal,
@@ -72,10 +97,10 @@ class Event {
       'id': id,
       'title': title,
       'description': description,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'scheduledDate': startTime.toIso8601String(),
+      'endDate': endTime.toIso8601String(),
       'location': location,
-      'type': type.toString().split('.').last,
+      'type': _eventTypeToString(type),
       'source': source.toString().split('.').last,
       'societyId': societyId,
       'courseCode': courseCode,

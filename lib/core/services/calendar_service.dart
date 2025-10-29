@@ -5,6 +5,7 @@ import '../../shared/models/user.dart';
 import '../demo_data/demo_data_manager.dart';
 import 'friendship_service.dart';
 import 'event_relationship_service.dart';
+import 'recurring_event_service.dart';
 
 class CalendarService {
   static final CalendarService _instance = CalendarService._internal();
@@ -14,6 +15,7 @@ class CalendarService {
   final DemoDataManager _demoData = DemoDataManager.instance;
   final FriendshipService _friendshipService = FriendshipService();
   final EventRelationshipService _eventRelationshipService = EventRelationshipService();
+  final RecurringEventService _recurringEventService = RecurringEventService();
   
   bool _isInitialized = false;
   
@@ -579,7 +581,7 @@ class CalendarService {
   /// Only includes events where user is actually attending (confirmed relationship)
   Future<List<EventV2>> getEnhancedUnifiedCalendar(String userId, {DateTime? startDate, DateTime? endDate}) async {
     await _ensureInitialized();
-    
+
     final user = _demoData.getUserById(userId);
     if (user == null) return [];
 
@@ -600,6 +602,20 @@ class CalendarService {
     final friendEvents = _getFriendEventsV2(userId, start, end);
     allEvents.addAll(friendEvents);
 
+    // 4. Generate recurring event instances
+    final allEventsV2 = _demoData.enhancedEventsSync;
+    final recurringParents = _recurringEventService.getRecurringEventsForRange(allEventsV2, start, end);
+    final recurringInstances = _recurringEventService.generateAllRecurringInstances(recurringParents, start, end);
+
+    // Only include recurring instances where user has relationship
+    final userRecurringInstances = recurringInstances.where((instance) {
+      final relationship = instance.getUserRelationship(userId);
+      return relationship == EventRelationship.attendee ||
+             relationship == EventRelationship.owner ||
+             relationship == EventRelationship.organizer;
+    }).toList();
+    allEvents.addAll(userRecurringInstances);
+
     // Remove duplicates and sort by start time
     final uniqueEvents = allEvents.toSet().toList();
     uniqueEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -612,7 +628,7 @@ class CalendarService {
     if (!_isInitialized) {
       throw StateError('Calendar service not initialized. Call async method first.');
     }
-    
+
     final user = _demoData.getUserById(userId);
     if (user == null) return [];
 
@@ -629,7 +645,7 @@ class CalendarService {
     final allEventsV2 = _demoData.enhancedEventsSync;
     final userEvents = allEventsV2.where((event) {
       final relationship = event.getUserRelationship(userId);
-      return (relationship == EventRelationship.attendee || 
+      return (relationship == EventRelationship.attendee ||
               relationship == EventRelationship.owner) &&
              event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
              event.startTime.isBefore(end);
@@ -640,10 +656,23 @@ class CalendarService {
     final friendEvents = _getFriendEventsV2(userId, start, end);
     allEvents.addAll(friendEvents);
 
+    // 4. Generate recurring event instances
+    final recurringParents = _recurringEventService.getRecurringEventsForRange(allEventsV2, start, end);
+    final recurringInstances = _recurringEventService.generateAllRecurringInstances(recurringParents, start, end);
+
+    // Only include recurring instances where user has relationship
+    final userRecurringInstances = recurringInstances.where((instance) {
+      final relationship = instance.getUserRelationship(userId);
+      return relationship == EventRelationship.attendee ||
+             relationship == EventRelationship.owner ||
+             relationship == EventRelationship.organizer;
+    }).toList();
+    allEvents.addAll(userRecurringInstances);
+
     // Remove duplicates by ID and sort by date
     final uniqueEvents = <String, EventV2>{};
     for (final event in allEvents) {
-      if (event.startTime.isAfter(start.subtract(const Duration(days: 1))) && 
+      if (event.startTime.isAfter(start.subtract(const Duration(days: 1))) &&
           event.startTime.isBefore(end)) {
         uniqueEvents[event.id] = event;
       }
@@ -660,8 +689,16 @@ class CalendarService {
   }
 
   /// Get society events with user's relationship status
-  Future<List<Map<String, dynamic>>> getSocietyEventsWithStatus(String userId, String societyId) async {
-    return await _eventRelationshipService.getSocietyEventsWithStatus(userId, societyId);
+  Future<List<Map<String, dynamic>>> getSocietyEventsWithStatus(
+    String userId,
+    String societyId,
+    {EventTimeFilter timeFilter = EventTimeFilter.upcoming}
+  ) async {
+    return await _eventRelationshipService.getSocietyEventsWithStatus(
+      userId,
+      societyId,
+      timeFilter: timeFilter,
+    );
   }
 
   /// Get events for a specific date using EventV2 (personal calendar only)
@@ -669,6 +706,13 @@ class CalendarService {
     final startOfDay = DateTime(date.year, date.month, date.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
     return getEnhancedUnifiedCalendar(userId, startDate: startOfDay, endDate: endOfDay);
+  }
+
+  /// Get events for a specific date using EventV2 (synchronous version)
+  List<EventV2> getUserEventsForDateV2Sync(String userId, DateTime date) {
+    final startOfDay = DateTime(date.year, date.month, date.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return getEnhancedUnifiedCalendarSync(userId, startDate: startOfDay, endDate: endOfDay);
   }
 
   /// Get personal events converted to EventV2 format

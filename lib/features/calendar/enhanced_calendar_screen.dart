@@ -3572,8 +3572,6 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
   }) {
     final eventDisplayProperties = EventDisplayProperties.fromEventV2(event, _demoData.currentUser.id);
     final eventColor = EventColors.getEventColor(eventDisplayProperties.colorKey);
-    final eventBgColor = EventColors.getEventBackgroundColor(eventDisplayProperties.colorKey);
-    final eventLabel = EventColors.getEventTypeLabel(eventDisplayProperties.colorKey);
     
     return GestureDetector(
       onTap: onTap,
@@ -3667,31 +3665,25 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
               ),
             ),
 
-            // Event type badge
+            // Attendee count
             Positioned(
               left: 6,
               top: 90,
-              child: Container(
-                height: 14,
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: ShapeDecoration(
-                  color: eventBgColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Center(
-                  child: Text(
-                    eventLabel,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.people, size: 14, color: EventColors.getSecondaryTextColor(context)),
+                  const SizedBox(width: 3),
+                  Text(
+                    event.attendeeIds.length.toString(),
                     style: TextStyle(
-                      color: eventColor,
-                      fontSize: 7,
+                      color: EventColors.getSecondaryTextColor(context),
+                      fontSize: 10,
                       fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.30,
+                      fontWeight: FontWeight.w500,
                     ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
                   ),
-                ),
+                ],
               ),
             ),
           ],
@@ -3700,143 +3692,131 @@ class _EnhancedCalendarScreenState extends State<EnhancedCalendarScreen>
     );
   }
 
-  /// Build week view timetable chip with ultra-narrow 43x111 dimensions
+  /// Build week view timetable chip - height adjusts based on event duration
   Widget _buildWeekTimetableChip({
     required EventV2 event,
     required VoidCallback onTap,
   }) {
     final eventDisplayProperties = EventDisplayProperties.fromEventV2(event, _demoData.currentUser.id);
     final eventColor = EventColors.getEventColor(eventDisplayProperties.colorKey);
-    final eventBgColor = EventColors.getEventBackgroundColor(eventDisplayProperties.colorKey);
-    final eventLabel = EventColors.getEventTypeLabel(eventDisplayProperties.colorKey);
-    
+
+    // Use LayoutBuilder to get the actual height available
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 111,
-        clipBehavior: Clip.antiAlias,
-        decoration: ShapeDecoration(
-          color: EventColors.getCardBackgroundColor(context),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          shadows: [
-            BoxShadow(
-              color: EventColors.getShadowColor(context),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-              spreadRadius: 0,
-            )
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Left color bar
-            Positioned(
-              left: 0,
-              top: 0,
-              child: Container(
-                width: 4,
-                height: 110.58,
-                decoration: ShapeDecoration(
-                  color: eventColor,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(2),
-                      bottomLeft: Radius.circular(2),
-                    ),
-                  ),
-                ),
-              ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableHeight = constraints.maxHeight;
+
+          // Calculate space for course code and attendee count
+          final courseCodeHeight = event.courseCode != null ? 18.0 : 0.0;
+          final attendeeCountHeight = 18.0; // attendee count row + padding
+          final padding = 8.0; // top and bottom padding
+
+          // Remaining space for title
+          final titleHeight = availableHeight - courseCodeHeight - attendeeCountHeight - padding;
+
+          // Calculate max lines based on available height
+          final maxLines = (titleHeight / 14.0).floor().clamp(1, 10);
+
+          return Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: ShapeDecoration(
+              color: EventColors.getCardBackgroundColor(context),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shadows: [
+                BoxShadow(
+                  color: EventColors.getShadowColor(context),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                  spreadRadius: 0,
+                )
+              ],
             ),
-
-            // Event title
-            Positioned(
-              left: 6,
-              top: 4,
-              right: 6,
-              child: SizedBox(
-                height: 32,
-                child: Text(
-                  event.title,
-                  style: TextStyle(
-                    color: EventColors.getPrimaryTextColor(context),
-                    fontSize: 7,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w700,
-                    height: 1.43,
-                  ),
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-
-            // Course code
-            if (event.courseCode != null)
-              Positioned(
-                left: 6,
-                top: 52,
-                child: Text(
-                  event.courseCode!,
-                  style: TextStyle(
-                    color: eventColor,
-                    fontSize: 8,
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w600,
-                    height: 1.80,
-                  ),
-                ),
-              ),
-
-            // Event type badge
-            Positioned(
-              left: 6,
-              top: 64,
-              child: Container(
-                width: 23,
-                height: 12,
-                decoration: ShapeDecoration(
-                  color: eventBgColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Center(
-                  child: Text(
-                    eventLabel,
-                    style: TextStyle(
+            child: Stack(
+              children: [
+                // Left color bar
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 4,
+                    decoration: ShapeDecoration(
                       color: eventColor,
-                      fontSize: 3,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.50,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(2),
+                          bottomLeft: Radius.circular(2),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
 
-            // Attendee count (ultra compact)
-            Positioned(
-              left: 6,
-              top: 76,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
-                  const SizedBox(width: 2),
-                  Text(
-                    event.attendeeIds.length.toString(),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: EventColors.getSecondaryTextColor(context),
-                      fontSize: 8,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w400,
+                // Event title - takes available space
+                Positioned(
+                  left: 6,
+                  top: 4,
+                  right: 6,
+                  child: SizedBox(
+                    height: titleHeight.clamp(14.0, double.infinity),
+                    child: Text(
+                      event.title,
+                      style: TextStyle(
+                        color: EventColors.getPrimaryTextColor(context),
+                        fontSize: 13,
+                        fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                      maxLines: maxLines,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                // Course code
+                if (event.courseCode != null)
+                  Positioned(
+                    left: 6,
+                    bottom: attendeeCountHeight + 2,
+                    child: Text(
+                      event.courseCode!,
+                      style: TextStyle(
+                        color: eventColor,
+                        fontSize: 11,
+                        fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                    ),
+                  ),
+
+                // Attendee count
+                Positioned(
+                  left: 6,
+                  bottom: 4,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.people, size: 12, color: EventColors.getSecondaryTextColor(context)),
+                      const SizedBox(width: 2),
+                      Text(
+                        event.attendeeIds.length.toString(),
+                        style: TextStyle(
+                          color: EventColors.getSecondaryTextColor(context),
+                          fontSize: 9,
+                          fontFamily: 'Roboto',
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

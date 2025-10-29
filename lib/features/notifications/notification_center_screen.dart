@@ -3,6 +3,7 @@ import 'dart:async';
 import '../../core/services/notification_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/constants/app_colors.dart';
+import '../notifications/reminder_preferences_screen.dart';
 
 class NotificationCenterScreen extends StatefulWidget {
   const NotificationCenterScreen({super.key});
@@ -22,12 +23,13 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
   
   List<AppNotification> _allNotifications = [];
   List<AppNotification> _unreadNotifications = [];
+  List<AppNotification> _reminderNotifications = [];
   int _badgeCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadNotifications();
     _setupNotificationListeners();
   }
@@ -35,6 +37,10 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
   void _loadNotifications() {
     _allNotifications = _notificationService.getUserNotifications(_demoData.currentUser.id);
     _unreadNotifications = _allNotifications.where((n) => !n.isRead).toList();
+    _reminderNotifications = _allNotifications.where((n) =>
+      n.type == NotificationType.eventReminder ||
+      (n.data['isReminder'] == true)
+    ).toList();
     _badgeCount = _notificationService.unreadCount;
     setState(() {});
   }
@@ -82,6 +88,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
             onSelected: _handleMenuAction,
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'clear_all', child: Text('Clear All')),
+              const PopupMenuItem(value: 'reminder_settings', child: Text('Reminder Preferences')),
               const PopupMenuItem(value: 'settings', child: Text('Notification Settings')),
             ],
           ),
@@ -110,6 +117,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
                     )
                   : const Icon(Icons.circle),
             ),
+            Tab(
+              text: 'Reminders',
+              icon: _reminderNotifications.isNotEmpty
+                  ? Badge(
+                      label: Text('${_reminderNotifications.length}'),
+                      child: const Icon(Icons.alarm),
+                    )
+                  : const Icon(Icons.alarm),
+            ),
           ],
         ),
       ),
@@ -118,6 +134,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
         children: [
           _buildNotificationsList(_allNotifications),
           _buildNotificationsList(_unreadNotifications),
+          _buildRemindersList(_reminderNotifications),
         ],
       ),
     );
@@ -379,6 +396,14 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
       case 'clear_all':
         _showClearAllDialog();
         break;
+      case 'reminder_settings':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ReminderPreferencesScreen(),
+          ),
+        );
+        break;
       case 'settings':
         _showNotificationSettings();
         break;
@@ -490,5 +515,260 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen>
   String _getSenderName(String senderId) {
     final sender = _demoData.getUserById(senderId);
     return sender?.name.split(' ')[0] ?? 'Unknown';
+  }
+
+  Widget _buildRemindersList(List<AppNotification> notifications) {
+    if (notifications.isEmpty) {
+      return _buildEmptyReminderState();
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadNotifications();
+      },
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: notifications.length,
+        itemBuilder: (context, index) {
+          final notification = notifications[index];
+          return _buildReminderCard(notification);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyReminderState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.alarm_off,
+            size: 64,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No reminders set',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Reminders for upcoming events\nand deadlines will appear here',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReminderPreferencesScreen(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings),
+            label: const Text('Reminder Preferences'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReminderCard(AppNotification notification) {
+    final isDeadlineReminder = notification.data['isDeadline'] == true;
+    final reminderType = notification.data['reminderType'] ?? '';
+    final eventType = notification.data['eventType'] ?? '';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: notification.isRead ? Colors.white : Colors.orange[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: notification.isRead ? Colors.grey[200]! : Colors.orange[200]!,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isDeadlineReminder ? Icons.assignment_late : Icons.alarm,
+            color: Colors.orange,
+            size: 20,
+          ),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                notification.title,
+                style: TextStyle(
+                  fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            if (!notification.isRead)
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.orange,
+                  shape: BoxShape.circle,
+                ),
+              ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              notification.body,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                if (reminderType.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      reminderType,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.orange,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                if (eventType.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      eventType.split('.').last,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _formatNotificationTime(notification.timestamp),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) => _handleReminderAction(value, notification),
+          itemBuilder: (context) => [
+            if (!notification.isRead)
+              const PopupMenuItem(value: 'mark_read', child: Text('Mark as Read')),
+            if (!isDeadlineReminder) ...[
+              const PopupMenuItem(value: 'snooze_5', child: Text('Snooze 5 min')),
+              const PopupMenuItem(value: 'snooze_15', child: Text('Snooze 15 min')),
+            ],
+            if (isDeadlineReminder)
+              const PopupMenuItem(value: 'mark_complete', child: Text('Mark Complete')),
+            if (notification.actionUrl != null)
+              const PopupMenuItem(value: 'view', child: Text('View Event')),
+            const PopupMenuItem(value: 'delete', child: Text('Delete')),
+          ],
+        ),
+        onTap: () => _handleNotificationTap(notification),
+      ),
+    );
+  }
+
+  void _handleReminderAction(String action, AppNotification notification) {
+    switch (action) {
+      case 'mark_read':
+        _notificationService.markAsRead(notification.id);
+        break;
+      case 'view':
+        if (notification.actionUrl != null) {
+          _navigateToActionUrl(notification.actionUrl!);
+        }
+        break;
+      case 'delete':
+        _notificationService.deleteNotification(notification.id);
+        break;
+      case 'snooze_5':
+        _snoozeReminder(notification, 5);
+        break;
+      case 'snooze_15':
+        _snoozeReminder(notification, 15);
+        break;
+      case 'mark_complete':
+        _markEventComplete(notification);
+        break;
+    }
+  }
+
+  void _snoozeReminder(AppNotification notification, int minutes) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Reminder snoozed for $minutes minutes'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+    _notificationService.deleteNotification(notification.id);
+  }
+
+  void _markEventComplete(AppNotification notification) {
+    final eventId = notification.data['eventId'];
+    if (eventId != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Event marked as complete'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      _notificationService.deleteNotification(notification.id);
+    }
   }
 }

@@ -36,11 +36,18 @@ dependencies:
   uuid: ^4.5.1
   logger: ^2.5.0
 
+  # Push Notifications & Reminders
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
+
   # Image & Asset Management
   cached_network_image: ^3.4.1
 
   # Animations
   lottie: ^3.2.0
+
+  # Guided Tours
+  tutorial_coach_mark: ^1.2.11
 
   # Maps
   flutter_map: ^7.0.2

@@ -398,8 +398,6 @@ class EventCards {
     VoidCallback? onTap,
   }) {
     final eventColor = EventColors.getEventColor(eventType);
-    final eventBgColor = EventColors.getEventBackgroundColor(eventType);
-    final eventLabel = EventColors.getEventTypeLabel(eventType);
 
     return GestureDetector(
       onTap: onTap,
@@ -440,13 +438,13 @@ class EventCards {
               ),
             ),
 
-            // Event title
+            // Event title - increased to 5 lines
             Positioned(
               left: 6,
               top: 4,
               child: SizedBox(
                 width: 49,
-                height: 48,
+                height: 60,
                 child: Text(
                   event.title,
                   style: TextStyle(
@@ -456,17 +454,17 @@ class EventCards {
                     fontWeight: FontWeight.w700,
                     height: 1.2,
                   ),
-                  maxLines: 4,
+                  maxLines: 5,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
 
-            // Course code
+            // Course code - shifted down
             if (event.courseCode != null)
               Positioned(
                 left: 6,
-                top: 58,
+                top: 68,
                 child: Text(
                   event.courseCode!,
                   style: TextStyle(
@@ -479,10 +477,10 @@ class EventCards {
                 ),
               ),
 
-            // Time
+            // Time - shifted down
             Positioned(
               left: 6,
-              top: 72,
+              top: 84,
               child: Text(
                 '${event.startTime.hour.toString().padLeft(2, '0')}:${event.startTime.minute.toString().padLeft(2, '0')} - ${event.endTime.hour.toString().padLeft(2, '0')}:${event.endTime.minute.toString().padLeft(2, '0')}',
                 style: TextStyle(
@@ -494,36 +492,10 @@ class EventCards {
               ),
             ),
 
-            // Event type badge
+            // Attendee count - shifted down
             Positioned(
-              left: 7,
-              top: 90,
-              child: Container(
-                width: 23,
-                height: 12,
-                decoration: ShapeDecoration(
-                  color: eventBgColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Center(
-                  child: Text(
-                    eventLabel,
-                    style: TextStyle(
-                      color: eventColor,
-                      fontSize: 3,
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.50,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Attendee count
-            Positioned(
-              left: 31,
-              top: 90,
+              left: 6,
+              top: 102,
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -534,35 +506,9 @@ class EventCards {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: EventColors.getSecondaryTextColor(context),
-                      fontSize: 5,
+                      fontSize: 8,
                       fontFamily: 'Roboto',
                       fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Location
-            Positioned(
-              left: 6,
-              top: 112,
-              child: Row(
-                children: [
-                  Icon(Icons.location_on, size: 8, color: EventColors.getSecondaryTextColor(context)),
-                  const SizedBox(width: 2),
-                  SizedBox(
-                    width: 43,
-                    child: Text(
-                      event.location,
-                      style: TextStyle(
-                        color: EventColors.getSecondaryTextColor(context),
-                        fontSize: 3,
-                        fontFamily: 'Roboto',
-                        fontWeight: FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

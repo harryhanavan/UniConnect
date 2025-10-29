@@ -43,6 +43,34 @@ class AppColors {
   // Alias for study spots - use homeColor instead
   static const Color studyColor = homeColor; // Purple for study spots (same as home color)
   
+  // Helper methods for temp style toggle support
+  static Color getAdaptiveColor({
+    required Color originalColor,
+    required bool isTempStyleEnabled,
+  }) {
+    return isTempStyleEnabled ? primaryDark : originalColor;
+  }
+
+  static Color getAdaptiveHomeColor(bool isTempStyleEnabled) {
+    return getAdaptiveColor(originalColor: homeColor, isTempStyleEnabled: isTempStyleEnabled);
+  }
+
+  static Color getAdaptiveSocietyColor(bool isTempStyleEnabled) {
+    return getAdaptiveColor(originalColor: societyColor, isTempStyleEnabled: isTempStyleEnabled);
+  }
+
+  static Color getAdaptiveSocialColor(bool isTempStyleEnabled) {
+    return getAdaptiveColor(originalColor: socialColor, isTempStyleEnabled: isTempStyleEnabled);
+  }
+
+  static Color getAdaptivePersonalColor(bool isTempStyleEnabled) {
+    return getAdaptiveColor(originalColor: personalColor, isTempStyleEnabled: isTempStyleEnabled);
+  }
+
+  static Color getAdaptiveStudyGroupColor(bool isTempStyleEnabled) {
+    return getAdaptiveColor(originalColor: studyGroupColor, isTempStyleEnabled: isTempStyleEnabled);
+  }
+
   // Helper method to get color by event type
   static Color getEventTypeColor(String eventType) {
     switch (eventType.toLowerCase()) {

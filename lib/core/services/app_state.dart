@@ -53,6 +53,7 @@ class AppState extends ChangeNotifier {
   bool _hasExplicitlyEnteredDemo = false; // Track if user explicitly chose demo mode
   int _currentNavIndex = 0; // Start on Home
   bool _isInitialized = false;
+  bool _isManuallyNavigating = false; // Prevent MaterialApp auto-routing during manual navigation
 
   // Tab initialization parameters for smart navigation
   CalendarTabParams? _pendingCalendarParams;
@@ -137,13 +138,14 @@ class AppState extends ChangeNotifier {
   // Getters
   bool get isDarkMode => _isDarkMode;
   bool get isTempStyleEnabled => _isTempStyleEnabled;
-  bool get isAuthenticated => _isAuthenticated && _isInitialized;
+  bool get isAuthenticated => _isAuthenticated && _isInitialized && !_isManuallyNavigating;
   bool get hasCompletedOnboarding => _hasCompletedOnboarding;
-  bool get shouldShowOnboarding => _isInitialized && (!_hasCompletedOnboarding || (!_isProduction && _forceShowOnboardingInDev)) && !_hasExplicitlyEnteredDemo;
+  bool get shouldShowOnboarding => _isInitialized && (!_hasCompletedOnboarding || (!_isProduction && _forceShowOnboardingInDev)) && !_hasExplicitlyEnteredDemo && !_isManuallyNavigating;
   bool get isNewUser => _isNewUser;
   String? get activeUserId => _activeUserId;
   int get currentNavIndex => _currentNavIndex;
   bool get isInitialized => _isInitialized;
+  bool get isManuallyNavigating => _isManuallyNavigating;
 
   // Development getters
   bool get isForceShowOnboardingEnabled => _forceShowOnboardingInDev;
@@ -229,6 +231,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Manual navigation control methods
+  void startManualNavigation() {
+    _isManuallyNavigating = true;
+    notifyListeners();
+  }
+
+  void endManualNavigation() {
+    _isManuallyNavigating = false;
+    notifyListeners();
+  }
+
   // Smart navigation methods
   void setNavIndexWithCalendarParams(int index, CalendarTabParams params) {
     _pendingCalendarParams = params;
@@ -288,20 +301,31 @@ class AppState extends ChangeNotifier {
 
   // Navigation-aware version for use from UI components
   void enterDemoModeWithNavigation(BuildContext context) {
+    print('AppState.enterDemoModeWithNavigation: Starting demo mode with navigation');
+
     enterDemoMode();
 
-    // Import the MainNavigation widget for navigation
-    // This ensures immediate navigation to the main app
+    // Set navigation index to home
+    setNavIndex(0);
+
+    // CRITICAL: Prevent MaterialApp from auto-routing during manual navigation
+    // This prevents duplicate MainNavigation instances that cause GlobalKey conflicts
+    startManualNavigation();
+
+    print('AppState.enterDemoModeWithNavigation: Manually navigating to MainNavigation (MaterialApp auto-routing disabled)');
+
+    // Navigate to main app - clear entire navigation stack
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(
-        builder: (context) {
-          // Dynamically import MainNavigation to avoid circular dependency
-          return const MainNavigation();
-        },
+        builder: (context) => const MainNavigation(),
       ),
       (route) => false, // Remove all previous routes
-    );
+    ).then((_) {
+      // Re-enable MaterialApp auto-routing after navigation completes
+      endManualNavigation();
+      print('AppState.enterDemoModeWithNavigation: Navigation complete, MaterialApp auto-routing re-enabled');
+    });
   }
 
   void logout() {

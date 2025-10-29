@@ -275,6 +275,7 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
                       Container(
                         width: 20,
                         height: 20,
+                        clipBehavior: Clip.antiAlias,
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(8), // Match calendar cards
@@ -283,8 +284,20 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
                             ? CachedNetworkImage(
                                 imageUrl: society.logoUrl!,
                                 fit: BoxFit.cover,
+                                placeholder: (context, url) => Center(
+                                  child: SizedBox(
+                                    width: 10,
+                                    height: 10,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 1.5,
+                                      color: AppColors.societyColor,
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) =>
+                                    _buildSocietyLogoPlaceholder(society.category, society.name),
                               )
-                            : Icon(Icons.groups, size: 12, color: Colors.grey[600]),
+                            : _buildSocietyLogoPlaceholder(society.category, society.name),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -383,7 +396,7 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
   String _formatEventTime(DateTime eventTime) {
     final now = DateTime.now();
     final difference = eventTime.difference(now);
-    
+
     if (difference.inDays > 7) {
       return '${eventTime.day}/${eventTime.month}/${eventTime.year}';
     } else if (difference.inDays > 0) {
@@ -397,5 +410,34 @@ class _EnhancedEventCardState extends State<EnhancedEventCard> {
     } else {
       return 'Ended';
     }
+  }
+
+  Widget _buildSocietyLogoPlaceholder(String societyCategory, String societyName) {
+    // Create a color based on society category
+    final colors = {
+      'Technology': Colors.blue,
+      'Creative': Colors.purple,
+      'Sports': Colors.green,
+      'Cultural': Colors.orange,
+      'Business': Colors.red,
+      'Academic': Colors.indigo,
+      'Entertainment': Colors.pink,
+    };
+
+    final color = colors[societyCategory] ?? Colors.grey;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.groups,
+          color: color,
+          size: 12,
+        ),
+      ),
+    );
   }
 }

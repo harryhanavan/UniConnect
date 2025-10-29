@@ -8,23 +8,13 @@ class SocietyRepository extends BaseRepository<Society> {
 
   @override
   Society fromMap(Map<String, dynamic> map) {
-    List<String> memberIds = [];
-    if (map['member_ids'] != null && map['member_ids'].isNotEmpty) {
-      try {
-        final memberIdsStr = map['member_ids'] as String;
-        memberIds = memberIdsStr.split(',').where((id) => id.isNotEmpty).toList();
-      } catch (e) {
-        memberIds = [];
-      }
-    }
-
     return Society(
       id: map['id'] as String,
       name: map['name'] as String,
       description: map['description'] as String? ?? '',
       category: map['category'] as String,
       memberCount: map['member_count'] as int,
-      memberIds: memberIds,
+      memberIds: [], // Will be populated separately from junction table
       logoUrl: map['image_url'] as String?,
       // Map database fields to model fields
       aboutUs: map['contact_email'] as String?, // Use contact_email as aboutUs
@@ -42,7 +32,6 @@ class SocietyRepository extends BaseRepository<Society> {
       'description': society.description,
       'category': society.category,
       'member_count': society.memberCount,
-      'member_ids': society.memberIds.join(','),
       'is_featured': 0, // Default not featured
       'image_url': society.logoUrl,
       'contact_email': society.aboutUs, // Map aboutUs to contact_email

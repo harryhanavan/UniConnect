@@ -302,7 +302,7 @@ class _WelcomeCompleteScreenState extends State<WelcomeCompleteScreen>
     );
   }
 
-  void _enterApp() {
+  Future<void> _enterApp() async {
     // Mark onboarding as complete and authenticate user
     final appState = Provider.of<AppState>(context, listen: false);
 
@@ -310,6 +310,12 @@ class _WelcomeCompleteScreenState extends State<WelcomeCompleteScreen>
     print('WelcomeCompleteScreen._enterApp: newUserData != null: ${appState.newUserData != null}');
     print('WelcomeCompleteScreen._enterApp: activeUserId: ${appState.activeUserId}');
     print('WelcomeCompleteScreen._enterApp: isNewUser: ${appState.isNewUser}');
+
+    // Debug the current state before completion
+    print('WelcomeCompleteScreen._enterApp: BEFORE completion state check:');
+    print('  - newUserData != null: ${appState.newUserData != null}');
+    print('  - activeUserId: ${appState.activeUserId}');
+    print('  - isNewUser: ${appState.isNewUser}');
 
     // Check if we have new user data from the onboarding flow
     if (appState.newUserData != null && appState.activeUserId != null) {
@@ -322,30 +328,38 @@ class _WelcomeCompleteScreenState extends State<WelcomeCompleteScreen>
       appState.completeOnboarding();
     }
 
-    // Navigate to main app with a nice transition
-    Navigator.pushAndRemoveUntil(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const MainNavigation(),
-        transitionDuration: const Duration(milliseconds: 600),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0.0, 0.1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOut,
-              )),
-              child: child,
-            ),
-          );
-        },
-      ),
-      (route) => false,
-    );
+    // Ensure AppState updates have propagated
+    await Future.delayed(const Duration(milliseconds: 50));
+
+    // Verify the state is correctly set
+    print('WelcomeCompleteScreen._enterApp: AFTER completion:');
+    print('  - isAuthenticated: ${appState.isAuthenticated}');
+    print('  - shouldShowOnboarding: ${appState.shouldShowOnboarding}');
+    print('  - isInitialized: ${appState.isInitialized}');
+
+    // Set navigation index to home
+    appState.setNavIndex(0);
+
+    // CRITICAL: Prevent MaterialApp from auto-routing during manual navigation
+    // This prevents duplicate MainNavigation instances that cause GlobalKey conflicts
+    appState.startManualNavigation();
+
+    // Clear the entire navigation stack and go to MainNavigation
+    if (mounted) {
+      print('WelcomeCompleteScreen._enterApp: Manually navigating to MainNavigation (MaterialApp auto-routing disabled)');
+
+      // Use pushAndRemoveUntil to completely replace the navigation stack
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+        (route) => false, // Remove all previous routes
+      ).then((_) {
+        // Re-enable MaterialApp auto-routing after navigation completes
+        if (mounted) {
+          appState.endManualNavigation();
+          print('WelcomeCompleteScreen._enterApp: Navigation complete, MaterialApp auto-routing re-enabled');
+        }
+      });
+    }
   }
 
   void _showHelpOptions() {

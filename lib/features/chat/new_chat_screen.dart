@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
@@ -163,7 +165,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
     }
   }
 
-  Widget _buildUserTile(User user, {bool showSelect = false, VoidCallback? onTap}) {
+  Widget _buildUserTile(User user, AppState appState, {bool showSelect = false, VoidCallback? onTap}) {
     final isSelected = _selectedUsers.contains(user);
     
     return Container(
@@ -172,7 +174,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
         color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(8),
         border: showSelect && isSelected
-            ? Border.all(color: AppColors.socialColor, width: 2)
+            ? Border.all(color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled), width: 2)
             : null,
         boxShadow: [
           BoxShadow(
@@ -192,12 +194,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               backgroundImage: user.profileImageUrl != null
                   ? NetworkImage(user.profileImageUrl!)
                   : null,
-              backgroundColor: AppColors.socialColor.withOpacity(0.1),
+              backgroundColor: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled).withOpacity(0.1),
               child: user.profileImageUrl == null
                   ? Text(
                       user.name.substring(0, 1),
                       style: TextStyle(
-                        color: AppColors.socialColor,
+                        color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                         fontWeight: FontWeight.bold,
                       ),
                     )
@@ -211,7 +213,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: AppColors.socialColor,
+                    color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                   ),
@@ -263,7 +265,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildFriendsTab() {
+  Widget _buildFriendsTab(AppState appState) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -308,12 +310,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _filteredFriends.length,
       itemBuilder: (context, index) {
-        return _buildUserTile(_filteredFriends[index]);
+        return _buildUserTile(_filteredFriends[index], appState);
       },
     );
   }
 
-  Widget _buildDiscoverTab() {
+  Widget _buildDiscoverTab(AppState appState) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -348,12 +350,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _filteredUsers.length,
       itemBuilder: (context, index) {
-        return _buildUserTile(_filteredUsers[index]);
+        return _buildUserTile(_filteredUsers[index], appState);
       },
     );
   }
 
-  Widget _buildGroupTab() {
+  Widget _buildGroupTab(AppState appState) {
     return Column(
       children: [
         Container(
@@ -401,12 +403,12 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                                   backgroundImage: user.profileImageUrl != null
                                       ? NetworkImage(user.profileImageUrl!)
                                       : null,
-                                  backgroundColor: AppColors.socialColor.withOpacity(0.1),
+                                  backgroundColor: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled).withOpacity(0.1),
                                   child: user.profileImageUrl == null
                                       ? Text(
                                           user.name.substring(0, 1),
                                           style: TextStyle(
-                                            color: AppColors.socialColor,
+                                            color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                                           ),
                                         )
                                       : null,
@@ -459,6 +461,7 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
                   itemBuilder: (context, index) {
                     return _buildUserTile(
                       _filteredUsers[index],
+                      appState,
                       showSelect: true,
                       onTap: () => _toggleUserSelection(_filteredUsers[index]),
                     );
@@ -492,12 +495,14 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppState appState) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withOpacity(0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark]
+              : [AppColors.socialColor, AppColors.socialColor.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -542,11 +547,13 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Column(
-        children: [
-          _buildHeader(),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          body: Column(
+            children: [
+              _buildHeader(appState),
           Container(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -564,18 +571,20 @@ class _NewChatScreenState extends State<NewChatScreen> with TickerProviderStateM
               onChanged: _filterUsers,
             ),
           ),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildFriendsTab(),
-                _buildDiscoverTab(),
-                _buildGroupTab(),
-              ],
-            ),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildFriendsTab(appState),
+                    _buildDiscoverTab(appState),
+                    _buildGroupTab(appState),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -120,14 +120,39 @@ class EventRelationshipService {
   }
 
   /// Get society events with user's relationship status
-  Future<List<Map<String, dynamic>>> getSocietyEventsWithStatus(String userId, String societyId) async {
+  Future<List<Map<String, dynamic>>> getSocietyEventsWithStatus(
+    String userId,
+    String societyId,
+    {EventTimeFilter timeFilter = EventTimeFilter.upcoming}
+  ) async {
     await _ensureInitialized();
-    
+
     final allEvents = _demoData.enhancedEventsSync;
-    final societyEvents = allEvents.where((event) => 
-      event.societyId == societyId && event.startTime.isAfter(DateTime.now())
-    ).toList();
-    
+    final now = DateTime.now();
+
+    final societyEvents = allEvents.where((event) {
+      if (event.societyId != societyId) return false;
+
+      // Apply time filter
+      switch (timeFilter) {
+        case EventTimeFilter.upcoming:
+          return event.startTime.isAfter(now);
+        case EventTimeFilter.past:
+          return event.startTime.isBefore(now);
+        case EventTimeFilter.all:
+          return true;
+      }
+    }).toList();
+
+    // Sort events: upcoming events ascending, past events descending
+    societyEvents.sort((a, b) {
+      if (timeFilter == EventTimeFilter.past) {
+        return b.startTime.compareTo(a.startTime); // Most recent first for past events
+      } else {
+        return a.startTime.compareTo(b.startTime); // Soonest first for upcoming/all
+      }
+    });
+
     return societyEvents.map((event) => {
       'event': event,
       'relationship': event.getUserRelationship(userId),

@@ -258,7 +258,7 @@ class DemoDataManager {
     if (!_isInitialized) {
       throw StateError('Demo data not initialized. Call await demoDataManager.users first.');
     }
-    return usersSync.where((user) => user.id != currentUser.id).toList();
+    return usersSync.where((user) => currentUser.friendIds.contains(user.id)).toList();
   }
   
   List<Society> get joinedSocieties {
@@ -298,7 +298,7 @@ class DemoDataManager {
   // Async versions for initial loading
   Future<List<User>> get friendsAsync async {
     await _initializeData();
-    return usersSync.where((user) => user.id != currentUser.id).toList();
+    return usersSync.where((user) => currentUser.friendIds.contains(user.id)).toList();
   }
   
   Future<List<Society>> get joinedSocietiesAsync async {

@@ -4,6 +4,7 @@ import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/tour_flows.dart';
 import '../../features/home/home_screen.dart';
 import '../../features/calendar/enhanced_calendar_screen.dart';
 import '../../features/societies/enhanced_societies_screen.dart';
@@ -70,17 +71,18 @@ class _MainNavigationState extends State<MainNavigation> {
     return Consumer<AppState>(
       builder: (context, appState, child) {
         return Scaffold(
-          body: IndexedStack(
-            index: appState.currentNavIndex,
-            children: const [
-              HomeScreen(),
-              EnhancedCalendarScreen(),
-              EnhancedSocietiesScreen(),
-              EnhancedFriendsScreen(),
-              ChatListScreen(),
-            ],
-          ),
+            body: IndexedStack(
+              index: appState.currentNavIndex,
+              children: const [
+                HomeScreen(),
+                EnhancedCalendarScreen(),
+                EnhancedSocietiesScreen(),
+                EnhancedFriendsScreen(),
+                ChatListScreen(),
+              ],
+            ),
           bottomNavigationBar: BottomNavigationBar(
+            key: TourKeys.homeBottomNavKey,
             currentIndex: appState.currentNavIndex,
             onTap: (index) {
               appState.setNavIndex(index);

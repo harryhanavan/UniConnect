@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/constants/tour_flows.dart';
 import '../../core/services/app_state.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/calendar_service.dart';
+import '../../core/services/chat_service.dart';
 import '../../core/utils/ui_helpers.dart';
 import '../../shared/models/user.dart';
 import '../../shared/models/friend_request.dart';
@@ -119,26 +121,34 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           body: Column(
             children: [
               // Header with real-time status
-              _buildHeader(currentUser),
+              Container(
+                key: TourKeys.friendsHeaderKey,
+                child: _buildHeader(currentUser),
+              ),
 
               // Tab Navigation
-              _buildTabBar(),
+              Container(
+                key: TourKeys.friendsTabsKey,
+                child: _buildTabBar(appState),
+              ),
 
               // Tab Content
               Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildFriendsTab(currentUser),
-                      _buildOnCampusTab(currentUser),
-                      _buildRequestsTab(currentUser),
-                      _buildSuggestionsTab(currentUser),
-                    ],
+                key: TourKeys.friendsListKey,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildFriendsTab(currentUser, appState),
+                    _buildOnCampusTab(currentUser, appState),
+                    _buildRequestsTab(currentUser, appState),
+                    _buildSuggestionsTab(currentUser, appState),
+                  ],
                 ),
               ),
             ],
           ),
           floatingActionButton: FloatingActionButton.extended(
+            key: TourKeys.friendsAddButtonKey,
             heroTag: "friends_add_friend_fab",
             onPressed: () {
               // Navigate directly to People tab in search screen
@@ -149,7 +159,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 ),
               );
             },
-            backgroundColor: AppColors.socialColor,
+            backgroundColor: appState.isTempStyleEnabled ? AppColors.primary : AppColors.socialColor,
             icon: const Icon(Icons.person_add, color: Colors.white),
             label: const Text(
               'Add Friend',
@@ -233,18 +243,23 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(AppState appState) {
     final pendingCount = _demoData.getPendingFriendRequests(_demoData.currentUser.id).length;
     final sentCount = _demoData.getSentFriendRequests(_demoData.currentUser.id).length;
     final totalRequestCount = pendingCount + sentCount;
+
+    // In temp style mode, use primary (lighter blue) for tab accents
+    final tabColor = appState.isTempStyleEnabled
+        ? AppColors.primary
+        : AppColors.socialColor;
 
     return Container(
       color: AppTheme.getSurfaceColor(context),
       child: TabBar(
         controller: _tabController,
-        labelColor: AppColors.socialColor,
+        labelColor: tabColor,
         unselectedLabelColor: AppTheme.getSecondaryTextColor(context),
-        indicatorColor: AppColors.socialColor,
+        indicatorColor: tabColor,
         tabs: [
           const Tab(text: 'Friends'),
           const Tab(text: 'On Campus'),
@@ -258,18 +273,21 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                   Stack(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(4),
+                        width: 18,
+                        height: 18,
                         decoration: BoxDecoration(
                           color: pendingCount > 0 ? Colors.red : Colors.orange,
                           shape: BoxShape.circle,
                         ),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                        child: Text(
-                          '$totalRequestCount',
-                          style: TextStyle(
-                            color: const Color(0xFF2C2C2C),
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Text(
+                            '$totalRequestCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              height: 1.0,
+                            ),
                           ),
                         ),
                       ),
@@ -300,8 +318,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
   }
 
   // Friends Tab with Timetable Integration
-  Widget _buildFriendsTab(User currentUser) {
-    final appState = Provider.of<AppState>(context, listen: false);
+  Widget _buildFriendsTab(User currentUser, AppState appState) {
     final friends = appState.friends;
     
     if (friends.isEmpty) {
@@ -316,18 +333,18 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
       padding: const EdgeInsets.all(16),
       children: [
         // Common Free Time Banner
-        _buildCommonFreeTimeBanner(currentUser, friends),
+        _buildCommonFreeTimeBanner(currentUser, friends, appState),
         
         const SizedBox(height: 20),
         
         // Friends List with Enhanced Info
-        ...friends.map((friend) => _buildEnhancedFriendCard(currentUser, friend)),
+        ...friends.map((friend) => _buildEnhancedFriendCard(currentUser, friend, appState)),
       ],
     );
   }
 
   // On Campus Tab with Real-time Locations
-  Widget _buildOnCampusTab(User currentUser) {
+  Widget _buildOnCampusTab(User currentUser, AppState appState) {
     final campusData = _locationService.getFriendsOnCampusMap(currentUser.id);
     final friendsOnCampus = (campusData['friends'] as List<dynamic>?)?.cast<User>() ?? <User>[];
     
@@ -358,16 +375,17 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
         const SizedBox(height: 12),
         
         ...friendsOnCampus.map((friend) => _buildLocationFriendCard(
-          friend, 
+          friend,
           campusData['locations'][friend.id] as Location?,
           campusData['distances'][friend.id] as double?,
+          appState,
         )),
       ],
     );
   }
 
   // Friend Requests Tab
-  Widget _buildRequestsTab(User currentUser) {
+  Widget _buildRequestsTab(User currentUser, AppState appState) {
     final pendingRequests = _demoData.getPendingFriendRequests(currentUser.id);
     final sentRequests = _demoData.getSentFriendRequests(currentUser.id);
 
@@ -410,13 +428,13 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           ),
         ),
         const SizedBox(height: 12),
-        _buildAddFriendOptions(),
+        _buildAddFriendOptions(appState),
       ],
     );
   }
 
   // Enhanced Discovery Tab with Multiple Discovery Methods
-  Widget _buildSuggestionsTab(User currentUser) {
+  Widget _buildSuggestionsTab(User currentUser, AppState appState) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -476,7 +494,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
           'Connected through mutual friends',
           Icons.people_outline,
           () => _getMutualFriends(currentUser),
-          AppColors.socialColor,
+          AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
         ),
         
         const SizedBox(height: 16),
@@ -493,7 +511,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  Widget _buildCommonFreeTimeBanner(User currentUser, List<User> friends) {
+  Widget _buildCommonFreeTimeBanner(User currentUser, List<User> friends, AppState appState) {
     // Get common free times for today
     final commonTimes = <Map<String, dynamic>>[];
     for (final friend in friends.take(3)) { // Check top 3 friends
@@ -521,10 +539,10 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.schedule, color: AppColors.socialColor),
-              SizedBox(width: 8),
+              Icon(Icons.schedule, color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)),
+              const SizedBox(width: 8),
               Text(
                 'Common Free Time Today',
                 style: TextStyle(
@@ -549,8 +567,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  Widget _buildEnhancedFriendCard(User currentUser, User friend) {
-    final canViewTimetable = _friendshipService.canViewTimetable(currentUser.id, friend.id);
+  Widget _buildEnhancedFriendCard(User currentUser, User friend, AppState appState) {
     final canViewLocation = _friendshipService.canViewLocation(currentUser.id, friend.id);
     final currentLocation = friend.currentLocationId != null
         ? _demoData.getLocationById(friend.currentLocationId!)
@@ -670,34 +687,44 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (canViewTimetable)
-                      GestureDetector(
-                        onTap: () => _showTimetableOverlay(currentUser, friend),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.personalColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(context).shadowColor.withOpacity(0.05),
-                                blurRadius: 2,
-                                offset: const Offset(0, 1),
-                                spreadRadius: 0,
-                              )
-                            ],
-                          ),
-                          child: Text(
-                            'Timetable',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.personalColor,
+                    GestureDetector(
+                      onTap: () => _navigateToChat(friend),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).shadowColor.withOpacity(0.05),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                              spreadRadius: 0,
+                            )
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.message_outlined,
+                              size: 16,
+                              color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                             ),
-                          ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Message',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontFamily: 'Roboto',
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                    ),
                     if (friend.isOnline && canViewLocation) ...[
                       const SizedBox(height: 8),
                       Container(
@@ -727,7 +754,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  Widget _buildLocationFriendCard(User friend, Location? location, double? distance) {
+  Widget _buildLocationFriendCard(User friend, Location? location, double? distance, AppState appState) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: AppTheme.getCardDecoration(context),
@@ -825,7 +852,7 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
                     Container(
                       margin: const EdgeInsets.only(right: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.socialColor,
+                        color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
@@ -1373,29 +1400,29 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     );
   }
 
-  Widget _buildAddFriendOptions() {
+  Widget _buildAddFriendOptions(AppState appState) {
     return Column(
       children: [
         ListTile(
-          leading: const Icon(Icons.qr_code_scanner, color: AppColors.socialColor),
+          leading: Icon(Icons.qr_code_scanner, color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)),
           title: const Text('Scan QR Code'),
           subtitle: const Text('Add friends by scanning their QR code'),
           onTap: () => _showQRScanner(),
         ),
         ListTile(
-          leading: const Icon(Icons.search, color: AppColors.socialColor),
+          leading: Icon(Icons.search, color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)),
           title: const Text('Search by Name'),
           subtitle: const Text('Find friends by their name or email'),
           onTap: () => _showSearchDialog(),
         ),
         ListTile(
-          leading: const Icon(Icons.contacts, color: AppColors.socialColor),
+          leading: Icon(Icons.contacts, color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)),
           title: const Text('Import Contacts'),
           subtitle: const Text('Find friends from your contacts'),
           onTap: () => _showContactsImport(),
         ),
         ListTile(
-          leading: const Icon(Icons.school, color: AppColors.socialColor),
+          leading: Icon(Icons.school, color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)),
           title: const Text('Find from Classes & Societies'),
           subtitle: const Text('Discover people from your courses and societies'),
           onTap: () {
@@ -1617,10 +1644,13 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
             child: ElevatedButton(
               onPressed: () => _sendFriendRequest(user),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF5F5F0),
-                foregroundColor: Theme.of(context).colorScheme.surface,
+                backgroundColor: accentColor,
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                textStyle: TextStyle(fontSize: 12),
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               child: const Text('Add'),
             ),
@@ -1993,20 +2023,39 @@ class _EnhancedFriendsScreenState extends State<EnhancedFriendsScreen>
     }
   }
 
-  void _navigateToChat(User friend) {
+  void _navigateToChat(User friend) async {
     try {
-      // ChatScreen needs a Chat object, not individual parameters
-      UIHelpers.showSnackBar(
-        context,
-        'Starting chat with ${friend.name} - feature coming soon!',
-        type: SnackBarType.info,
+      // Show loading indicator
+      UIHelpers.showLoadingDialog(context, message: 'Opening chat...');
+
+      // Get or create chat with the friend
+      final chatService = ChatService();
+      final chat = await chatService.createOrGetDirectChat(
+        _demoData.currentUser.id,
+        friend.id,
       );
+
+      if (mounted) {
+        // Hide loading dialog
+        UIHelpers.hideLoadingDialog(context);
+
+        // Navigate to chat screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(chat: chat),
+          ),
+        );
+      }
     } catch (e) {
-      UIHelpers.showSnackBar(
-        context,
-        'Chat feature not available yet',
-        type: SnackBarType.info,
-      );
+      if (mounted) {
+        UIHelpers.hideLoadingDialog(context);
+        UIHelpers.showSnackBar(
+          context,
+          'Failed to open chat: ${e.toString()}',
+          type: SnackBarType.error,
+        );
+      }
     }
   }
 

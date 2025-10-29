@@ -63,6 +63,12 @@ class EventV2 {
   final String? importId;
   final DateTime? lastSyncTime;
   final Map<String, dynamic>? importPeriod; // Semester period metadata for imports
+
+  // Reminder settings
+  final bool enableReminders;
+  final List<int>? reminderMinutesBefore; // e.g., [5, 15, 60, 1440] for 5min, 15min, 1hr, 1day
+  final bool? customReminderSound;
+  final String? reminderNote;
   
   const EventV2({
     required this.id,
@@ -110,6 +116,11 @@ class EventV2 {
     this.importId,
     this.lastSyncTime,
     this.importPeriod,
+    // Reminder settings
+    this.enableReminders = true,
+    this.reminderMinutesBefore,
+    this.customReminderSound,
+    this.reminderNote,
   });
   
   /// Get user's relationship to this event
@@ -328,6 +339,11 @@ class EventV2 {
     String? importSource,
     String? importId,
     DateTime? lastSyncTime,
+    // Reminder fields
+    bool? enableReminders,
+    List<int>? reminderMinutesBefore,
+    bool? customReminderSound,
+    String? reminderNote,
   }) {
     return EventV2(
       id: id ?? this.id,
@@ -364,6 +380,11 @@ class EventV2 {
       importSource: importSource ?? this.importSource,
       importId: importId ?? this.importId,
       lastSyncTime: lastSyncTime ?? this.lastSyncTime,
+      // Reminder fields
+      enableReminders: enableReminders ?? this.enableReminders,
+      reminderMinutesBefore: reminderMinutesBefore ?? this.reminderMinutesBefore,
+      customReminderSound: customReminderSound ?? this.customReminderSound,
+      reminderNote: reminderNote ?? this.reminderNote,
     );
   }
 
@@ -375,4 +396,176 @@ class EventV2 {
 
   /// Check if this event uses the new direct date scheduling system
   bool get usesDirectDateScheduling => scheduledDate != null;
+
+  /// Convert EventV2 to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
+      'location': location,
+      'category': category.toString(),
+      'subType': subType.toString(),
+      'origin': origin.toString(),
+      'creatorId': creatorId,
+      'organizerIds': organizerIds,
+      'attendeeIds': attendeeIds,
+      'invitedIds': invitedIds,
+      'interestedIds': interestedIds,
+      'privacyLevel': privacyLevel.toString(),
+      'sharingPermission': sharingPermission.toString(),
+      'discoverability': discoverability.toString(),
+      'societyId': societyId,
+      'courseCode': courseCode,
+      'isAllDay': isAllDay,
+      'isRecurring': isRecurring,
+      'recurringPattern': recurringPattern,
+      'parentEventId': parentEventId,
+      'customFields': customFields,
+      'semesterType': semesterType,
+      'semesterYear': semesterYear,
+      'semesterStartDate': semesterStartDate?.toIso8601String(),
+      'semesterEndDate': semesterEndDate?.toIso8601String(),
+      'academicWeek': academicWeek,
+      'scheduledDate': scheduledDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isRecurringInstance': isRecurringInstance,
+      'nextOccurrence': nextOccurrence?.toIso8601String(),
+      'recurringRule': recurringRule,
+      'useAbsoluteDate': useAbsoluteDate,
+      'exactDate': exactDate?.toIso8601String(),
+      'dayOfWeek': dayOfWeek,
+      'timeOfDay': timeOfDay,
+      'driftAdjustment': driftAdjustment,
+      'importSource': importSource,
+      'importId': importId,
+      'lastSyncTime': lastSyncTime?.toIso8601String(),
+      'importPeriod': importPeriod,
+      'enableReminders': enableReminders,
+      'reminderMinutesBefore': reminderMinutesBefore,
+      'customReminderSound': customReminderSound,
+      'reminderNote': reminderNote,
+    };
+  }
+
+  /// Create EventV2 from JSON
+  static EventV2 fromJson(Map<String, dynamic> json) {
+    return EventV2(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      startTime: DateTime.parse(json['startTime']),
+      endTime: DateTime.parse(json['endTime']),
+      location: json['location'],
+      category: EventCategory.values.firstWhere(
+        (e) => e.toString() == json['category'],
+        orElse: () => EventCategory.personal,
+      ),
+      subType: EventSubType.values.firstWhere(
+        (e) => e.toString() == json['subType'],
+        orElse: () => EventSubType.personalGoal,
+      ),
+      origin: EventOrigin.values.firstWhere(
+        (e) => e.toString() == json['origin'],
+        orElse: () => EventOrigin.user,
+      ),
+      creatorId: json['creatorId'],
+      organizerIds: List<String>.from(json['organizerIds'] ?? []),
+      attendeeIds: List<String>.from(json['attendeeIds'] ?? []),
+      invitedIds: List<String>.from(json['invitedIds'] ?? []),
+      interestedIds: List<String>.from(json['interestedIds'] ?? []),
+      privacyLevel: EventPrivacyLevel.values.firstWhere(
+        (e) => e.toString() == json['privacyLevel'],
+        orElse: () => EventPrivacyLevel.friendsOnly,
+      ),
+      sharingPermission: EventSharingPermission.values.firstWhere(
+        (e) => e.toString() == json['sharingPermission'],
+        orElse: () => EventSharingPermission.canSuggest,
+      ),
+      discoverability: EventDiscoverability.values.firstWhere(
+        (e) => e.toString() == json['discoverability'],
+        orElse: () => EventDiscoverability.feedVisible,
+      ),
+      societyId: json['societyId'],
+      courseCode: json['courseCode'],
+      isAllDay: json['isAllDay'] ?? false,
+      isRecurring: json['isRecurring'] ?? false,
+      recurringPattern: json['recurringPattern'],
+      parentEventId: json['parentEventId'],
+      customFields: json['customFields'] != null
+          ? Map<String, dynamic>.from(json['customFields'])
+          : null,
+      semesterType: json['semesterType'],
+      semesterYear: json['semesterYear'],
+      semesterStartDate: json['semesterStartDate'] != null
+          ? DateTime.parse(json['semesterStartDate'])
+          : null,
+      semesterEndDate: json['semesterEndDate'] != null
+          ? DateTime.parse(json['semesterEndDate'])
+          : null,
+      academicWeek: json['academicWeek'],
+      scheduledDate: json['scheduledDate'] != null
+          ? DateTime.parse(json['scheduledDate'])
+          : null,
+      endDate: json['endDate'] != null
+          ? DateTime.parse(json['endDate'])
+          : null,
+      isRecurringInstance: json['isRecurringInstance'] ?? false,
+      nextOccurrence: json['nextOccurrence'] != null
+          ? DateTime.parse(json['nextOccurrence'])
+          : null,
+      recurringRule: json['recurringRule'],
+      useAbsoluteDate: json['useAbsoluteDate'] ?? false,
+      exactDate: json['exactDate'] != null
+          ? DateTime.parse(json['exactDate'])
+          : null,
+      dayOfWeek: json['dayOfWeek'],
+      timeOfDay: json['timeOfDay'],
+      driftAdjustment: json['driftAdjustment'] ?? false,
+      importSource: json['importSource'],
+      importId: json['importId'],
+      lastSyncTime: json['lastSyncTime'] != null
+          ? DateTime.parse(json['lastSyncTime'])
+          : null,
+      importPeriod: json['importPeriod'] != null
+          ? Map<String, dynamic>.from(json['importPeriod'])
+          : null,
+      enableReminders: json['enableReminders'] ?? true,
+      reminderMinutesBefore: json['reminderMinutesBefore'] != null
+          ? List<int>.from(json['reminderMinutesBefore'])
+          : null, // Will be set to defaults in UI when needed
+      customReminderSound: json['customReminderSound'],
+      reminderNote: json['reminderNote'],
+    );
+  }
+
+  /// Get default reminder settings based on event type
+  static List<int>? getDefaultRemindersForType(EventSubType subType) {
+    switch (subType) {
+      case EventSubType.lecture:
+      case EventSubType.tutorial:
+      case EventSubType.lab:
+        return [15]; // 15 minutes before class
+      case EventSubType.exam:
+        return [60, 1440]; // 1 hour and 1 day before exam
+      case EventSubType.assignment:
+        return [1440]; // 1 day before assignment due
+      case EventSubType.meeting:
+        return [15]; // 15 minutes before meeting
+      case EventSubType.studySession:
+        return [15]; // 15 minutes before study session
+      case EventSubType.party:
+      case EventSubType.meetup:
+      case EventSubType.networking:
+      case EventSubType.gameNight:
+      case EventSubType.casualHangout:
+        return [30]; // 30 minutes before social events
+      case EventSubType.societyEvent:
+        return [30, 60]; // 30 minutes and 1 hour before society events
+      default:
+        return [15]; // Default 15 minutes for other events
+    }
+  }
 }

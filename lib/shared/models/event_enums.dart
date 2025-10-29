@@ -113,6 +113,13 @@ enum EventDiscoverability {
   calendarOnly, // Only in calendars
 }
 
+// Event time filter - for filtering events by time
+enum EventTimeFilter {
+  all,      // All events (past, present, future)
+  upcoming, // Future events only
+  past,     // Past events only
+}
+
 /// Helper class to manage event type relationships
 class EventTypeHelper {
   /// Map sub-types to their categories
@@ -244,6 +251,18 @@ class EventTypeHelper {
         return '🏢';
       case CalendarFilter.discover:
         return '🔍';
+    }
+  }
+
+  /// Get display name for EventTimeFilter
+  static String getEventTimeFilterDisplayName(EventTimeFilter filter) {
+    switch (filter) {
+      case EventTimeFilter.all:
+        return 'All';
+      case EventTimeFilter.upcoming:
+        return 'Upcoming';
+      case EventTimeFilter.past:
+        return 'Past';
     }
   }
 }

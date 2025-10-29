@@ -14,6 +14,7 @@ import '../friends/enhanced_map_screen.dart';
 import '../timetable/smart_timetable_overlay.dart';
 import '../timetable/timetable_management_screen.dart';
 import '../notifications/notification_center_screen.dart';
+import '../notifications/reminder_preferences_screen.dart';
 import '../privacy/privacy_settings_screen.dart';
 import 'profile_edit_screen.dart';
 
@@ -287,6 +288,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const NotificationCenterScreen()),
+                    );
+                  },
+                ),
+                _buildTile(
+                  'Reminder Preferences',
+                  'Configure reminders for events, deadlines, and notifications',
+                  Icons.alarm,
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ReminderPreferencesScreen()),
                     );
                   },
                 ),

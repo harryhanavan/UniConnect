@@ -95,12 +95,14 @@ class LocationService {
 
     for (final friendId in user.friendIds) {
       final friend = _demoData.getUserById(friendId);
-      if (friend == null || !friend.isOnline || friend.currentLocationId == null) continue;
+      // Skip if friend doesn't exist or has no location
+      if (friend == null || friend.currentLocationId == null) continue;
 
       // Check if user can see this friend's location
       if (!_friendshipService.canViewLocation(userId, friendId)) continue;
 
       // Check if location was updated recently (within last 2 hours)
+      // If locationUpdatedAt is null, assume location is current (for demo data)
       if (friend.locationUpdatedAt != null &&
           DateTime.now().difference(friend.locationUpdatedAt!).inHours > 2) {
         continue;
@@ -151,8 +153,8 @@ class LocationService {
 
     for (final friendId in user.friendIds) {
       final friend = _demoData.getUserById(friendId);
-      if (friend == null || !friend.isOnline || 
-          friend.latitude == null || friend.longitude == null) {
+      // Skip if friend doesn't exist or has no coordinates
+      if (friend == null || friend.latitude == null || friend.longitude == null) {
         continue;
       }
 
@@ -261,7 +263,7 @@ class LocationService {
       
       for (final friendId in user.friendIds) {
         final friend = _demoData.getUserById(friendId);
-        if (friend == null || !friend.isOnline) continue;
+        if (friend == null) continue;
 
         if (_friendshipService.canViewLocation(userId, friendId) &&
             friend.currentLocationId == location.id &&
@@ -292,7 +294,8 @@ class LocationService {
     // Count friends at each location
     for (final friendId in user.friendIds) {
       final friend = _demoData.getUserById(friendId);
-      if (friend == null || !friend.isOnline || friend.currentLocationId == null) continue;
+      // Skip if friend doesn't exist or has no location
+      if (friend == null || friend.currentLocationId == null) continue;
 
       if (_friendshipService.canViewLocation(userId, friendId)) {
         final locationId = friend.currentLocationId!;

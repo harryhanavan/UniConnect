@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../shared/models/chat_message.dart';
@@ -173,10 +175,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Widget _buildMessage(ChatMessage message, {bool showAvatar = true}) {
+  Widget _buildMessage(ChatMessage message, {bool showAvatar = true, required AppState appState}) {
     final isMe = message.senderId == _currentUserId;
     final user = _userCache[message.senderId];
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
       child: Row(
@@ -221,12 +223,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 if (message.replyToMessageId != null)
-                  _buildReplyPreview(message.replyToMessageId!),
+                  _buildReplyPreview(message.replyToMessageId!, appState),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   decoration: BoxDecoration(
                     color: isMe
-                        ? AppColors.socialColor
+                        ? AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled)
                         : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(18),
                   ),
@@ -274,7 +276,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildReplyPreview(String messageId) {
+  Widget _buildReplyPreview(String messageId, AppState appState) {
     final replyMessage = _messages.firstWhere(
       (m) => m.id == messageId,
       orElse: () => ChatMessage(
@@ -287,9 +289,9 @@ class _ChatScreenState extends State<ChatScreen> {
         status: MessageStatus.sent,
       ),
     );
-    
+
     final replyUser = _userCache[replyMessage.senderId];
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.all(8),
@@ -298,7 +300,7 @@ class _ChatScreenState extends State<ChatScreen> {
         borderRadius: BorderRadius.circular(8),
         border: Border(
           left: BorderSide(
-            color: AppColors.socialColor,
+            color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
             width: 3,
           ),
         ),
@@ -316,10 +318,10 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Text(
             replyUser?.name ?? 'Unknown',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: AppColors.socialColor,
+              color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
             ),
           ),
           const SizedBox(height: 2),
@@ -397,12 +399,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(AppState appState) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark]
+              : [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -451,44 +455,48 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      final previousMessage = index > 0 ? _messages[index - 1] : null;
-                      final showAvatar = previousMessage == null ||
-                          previousMessage.senderId != message.senderId ||
-                          message.timestamp.difference(previousMessage.timestamp).inMinutes > 5;
-                      
-                      return GestureDetector(
-                        onLongPress: () {
-                          HapticFeedback.mediumImpact();
-                          // TODO: Show message options (reply, copy, delete, etc.)
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: Column(
+            children: [
+              _buildHeader(appState),
+              Expanded(
+                child: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ListView.builder(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _messages.length,
+                        itemBuilder: (context, index) {
+                          final message = _messages[index];
+                          final previousMessage = index > 0 ? _messages[index - 1] : null;
+                          final showAvatar = previousMessage == null ||
+                              previousMessage.senderId != message.senderId ||
+                              message.timestamp.difference(previousMessage.timestamp).inMinutes > 5;
+
+                          return GestureDetector(
+                            onLongPress: () {
+                              HapticFeedback.mediumImpact();
+                              // TODO: Show message options (reply, copy, delete, etc.)
+                            },
+                            child: _buildMessage(message, showAvatar: showAvatar, appState: appState),
+                          );
                         },
-                        child: _buildMessage(message, showAvatar: showAvatar),
-                      );
-                    },
-                  ),
+                      ),
+              ),
+              _buildTypingIndicator(),
+              if (_replyingToMessageId != null) _buildReplyBar(appState),
+              _buildMessageInput(appState),
+            ],
           ),
-          _buildTypingIndicator(),
-          if (_replyingToMessageId != null) _buildReplyBar(),
-          _buildMessageInput(),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildReplyBar() {
+  Widget _buildReplyBar(AppState appState) {
     final replyMessage = _messages.firstWhere(
       (m) => m.id == _replyingToMessageId,
       orElse: () => ChatMessage(
@@ -501,9 +509,9 @@ class _ChatScreenState extends State<ChatScreen> {
         status: MessageStatus.sent,
       ),
     );
-    
+
     final replyUser = _userCache[replyMessage.senderId];
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -518,7 +526,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 4,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.socialColor,
+              color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -529,10 +537,10 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(
                   'Replying to ${replyUser?.name ?? 'Unknown'}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.socialColor,
+                    color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -561,7 +569,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageInput() {
+  Widget _buildMessageInput(AppState appState) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -597,8 +605,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 8),
             Container(
-              decoration: const BoxDecoration(
-                color: AppColors.socialColor,
+              decoration: BoxDecoration(
+                color: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
                 shape: BoxShape.circle,
               ),
               child: IconButton(

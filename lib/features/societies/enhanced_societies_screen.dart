@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/constants/tour_flows.dart';
 import '../../core/services/app_state.dart';
 import '../../core/utils/ui_helpers.dart';
 import '../../core/demo_data/demo_data_manager.dart';
@@ -28,18 +29,19 @@ class EnhancedSocietiesScreen extends StatefulWidget {
   State<EnhancedSocietiesScreen> createState() => _EnhancedSocietiesScreenState();
 }
 
-class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen> 
+class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String _searchQuery = '';
   String _selectedCategory = 'All';
-  
+  EventTimeFilter _selectedEventTimeFilter = EventTimeFilter.upcoming;
+
   final DemoDataManager _demoData = DemoDataManager.instance;
   final CalendarService _calendarService = CalendarService();
   final EventRelationshipService _eventRelationshipService = EventRelationshipService();
   // Services are available but not directly used in this screen currently
   // final FriendshipService _friendshipService = FriendshipService();
-  
+
   bool _isInitialized = false;
 
   final List<String> _categories = [
@@ -129,17 +131,27 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
           backgroundColor: AppTheme.getBackgroundColor(context),
           body: Column(
             children: [
-              _buildHeader(appState),
-              _buildSearchAndFilter(),
-              _buildTabBar(),
+              Container(
+                key: TourKeys.societiesHeaderKey,
+                child: _buildHeader(appState),
+              ),
+              Container(
+                key: TourKeys.societiesSearchKey,
+                child: _buildSearchAndFilter(appState),
+              ),
+              Container(
+                key: TourKeys.societiesTabsKey,
+                child: _buildTabBar(appState),
+              ),
               Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildMySocietiesTab(appState),
-                      _buildDiscoverTab(),
-                      _buildEventsTab(appState),
-                    ],
+                key: TourKeys.societiesCardsKey,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildMySocietiesTab(appState),
+                    _buildDiscoverTab(appState),
+                    _buildEventsTab(appState),
+                  ],
                 ),
               ),
             ],
@@ -208,7 +220,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
 
-  Widget _buildSearchAndFilter() {
+  Widget _buildSearchAndFilter(AppState appState) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -254,8 +266,8 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                         _selectedCategory = category;
                       });
                     },
-                    selectedColor: AppColors.societyColor.withValues(alpha: 0.2),
-                    checkmarkColor: AppColors.societyColor,
+                    selectedColor: AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled).withValues(alpha: 0.2),
+                    checkmarkColor: AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled),
                   ),
                 );
               },
@@ -266,14 +278,19 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildTabBar(AppState appState) {
+    // In temp style mode, use primary (lighter blue, same as create event button) for consistency
+    final tabColor = appState.isTempStyleEnabled
+        ? AppColors.primary
+        : AppColors.societyColor;
+
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: TabBar(
         controller: _tabController,
-        labelColor: AppColors.societyColor,
+        labelColor: tabColor,
         unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-        indicatorColor: AppColors.societyColor,
+        indicatorColor: tabColor,
         tabs: const [
           Tab(text: 'My Societies'),
           Tab(text: 'Discover'),
@@ -283,7 +300,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildDiscoverTab() {
+  Widget _buildDiscoverTab(AppState appState) {
     final filteredSocieties = _getFilteredSocieties();
     
     if (filteredSocieties.isEmpty) {
@@ -342,7 +359,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                               right: rowSocieties.indexOf(society) == 0 && rowSocieties.length > 1 ? 4 : 0,
                               left: rowSocieties.indexOf(society) == 1 ? 4 : 0,
                             ),
-                            child: _buildFigmaDiscoverCard(society),
+                            child: _buildFigmaDiscoverCard(society, appState),
                           ),
                         )),
                         // Add empty expanded widget if odd number of societies in last row
@@ -391,7 +408,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             ElevatedButton(
               onPressed: () => _tabController.animateTo(1),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.societyColor,
+                backgroundColor: AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled),
                 foregroundColor: Colors.white,
               ),
               child: const Text('Discover Societies'),
@@ -463,7 +480,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             // Society List with proper spacing
             ...filteredJoinedSocieties.map((society) => Padding(
               padding: const EdgeInsets.only(bottom: 12), // Add spacing between cards
-              child: _buildFigmaYourSocietyCard(society),
+              child: _buildFigmaYourSocietyCard(society, appState),
             )).toList(),
 
             // Add bottom padding for last item
@@ -484,16 +501,13 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     final currentUser = appState.currentUser;
     final filteredEvents = _getFilteredEvents();
 
-    // Get all society events using the same filtering logic as _getFilteredEvents()
-    // but without search/category filters to check for empty state
-    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+    // Get all society events regardless of filters to check if user has any society events
     final allSocietyEvents = _demoData.enhancedEventsSync.where((event) =>
       event.societyId != null &&
       event.canUserView(
         currentUser.id,
         userSocietyIds: currentUser.societyIds,
       ) &&
-      event.startTime.isAfter(sevenDaysAgo) &&
       currentUser.societyIds.contains(event.societyId)
     ).toList();
     
@@ -546,36 +560,71 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     
     return Column(
       children: [
-        // Header showing filter count
-        if (_searchQuery.isNotEmpty || _selectedCategory != 'All')
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Filtered Events (${filteredEvents.length})',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 18,
-                fontFamily: 'Roboto',
-                fontWeight: FontWeight.w500,
-                height: 1.33,
+        // Time Filter Chips
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _getEventsHeaderText(filteredEvents.length),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 18,
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+              Row(
+                children: EventTimeFilter.values.map((filter) {
+                  final isSelected = _selectedEventTimeFilter == filter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      label: Text(
+                        EventTypeHelper.getEventTimeFilterDisplayName(filter),
+                        style: TextStyle(
+                          color: isSelected
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontSize: 13,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                      selected: isSelected,
+                      onSelected: (_) {
+                        setState(() {
+                          _selectedEventTimeFilter = filter;
+                        });
+                      },
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      selectedColor: const Color(0xFF4CAF50),
+                      checkmarkColor: Colors.white,
+                      side: BorderSide(
+                        color: isSelected
+                            ? const Color(0xFF4CAF50)
+                            : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+                        width: 1,
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        
+        ),
+
         // Events list
         Expanded(
           child: ListView.builder(
-            padding: EdgeInsets.fromLTRB(
-              16, 
-              (_searchQuery.isNotEmpty || _selectedCategory != 'All') ? 0 : 16, 
-              16, 
-              0
-            ),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             itemCount: filteredEvents.length,
             itemBuilder: (context, index) {
               final event = filteredEvents[index];
-              
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: EnhancedEventCard(
@@ -592,7 +641,18 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildFigmaDiscoverCard(Society society) {
+  String _getEventsHeaderText(int count) {
+    switch (_selectedEventTimeFilter) {
+      case EventTimeFilter.upcoming:
+        return count == 1 ? '1 upcoming event' : '$count upcoming events';
+      case EventTimeFilter.past:
+        return count == 1 ? '1 past event' : '$count past events';
+      case EventTimeFilter.all:
+        return count == 1 ? '1 event' : '$count events';
+    }
+  }
+
+  Widget _buildFigmaDiscoverCard(Society society, AppState appState) {
     return GestureDetector(
       onTap: () => _showSocietyDetails(society),
       child: Container(
@@ -696,7 +756,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   const SizedBox(height: 4),
                   
                   // Member count and friend info
-                  _buildMembershipInfo(society),
+                  _buildMembershipInfo(society, appState),
                   
                   const SizedBox(height: 4),
                   
@@ -719,7 +779,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildFigmaYourSocietyCard(Society society) {
+  Widget _buildFigmaYourSocietyCard(Society society, AppState appState) {
     return InkWell(
       onTap: () => _showSocietyDetails(society),
       borderRadius: BorderRadius.circular(8),
@@ -786,7 +846,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
                   const SizedBox(height: 4),
                   
                   // Member count and friend info
-                  _buildMembershipInfo(society),
+                  _buildMembershipInfo(society, appState),
                   
                   const SizedBox(height: 4),
                   
@@ -845,7 +905,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
     );
   }
 
-  Widget _buildEventDateSection(DateTime date, List<Event> events) {
+  Widget _buildEventDateSection(DateTime date, List<Event> events, AppState appState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -856,7 +916,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.societyColor,
+              color: AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled),
             ),
           ),
         ),
@@ -1165,19 +1225,28 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
 
   List<EventV2> _getFilteredEvents() {
     if (!_isInitialized) return [];
-    
-    // Get all discoverable society events (regardless of attendance status)
-    // Show events from the past 7 days + future events to avoid "cutoff" appearance
-    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
-    final allSocietyEvents = _demoData.enhancedEventsSync.where((event) =>
-      event.societyId != null && 
-      event.canUserView(
+
+    final now = DateTime.now();
+
+    // Get all society events based on time filter
+    final allSocietyEvents = _demoData.enhancedEventsSync.where((event) {
+      if (event.societyId == null) return false;
+      if (!_demoData.currentUser.societyIds.contains(event.societyId)) return false;
+      if (!event.canUserView(
         _demoData.currentUser.id,
         userSocietyIds: _demoData.currentUser.societyIds,
-      ) &&
-      event.startTime.isAfter(sevenDaysAgo) &&
-      _demoData.currentUser.societyIds.contains(event.societyId)
-    ).toList();
+      )) return false;
+
+      // Apply time filter
+      switch (_selectedEventTimeFilter) {
+        case EventTimeFilter.upcoming:
+          return event.startTime.isAfter(now);
+        case EventTimeFilter.past:
+          return event.startTime.isBefore(now);
+        case EventTimeFilter.all:
+          return true;
+      }
+    }).toList();
     
     return allSocietyEvents.where((event) {
       // Search in event title and description
@@ -1208,7 +1277,16 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
       }
       
       return true;
-    }).toList()..sort((a, b) => a.startTime.compareTo(b.startTime));
+    }).toList();
+
+    // Sort events based on time filter
+    if (_selectedEventTimeFilter == EventTimeFilter.past) {
+      allSocietyEvents.sort((a, b) => b.startTime.compareTo(a.startTime)); // Most recent first
+    } else {
+      allSocietyEvents.sort((a, b) => a.startTime.compareTo(b.startTime)); // Soonest first
+    }
+
+    return allSocietyEvents;
   }
 
   void _onEventTap(EventV2 event) {
@@ -1300,7 +1378,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
   }
 
 
-  Widget _buildMembershipInfo(Society society) {
+  Widget _buildMembershipInfo(Society society, AppState appState) {
     final currentUserFriends = _demoData.getFriendsForUser(_demoData.currentUser.id);
     final friendsInSociety = currentUserFriends.where((friend) => society.memberIds.contains(friend.id)).toList();
     
@@ -1335,12 +1413,12 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
           decoration: BoxDecoration(
             color: society.membershipFee == null
                 ? Colors.green.withOpacity(0.1)
-                : AppColors.societyColor.withOpacity(0.1),
+                : AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled).withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: society.membershipFee == null
                   ? Colors.green
-                  : AppColors.societyColor,
+                  : AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled),
               width: 1,
             ),
           ),
@@ -1351,7 +1429,7 @@ class _EnhancedSocietiesScreenState extends State<EnhancedSocietiesScreen>
             style: TextStyle(
               color: society.membershipFee == null
                   ? Colors.green[700]
-                  : AppColors.societyColor,
+                  : AppColors.getAdaptiveSocietyColor(appState.isTempStyleEnabled),
               fontSize: 10,
               fontFamily: 'Roboto',
               fontWeight: FontWeight.w600,

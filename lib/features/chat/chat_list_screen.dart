@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/constants/tour_flows.dart';
 import '../../core/services/app_state.dart';
 import '../../core/services/chat_service.dart';
 import '../../core/demo_data/demo_data_manager.dart';
@@ -245,9 +246,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
-  Widget _buildHeader() {
-    final appState = Provider.of<AppState>(context, listen: true);
-
+  Widget _buildHeader(AppState appState) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -301,6 +300,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                       },
                     ),
                     IconButton(
+                      key: TourKeys.messagesSearchKey,
                       icon: const Icon(Icons.search, color: Colors.white),
                       onPressed: () {
                         // TODO: Implement search functionality
@@ -318,12 +318,18 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.getBackgroundColor(context),
-      body: Column(
-        children: [
-          _buildHeader(),
+    return Consumer<AppState>(
+      builder: (context, appState, child) {
+        return Scaffold(
+          backgroundColor: AppTheme.getBackgroundColor(context),
+          body: Column(
+            children: [
+              Container(
+                key: TourKeys.messagesHeaderKey,
+                child: _buildHeader(appState),
+              ),
           Expanded(
+            key: TourKeys.messagesChatListKey,
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _chats.isEmpty
@@ -338,12 +344,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           },
                         ),
                       ),
+              ),
+            ],
           ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: "new_chat",
-        backgroundColor: const Color(0xFFF5F5F0),
+          floatingActionButton: FloatingActionButton(
+            key: TourKeys.messagesNewChatKey,
+            heroTag: "new_chat",
+            backgroundColor: AppColors.getAdaptiveSocialColor(appState.isTempStyleEnabled),
         onPressed: () {
           Navigator.push(
             context,
@@ -351,9 +358,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
               builder: (context) => const NewChatScreen(),
             ),
           );
-        },
-        child: const Icon(Icons.message_outlined, color: Colors.white),
-      ),
+            },
+            child: const Icon(Icons.message_outlined, color: Colors.white),
+          ),
+        );
+      },
     );
   }
 

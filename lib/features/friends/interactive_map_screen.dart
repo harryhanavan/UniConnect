@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../core/demo_data/demo_data_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/friendship_service.dart';
 import '../../core/services/calendar_service.dart';
+import '../../core/services/app_state.dart';
+import '../../core/utils/ui_helpers.dart';
 import '../../shared/models/user.dart';
 import '../../shared/models/location.dart';
 import '../../shared/models/event.dart';
+import '../../shared/widgets/friend_profile_modal.dart';
 import '../../core/constants/app_colors.dart';
 
 class InteractiveMapScreen extends StatefulWidget {
@@ -85,14 +89,17 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
   }
 
   Widget _buildHeader() {
+    final appState = Provider.of<AppState>(context, listen: false);
     final campusData = _locationService.getFriendsOnCampusMap(_demoData.currentUser.id);
     final friendsOnCampus = (campusData['friends'] as List<User>).length;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
+          colors: appState.isTempStyleEnabled
+              ? [AppColors.primaryDark, AppColors.primaryDark]
+              : [AppColors.socialColor, AppColors.socialColor.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -138,6 +145,9 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
   }
 
   Widget _buildControls() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final accentColor = appState.isTempStyleEnabled ? AppColors.primary : AppColors.socialColor;
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -150,13 +160,13 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildViewButton('friends', 'Friends', Icons.people, AppColors.online),
+                      _buildViewButton('friends', 'Friends', Icons.people, accentColor, appState),
                       const SizedBox(width: 8),
-                      _buildViewButton('events', 'Events', Icons.event, AppColors.socialColor),
+                      _buildViewButton('events', 'Events', Icons.event, accentColor, appState),
                       const SizedBox(width: 8),
-                      _buildViewButton('buildings', 'Buildings', Icons.location_city, Colors.grey),
+                      _buildViewButton('buildings', 'Buildings', Icons.location_city, accentColor, appState),
                       const SizedBox(width: 8),
-                      _buildViewButton('study', 'Study Spots', Icons.menu_book, AppColors.studyColor),
+                      _buildViewButton('study', 'Study Spots', Icons.menu_book, accentColor, appState),
                     ],
                   ),
                 ),
@@ -182,23 +192,24 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                   ],
                 ),
               ),
-              Switch(
-                value: _showHeatmap,
-                onChanged: (value) {
-                  setState(() {
-                    _showHeatmap = value;
-                  });
-                },
-                activeThumbColor: AppColors.socialColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Heatmap',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+              // Heatmap toggle hidden for now
+              // Switch(
+              //   value: _showHeatmap,
+              //   onChanged: (value) {
+              //     setState(() {
+              //       _showHeatmap = value;
+              //     });
+              //   },
+              //   activeThumbColor: accentColor,
+              // ),
+              // const SizedBox(width: 8),
+              // Text(
+              //   'Heatmap',
+              //   style: TextStyle(
+              //     fontSize: 14,
+              //     color: Theme.of(context).colorScheme.onSurface,
+              //   ),
+              // ),
             ],
           ),
         ],
@@ -206,9 +217,9 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
     );
   }
 
-  Widget _buildViewButton(String view, String label, IconData icon, Color color) {
+  Widget _buildViewButton(String view, String label, IconData icon, Color color, AppState appState) {
     final isSelected = _selectedView == view;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -677,6 +688,9 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
   }
 
   Widget _buildBottomPanel() {
+    final appState = Provider.of<AppState>(context, listen: false);
+    final accentColor = appState.isTempStyleEnabled ? AppColors.primary : AppColors.socialColor;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -703,8 +717,8 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                     icon: const Icon(Icons.my_location),
                     label: const Text('Center on Campus'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.socialColor,
-                      foregroundColor: Theme.of(context).colorScheme.surface,
+                      backgroundColor: accentColor,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -719,7 +733,7 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
                   icon: const Icon(Icons.directions),
                   style: IconButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    foregroundColor: AppColors.socialColor,
+                    foregroundColor: accentColor,
                   ),
                 ),
               ],
@@ -731,36 +745,16 @@ class _InteractiveMapScreenState extends State<InteractiveMapScreen>
   }
 
   void _showFriendPopup(User friend) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(friend.name),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Course: ${friend.course}'),
-            Text('Year: ${friend.year}'),
-            Text('Status: ${friend.status.toString().split('.').last}'),
-            if (friend.currentBuilding != null)
-              Text('Location: ${friend.currentBuilding}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to chat with friend
-            },
-            child: const Text('Message'),
-          ),
-        ],
-      ),
-    );
+    // Use the enhanced friend profile modal
+    try {
+      showFriendProfileModal(context, friend, currentUser: _demoData.currentUser);
+    } catch (e) {
+      UIHelpers.showSnackBar(
+        context,
+        'Error loading profile: $e',
+        type: SnackBarType.error,
+      );
+    }
   }
 
   void _showEventPopup(Event event) {
